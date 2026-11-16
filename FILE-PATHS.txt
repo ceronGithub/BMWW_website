@@ -1,0 +1,6 @@
+C:\BM-Logging\MasterSlider\MeanShift
+C:\BM-Logging\Calib
+C:\BM-Logging\CLO1A
+C:\BM-Logging\CLO1A1
+C:\LOG
+C:\BM-Parameter
