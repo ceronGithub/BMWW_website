@@ -59,22 +59,6 @@ input:focus-visible { outline: none; border-color: var(--color-accent); box-shad
 .brandTitle { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.2; }
 .brandSubtitle { font-size: 0.875rem; color: var(--color-text-muted); }
 
-/* Segmented switch to preview each PC role's screen while designing */
-.roleSwitch {
-  display: flex; flex-direction: row; align-items: center; justify-content: center;
-  border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden;
-}
-.roleButton {
-  min-height: 44px; padding: 0 var(--space-lg);
-  background: transparent; border: none; border-right: 1px solid var(--color-border);
-  color: var(--color-text-secondary); font: inherit; font-weight: 600; cursor: pointer;
-  touch-action: manipulation;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-.roleButton:last-child { border-right: none; }
-.roleButton:hover, .roleButton:focus, .roleButton:active { background-color: var(--color-surface-hover); color: var(--color-text-primary); }
-.roleButton.isActive { background-color: var(--color-accent); color: var(--color-accent-text); }
-
 .previewActions { display: flex; flex-direction: row; align-items: center; gap: var(--space-sm); }
 
 /* ---------- Buttons ---------- */

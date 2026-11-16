@@ -1,0 +1,54 @@
+PROJECT: BMWW_website (BM Analyzer, LOT_TRACKING)
+PURPOSE: Offline HTML/CSS/JS na bersyon ng BM-ANALYZER.xlsm (LOT_TRACKING muna). Binabantayan ang mga bagong
+file/folder sa Calib, CLO1A, at CLO1A1 habang may tumatakbong lote.
+
+TECH STACK: Plain HTML + CSS + JavaScript (ES modules). Walang framework, walang backend, walang database server.
+Browser: Chrome o Edge (File System Access API). Kailangang buksan sa http://localhost (hal. VS Code Live Server),
+hindi sa double-click na file://, dahil hindi pinapayagan ng browser ang ES module sa file://.
+
+DATABASE OVERVIEW: wala. localStorage keys: bmww.pcRegistry (listahan ng PC), bmww.activePcId (huling tab).
+IndexedDB "bmww.folderHandles" store "handles": mga piniling folder, susi = "<pcId>:<calib|clo1a|clo1a1>".
+
+DATA MODEL: PC = { id, type: "mww"|"lead", name, ip }. Ang registry order = order ng tab, dropdown, at IP row.
+
+FILE MAP
+  index.html               Header + tabs, PC'S/PC ROLE, MWW host, LEAD view, Add PC dialog, #mwwPanelTemplate
+  js/config.js             Lahat ng config (selector, path, limit, message, pattern). Dito lang baguhin ang mga ito.
+  js/main.js               Taga-ugnay: registry, piniling PC, panel, Add PC
+  js/pcRegistryLogic.js    Pure logic: default PC, addPc (sa ilalim ng huling kapareho ang uri)
+  js/NewPcValidation.js    Validation ng Add PC dialog
+  js/sqlInjectionDetector.js  Unang harang sa mapanganib na input (pattern + whitelist)
+  js/Storage.js            Nag-iisang humahawak ng localStorage
+  js/pcTabsView.js         UI ng tab, PC ROLE dropdown, IP row, Add PC dialog
+  js/mwwPanel.js           Isang MWW screen: Enter flow, simula ng lote, scan, RESULT
+  js/folderScanner.js      Scan ng folder + baseline/diff (basa lang)
+  js/folderHandleStore.js  IndexedDB para sa mga folder handle
+  js/toast.js              Toast (top-center, 2 segundo)
+  js/leadView.js           LEAD screen (sample data pa lang)
+  css/*.css                main, variables, pcTabs, mwwView, leadView, mediaQueries
+  FILE-PATHS.txt           Listahan ng mga path na ginagamit ng Excel version
+
+PROCESS: Pagsisimula ng lote (MWW tab)
+  Step 1 : Pumili ng tab ng MWW PC. mwwPanel.focusNextField() ang naglalagay ng cursor (Machine -> Barcode -> Operator).
+  Step 2 : Enter sa Machine -> Barcode. Enter sa Barcode (scanner) -> Operator.
+  Step 3 : Enter sa Operator -> startLote(): sinusuri ang Machine/Barcode/Operator, Start Date/Time = oras ngayon.
+  Step 4 : prepareBaselines(): humihingi ng permission sa bawat naka-link na folder, tapos kumukuha ng baseline.
+  Step 5 : Kada 3 segundo, runScanTick(): ang item na wala sa baseline = bago, ipinapakita sa RESULT
+           (Source, Date Created, Type, Path, Wafer, Blk, Layer No., File Name), pinakaluma sa taas.
+  Step 6 : NEW LOTE button: linilinis ang Barcode, Operator, Start, RESULT; humihinto ang scan; cursor sa Barcode.
+PROCESS: Add PC
+  Step 1 : "+ Add MWW / LEAD PC" -> dialog -> validateNewPc() -> main.handleAddPcRequest() -> addPc().
+  Step 2 : Naka-save sa localStorage; gagawa ng tab, dropdown option, IP row (sa ilalim ng huling kapareho ang uri),
+           at MWW panel kung MWW.
+
+DEBUG POINTS
+  - Walang lumalabas sa RESULT   -> may "Naka-link" ba ang folder? (status sa ilalim ng path row); may permission ba?
+  - Walang laman ang page        -> binuksan sa file://; gumamit ng localhost.
+  - Date Created ng folder       -> oras ng pagkakita (hanggang ~3s), dahil walang timestamp ng folder ang browser.
+  - Mali ang Wafer/Blk/Layer     -> CONFIG.FILE_NAME_PATTERN (kapareho ng resultNamePattern ng macro).
+  - Hindi mapili ang folder      -> hindi Chrome/Edge, o system folder na bawal piliin ng browser.
+
+ENVIRONMENT VARIABLES: wala.
+
+================ CHANGE LOG ================
+[2026-11-17] Task 1: dynamic PC tabs (MWW 1, MWW 2, LEAD PC1/2), Add PC dialog, PC ROLE dropdown, at IP rows na sumusunod sa registry. Task 2: Enter flow (Machine -> Barcode -> Operator), Start Date/Time, at pag-scan ng Calib/CLO1A/CLO1A1 papunta sa RESULT.

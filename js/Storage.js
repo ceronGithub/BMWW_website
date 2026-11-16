@@ -61,3 +61,21 @@ export function loadPcRegistry() {
 export function savePcRegistry(registry) {
   return writeStoredJson(CONFIG.STORAGE_KEYS.pcRegistry, registry);
 }
+
+/**
+ * loadActivePcId
+ * Ang huling piniling PC (tab). Kapag wala, sira, o wala na sa listahan, ang unang PC ang ibabalik.
+ */
+export function loadActivePcId(registry) {
+  const storedId = readStoredJson(CONFIG.STORAGE_KEYS.activePcId);
+  const isKnownPc = registry.some(function (pc) { return pc.id === storedId; });
+  return isKnownPc ? storedId : registry[0].id;
+}
+
+/**
+ * saveActivePcId
+ * Sine-save ang piniling PC para pareho pa rin sa susunod na bukas ng page.
+ */
+export function saveActivePcId(pcId) {
+  return writeStoredJson(CONFIG.STORAGE_KEYS.activePcId, pcId);
+}

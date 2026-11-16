@@ -8,156 +8,57 @@
   <link rel="stylesheet" href="css/mwwView.css" />
   <link rel="stylesheet" href="css/leadView.css" />
   <link rel="stylesheet" href="css/mediaQueries.css" />
-  <link rel="stylesheet" href="css/pcTabs.css" />
   <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/pcTabs.css" />
 </head>
 <body>
 
-  <!-- Top bar: brand, PC role preview switch, and design-preview sample data buttons -->
+  <!-- Top bar: brand, PC tabs (isa bawat PC) + Add PC, at sample data buttons para sa LEAD design preview -->
   <header class="appHeader">
     <div class="brandBlock">
       <h1 class="brandTitle">LOT TRACKING</h1>
       <p class="brandSubtitle">BM Analyzer</p>
     </div>
 
-    <nav class="roleSwitch" aria-label="PC role preview">
-      <button type="button" class="roleButton isActive" data-role="mww">MWW PC</button>
-      <button type="button" class="roleButton" data-role="lead1">LEAD PC1</button>
-      <button type="button" class="roleButton" data-role="lead2">LEAD PC2</button>
-    </nav>
+    <div class="pc-tabs-bar">
+      <nav class="pc-tabs" id="pcTabsStrip" role="tablist" aria-label="PC tabs"></nav>
+      <button type="button" class="pc-tabs__add-button" id="addPcButton">+ Add MWW / LEAD PC</button>
+    </div>
 
     <div class="previewActions">
-      <button type="button" class="buttonGhost" id="loadSampleButton">Load sample data</button>
+      <button type="button" class="buttonGhost" id="loadSampleButton">Load LEAD sample</button>
       <button type="button" class="buttonGhost" id="clearSampleButton">Clear</button>
     </div>
   </header>
 
   <main class="pageWrapper">
 
-    <!-- ===================== MWW PC VIEW (LOT_TRACKING) ===================== -->
+    <!-- ===================== PC'S + PC ROLE (shared sa lahat ng tab) ===================== -->
+    <section class="infoGrid pcSettings" aria-label="PC settings">
+      <article class="infoCard">
+        <h2 class="cardHeader">PC'S</h2>
+        <!-- Mga IP row: ginagawa ng js/pcTabsView.js mula sa registry -->
+        <div id="pcIpList"></div>
+      </article>
+      <article class="infoCard">
+        <h2 class="cardHeader">PC ROLE</h2>
+        <div class="valueRow">
+          <span>This PC is</span>
+          <select id="pcRoleSelect" class="pc-role-select" aria-label="PC role"></select>
+        </div>
+      </article>
+    </section>
+
+    <!-- ===================== MWW PC VIEW (LOT_TRACKING) =====================
+         Ang mga panel ay ginagawa ng js/mwwPanel.js (isa bawat MWW PC) -->
     <section id="mwwView" class="viewSection">
-      <div class="infoGrid">
-
-        <!-- Column 1: lot information + NEW LOTE -->
-        <div class="infoColumn">
-          <article class="infoCard">
-            <h2 class="cardHeader">LOTE INFORMATION</h2>
-            <div class="fieldRow">
-              <label for="barcodeInput">Barcode</label>
-              <input type="text" id="barcodeInput" autocomplete="off" autofocus />
-            </div>
-            <div class="fieldRow">
-              <label for="operatorInput">Operator</label>
-              <input type="text" id="operatorInput" autocomplete="off" />
-            </div>
-            <div class="fieldRow">
-              <label for="startDateInput">Start Date</label>
-              <input type="text" id="startDateInput" readonly />
-            </div>
-            <div class="fieldRow">
-              <label for="endDateInput">End Date</label>
-              <input type="text" id="endDateInput" readonly />
-            </div>
-            <div class="fieldRow">
-              <label for="startTimeInput">Start Time</label>
-              <input type="text" id="startTimeInput" readonly />
-            </div>
-            <div class="fieldRow">
-              <label for="endTimeInput">End Time</label>
-              <input type="text" id="endTimeInput" readonly />
-            </div>
-          </article>
-          <button type="button" class="buttonPrimary" id="newLoteButton">NEW LOTE</button>
-        </div>
-
-        <!-- Column 2: paths + machine -->
-        <div class="infoColumn">
-          <article class="infoCard">
-            <h2 class="cardHeader">SEARCH PATH / SEND PATH</h2>
-            <div class="fieldRow">
-              <label for="filePath1Input">File Path 1</label>
-              <input type="text" id="filePath1Input" class="pathInput" value="C:\BM-Logging\CLO1A" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="filePath2Input">File Path 2</label>
-              <input type="text" id="filePath2Input" class="pathInput" value="C:\BM-Logging\CLO1A1" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="serverPathInput">Server Path</label>
-              <input type="text" id="serverPathInput" class="pathInput" value="…\RPC MAT On-Hold\Documentation\…" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="databasePathInput">Database Path</label>
-              <input type="text" id="databasePathInput" class="pathInput" value="…\OneDrive\Desktop\BM_ANALYZER_Files\Tracking_lot" autocomplete="off" spellcheck="false" />
-            </div>
-          </article>
-          <article class="infoCard">
-            <h2 class="cardHeader">Machine</h2>
-            <div class="fieldRow">
-              <label for="machineNameInput">Machine Name</label>
-              <input type="text" id="machineNameInput" value="MWW 1" autocomplete="off" />
-            </div>
-          </article>
-        </div>
-
-        <!-- Column 3: PCs + role -->
-        <div class="infoColumn">
-          <article class="infoCard">
-            <h2 class="cardHeader">PC'S</h2>
-            <div class="fieldRow">
-              <label for="leadPc1IpInput">Lead PC1 IP</label>
-              <input type="text" id="leadPc1IpInput" class="pathInput" value="\\10.120.8.46" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="leadPc2IpInput">Lead PC2 IP</label>
-              <input type="text" id="leadPc2IpInput" class="pathInput" value="\\10.120.8.55" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="mww1IpInput">MWW 1 IP</label>
-              <input type="text" id="mww1IpInput" class="pathInput" value="\\192.168.212.23" autocomplete="off" spellcheck="false" />
-            </div>
-            <div class="fieldRow">
-              <label for="mww2IpInput">MWW 2 IP</label>
-              <input type="text" id="mww2IpInput" class="pathInput" value="\\192.168.212.21" autocomplete="off" spellcheck="false" />
-            </div>
-          </article>
-          <article class="infoCard">
-            <h2 class="cardHeader">PC ROLE</h2>
-            <div class="valueRow"><span>This PC is</span><strong>MWW PC</strong></div>
-          </article>
-        </div>
-      </div>
-
-      <!-- RESULT: new files/folders detected by the scanner -->
-      <section class="resultSection">
-        <h2 class="resultTitle">RESULT</h2>
-        <div class="tableScroll">
-          <table class="dataTable">
-            <thead>
-              <tr>
-                <th>Source</th><th>Date Created</th><th>Type</th><th>Path</th>
-                <th>Wafer</th><th>Blk</th><th>Layer No.</th><th>File Name</th>
-              </tr>
-            </thead>
-            <tbody id="mwwResultBody"></tbody>
-          </table>
-        </div>
-        <div class="emptyState" id="mwwEmptyState">
-          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          <p class="emptyTitle">Wala pang bagong file o folder.</p>
-          <p class="emptyHint">Pindutin ang NEW LOTE para magsimulang mag-scan.</p>
-        </div>
-      </section>
+      <div id="pcPanelHost"></div>
     </section>
 
     <!-- ===================== LEAD PC VIEW (LOT_TRACKING_LEAD) ===================== -->
     <section id="leadView" class="viewSection isHidden">
       <div class="leadTop">
-        <h2 class="leadTitle">LEAD PC - RESULTS</h2>
-        <article class="infoCard roleCard">
-          <h2 class="cardHeader">PC ROLE</h2>
-          <div class="valueRow"><span>This PC is</span><strong id="leadRoleText">LEAD PC1</strong></div>
-        </article>
+        <h2 class="leadTitle" id="leadTitleText">LEAD PC - RESULTS</h2>
       </div>
 
       <p class="monitoringNotice" id="monitoringNotice"></p>
@@ -186,15 +87,131 @@
 
   </main>
 
+  <!-- Add PC dialog: bukas kapag pinindot ang "+ Add MWW / LEAD PC" -->
+  <dialog id="addPcDialog" class="add-pc-dialog" aria-labelledby="addPcTitle">
+    <h2 class="add-pc-dialog__title" id="addPcTitle">ADD NEW PC</h2>
+    <div class="add-pc-dialog__body">
+      <div class="add-pc-dialog__field">
+        <label class="add-pc-dialog__label" for="addPcTypeSelect">Uri ng PC</label>
+        <select id="addPcTypeSelect" class="add-pc-dialog__control"></select>
+      </div>
+      <div class="add-pc-dialog__field">
+        <label class="add-pc-dialog__label" for="addPcIpInput">IP (optional)</label>
+        <input type="text" id="addPcIpInput" class="add-pc-dialog__control" placeholder="\\192.168.212.25" autocomplete="off" spellcheck="false" />
+        <p class="add-pc-dialog__hint">Puwede itong iwanang blangko at i-type na lang sa PC'S card.</p>
+      </div>
+      <p class="add-pc-dialog__error isHidden" id="addPcError" role="alert"></p>
+      <div class="add-pc-dialog__actions">
+        <button type="button" class="add-pc-dialog__button add-pc-dialog__button--cancel" id="addPcCancelButton">Cancel</button>
+        <button type="button" class="add-pc-dialog__button add-pc-dialog__button--confirm" id="addPcConfirmButton">Add PC</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Template ng isang MWW panel. Ang mga field ay [data-field] (hindi id) dahil kinokopya ito kada MWW PC. -->
+  <template id="mwwPanelTemplate">
+    <section class="mwwPanel viewSection">
+      <div class="infoGrid">
+
+        <!-- Column 1: lote information + NEW LOTE -->
+        <div class="infoColumn">
+          <article class="infoCard">
+            <h2 class="cardHeader">LOTE INFORMATION</h2>
+            <div class="fieldRow">
+              <label>Barcode</label>
+              <input type="text" data-field="barcode" aria-label="Barcode" autocomplete="off" />
+            </div>
+            <div class="fieldRow">
+              <label>Operator</label>
+              <input type="text" data-field="operator" aria-label="Operator" autocomplete="off" />
+            </div>
+            <div class="fieldRow">
+              <label>Start Date</label>
+              <input type="text" data-field="startDate" aria-label="Start Date" readonly />
+            </div>
+            <div class="fieldRow">
+              <label>End Date</label>
+              <input type="text" data-field="endDate" aria-label="End Date" readonly />
+            </div>
+            <div class="fieldRow">
+              <label>Start Time</label>
+              <input type="text" data-field="startTime" aria-label="Start Time" readonly />
+            </div>
+            <div class="fieldRow">
+              <label>End Time</label>
+              <input type="text" data-field="endTime" aria-label="End Time" readonly />
+            </div>
+          </article>
+          <button type="button" class="buttonPrimary" data-field="newLoteButton">NEW LOTE</button>
+        </div>
+
+        <!-- Column 2: paths + machine -->
+        <div class="infoColumn">
+          <article class="infoCard">
+            <h2 class="cardHeader">SEARCH PATH / SEND PATH</h2>
+            <div class="fieldRow pathRow">
+              <label>File Path 1</label>
+              <input type="text" data-field="filePath1" class="pathInput" aria-label="File Path 1" autocomplete="off" spellcheck="false" />
+              <button type="button" class="buttonGhost pickFolderButton" data-pick-key="clo1a">Pick folder</button>
+              <span class="pickStatus" data-pick-status="clo1a">Hindi pa napipili ang folder.</span>
+            </div>
+            <div class="fieldRow pathRow">
+              <label>File Path 2</label>
+              <input type="text" data-field="filePath2" class="pathInput" aria-label="File Path 2" autocomplete="off" spellcheck="false" />
+              <button type="button" class="buttonGhost pickFolderButton" data-pick-key="clo1a1">Pick folder</button>
+              <span class="pickStatus" data-pick-status="clo1a1">Hindi pa napipili ang folder.</span>
+            </div>
+            <div class="fieldRow pathRow">
+              <label>File Path 3 (Calib)</label>
+              <input type="text" data-field="filePath3" class="pathInput" aria-label="File Path 3 Calib" autocomplete="off" spellcheck="false" />
+              <button type="button" class="buttonGhost pickFolderButton" data-pick-key="calib">Pick folder</button>
+              <span class="pickStatus" data-pick-status="calib">Hindi pa napipili ang folder.</span>
+            </div>
+            <div class="fieldRow">
+              <label>Server Path</label>
+              <input type="text" data-field="serverPath" class="pathInput" aria-label="Server Path" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="fieldRow">
+              <label>Database Path</label>
+              <input type="text" data-field="databasePath" class="pathInput" aria-label="Database Path" autocomplete="off" spellcheck="false" />
+            </div>
+          </article>
+          <article class="infoCard">
+            <h2 class="cardHeader">Machine</h2>
+            <div class="fieldRow">
+              <label>Machine Name</label>
+              <input type="text" data-field="machineName" aria-label="Machine Name" autocomplete="off" />
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- RESULT: mga bagong file/folder na nakita sa Calib, CLO1A, at CLO1A1 -->
+      <section class="resultSection">
+        <h2 class="resultTitle">RESULT</h2>
+        <p class="scanStatus" data-field="scanStatus"></p>
+        <div class="tableScroll">
+          <table class="dataTable">
+            <thead>
+              <tr>
+                <th>Source</th><th>Date Created</th><th>Type</th><th>Path</th>
+                <th>Wafer</th><th>Blk</th><th>Layer No.</th><th>File Name</th>
+              </tr>
+            </thead>
+            <tbody data-field="resultBody"></tbody>
+          </table>
+        </div>
+        <div class="emptyState" data-field="resultEmptyState">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <p class="emptyTitle">Wala pang bagong file o folder.</p>
+          <p class="emptyHint">I-scan ang Barcode, ilagay ang Operator, at pindutin ang Enter para magsimulang mag-scan.</p>
+        </div>
+      </section>
+    </section>
+  </template>
+
   <div class="toastStack" id="toastStack" aria-live="polite"></div>
 
-  <script src="js/main.js"></script>
-  <script src="js/mwwView.js"></script>
-  <script src="js/leadView.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/sqlInjectionDetector.js"></script>
-  <script src="js/RegistryLogic.js"></script>
-  <script src="js/Storage.js"></script>
-  <script src="js/NewPcValidation.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

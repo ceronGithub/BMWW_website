@@ -127,3 +127,8 @@
   from { background-color: var(--color-accent-soft); }
   to   { background-color: transparent; }
 }
+
+/* ===== PC'S + PC ROLE (nasa ilalim ng header, shared sa lahat ng tab) ===== */
+.pcSettings { margin-bottom: var(--space-xl); }
+/* Ang dropdown sa loob ng PC ROLE card ay kumukuha ng natitirang lapad ng row */
+.valueRow .pc-role-select { flex: 1 1 auto; }

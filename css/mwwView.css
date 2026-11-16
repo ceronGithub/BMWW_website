@@ -22,3 +22,14 @@
 .fieldRow input.pathInput {
   font-family: Consolas, "Courier New", monospace; font-size: 0.875rem; text-align: left;
 }
+/* Row ng path na may Pick folder button: puwedeng bumaba ang status text sa sariling linya */
+.fieldRow.pathRow { flex-wrap: wrap; }
+.fieldRow.pathRow input.pathInput { flex: 1 1 12rem; }
+.pathRow .pickFolderButton { flex: 0 0 auto; min-height: 40px; }
+/* Maliit na linya sa ilalim ng path row: kung naka-link na ang folder */
+.pickStatus { flex: 1 1 100%; font-size: 0.8125rem; color: var(--color-text-muted); }
+.pickStatus.isLinked { color: var(--color-success); }
+
+/* Isang linya sa ilalim ng RESULT: binabantayan, bilang ng nakita, at mga babala */
+.scanStatus { font-size: 0.9375rem; color: var(--color-text-secondary); word-break: break-word; }
+.scanStatus:empty { display: none; }

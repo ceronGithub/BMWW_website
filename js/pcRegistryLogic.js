@@ -4,7 +4,7 @@
  * GINAGAWA: Nagbibigay ng default na listahan, nagdaragdag ng bagong PC, at
  *           nagsasabi kung saan ilalagay (sa ilalim ng huling PC na kapareho ang uri).
  *           Walang DOM, walang storage, walang UI.
- * INPUT:   registry = array ng { id, type, name, ip, existingIpInputId }
+ * INPUT:   registry = array ng { id, type, name, ip }
  *          type = "mww" o "lead" (keys ng CONFIG.PC_TYPES)
  * OUTPUT:  bagong array / object. Hindi binabago ang pinasok na array.
  * TANDAAN: Ang validation ng IP (SQL injection check) ay hindi dito; hiwalay na file.
@@ -15,7 +15,7 @@ import { CONFIG } from "./config.js";
 /**
  * createDefaultRegistry
  * Gumagawa ng listahan mula sa CONFIG.DEFAULT_PCS (MWW 1, MWW 2, LEAD PC1, LEAD PC2).
- * Ang ip ay null; ang tunay na IP ay nasa existing na input sa page.
+ * Ang ip ay galing sa defaultIp ng bawat PC.
  */
 export function createDefaultRegistry() {
   return CONFIG.DEFAULT_PCS.map(function (defaultPc) {
@@ -23,8 +23,7 @@ export function createDefaultRegistry() {
       id: defaultPc.id,
       type: defaultPc.type,
       name: defaultPc.name,
-      ip: null,
-      existingIpInputId: defaultPc.existingIpInputId
+      ip: defaultPc.defaultIp
     };
   });
 }
@@ -96,8 +95,7 @@ export function addPc(registry, type, ip) {
     id: type + pcNumber,
     type: type,
     name: typeConfig.namePrefix + pcNumber,
-    ip: typeof ip === "string" ? ip.trim() : "",
-    existingIpInputId: null
+    ip: typeof ip === "string" ? ip.trim() : ""
   };
 
   const anchorPc = findLastPcOfType(registry, type);
@@ -158,13 +156,11 @@ export function restoreRegistry(storedValue) {
       return defaultRegistry;
     }
     seenIds.add(pc.id);
-    const matchingDefault = defaultRegistry.find(function (defaultPc) { return defaultPc.id === pc.id; });
     cleanRegistry.push({
       id: pc.id,
       type: pc.type,
       name: pc.name,
-      ip: pc.ip,
-      existingIpInputId: matchingDefault ? matchingDefault.existingIpInputId : null
+      ip: typeof pc.ip === "string" ? pc.ip : ""
     });
   }
 
