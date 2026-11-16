@@ -6,3 +6,4 @@
 [2026-11-17] Sheet1: date range ayon sa date created, hindi buong Calib. -> task-17
 [2026-11-17] Sheet1: Data Analysis at Range Data Analysis, "AYUSIN" pa rin sa macro; kailangan ng detalye. -> task-18
 [2026-11-17] js/mwwView.js (lumang design preview, window.lotTracking) ay hindi naka-link sa index.html o sa kahit anong import. Tanungin muna si Ceron bago i-delete.
+[2026-11-17] task-7: tingnan muna ang modQueueEventApplier/modQueueEventParser para sa eksaktong field ng FINISH bago isulat ang buildQueueLine.

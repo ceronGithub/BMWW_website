@@ -14,6 +14,8 @@ DATA MODEL: PC = { id, type: "mww"|"lead", name, ip }. Ang registry order = orde
 
 FILE MAP
   index.html               Header + tabs, PC'S/PC ROLE, MWW host, LEAD view, Add PC dialog, #mwwPanelTemplate
+  js/loteLogic.js          Pure logic: LOT Unit (Wafer+Layer+Blk), Shift (6/14/22), pagpipilian sa Remarks
+  tests/loteLogic.test.mjs Node test ng loteLogic (takbo: node --test tests/loteLogic.test.mjs)
   js/config.js             Lahat ng config (selector, path, limit, message, pattern). Dito lang baguhin ang mga ito.
   js/main.js               Taga-ugnay: registry, piniling PC, panel, Add PC
   js/pcRegistryLogic.js    Pure logic: default PC, addPc (sa ilalim ng huling kapareho ang uri)
@@ -64,3 +66,4 @@ ENVIRONMENT VARIABLES: wala.
 [2026-11-17] Task 3: inalis ang lumang duplicate na js/RegistryLogic.js; pcRegistryLogic.js na lang ang registry logic.
 [2026-11-17] Task 4: PATH SETTINGS panel (SERVER, DATABASE, at Desktop/C$/Calib kada PC) na may pasteable input, naka-save sa localStorage, at default galing Sheet1.
 [2026-11-17] Task 5: ang Server/Database path ng MWW panel at ang monitoring notice ng LEAD screen ay galing na sa PATH SETTINGS; tinanggal ang hard-coded na path sa leadView.js.
+[2026-11-17] Task 6: dagdag ang js/loteLogic.js (LOT Unit, Shift, Remarks choices), SHIFTS at REMARKS_CHOICES sa config.js, at node test na pumapasa.

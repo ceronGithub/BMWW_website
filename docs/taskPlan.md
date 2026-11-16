@@ -1,6 +1,6 @@
 # taskPlan.md — BMWW_website (BM Analyzer, LOT_TRACKING)
-**NEXT UP:** task-6 | file: docs/tasks/task-06-lote-logic.md | needs: none
-**OPEN FINDINGS:** 6 — see docs/openFindings.md
+**NEXT UP:** task-7 | file: docs/tasks/task-07-queue-event-logic.md | needs: task-6
+**OPEN FINDINGS:** 7 — see docs/openFindings.md
 
 SPEC SOURCE: ang macro sa BM-ANALYZER.xlsm (modMacroConfig, modMonitoring*, modQueue*, modSend*) + mga tala sa Sheet1.
 SAFE: PC ROLE = MWW PC -> hindi diretsong sinusulatan ang monitoring file; nagpapadala ng QUEUE event
@@ -18,7 +18,7 @@ SAFE: PC ROLE = MWW PC -> hindi diretsong sinusulatan ang monitoring file; nagpa
 - [DONE] task-5 — Gamitin ang naka-save na Server/Database/Queue path sa MWW panel at LEAD notice (alisin ang hard-coded)
 
 ## Phase 4 — MWW PC -> Queue (macro: modQueue*, modShiftResolver, modRemarksFlow)
-- [ ] task-6 — Pure logic: LOT Unit (Wafer+Layer+Blk, hal. 4A25C20A), Shift (6/14/22), Remarks choices
+- [DONE] task-6 — Pure logic: LOT Unit (Wafer+Layer+Blk, hal. 4A25C20A), Shift (6/14/22), Remarks choices
 - [ ] task-7 — Pure logic: gawa ng queue event line (START/UNIT/FINISH, TAB, yyyymmdd_hhnnss_seq.q)
 - [ ] task-8 — I-link ang Queue folder at ipadala ang START kapag nagsimula ang lote
 - [ ] task-9 — Ipadala ang UNIT kada bagong LOT Unit sa RESULT, at itanong ang Remarks

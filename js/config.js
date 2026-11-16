@@ -10,6 +10,9 @@
  *   - Ang mga field ng bawat MWW panel ay [data-field="..."] na, hindi na id
  *     (kopya ng template ang MWW 2, 3, ... kaya hindi puwedeng magkapareho ang id).
  *   - Dagdag: selector, class name, at data attribute para sa tabs at Add PC.
+ * BINAGO (task 6):
+ *   - Dagdag: SHIFTS (oras at pangalan ng 3 shift) at REMARKS_CHOICES (pagpipilian sa Remarks),
+ *     kapareho ng modMacroConfig ng Excel macro.
  * BINAGO (task 1 at 2):
  *   - defaultIp na ang nasa DEFAULT_PCS (ang mga IP row ay ginagawa na ng JS mula sa registry).
  *   - FILE_NAME_PATTERN ay kapareho na ng resultNamePattern sa Excel macro.
@@ -81,6 +84,27 @@ export const CONFIG = Object.freeze({
      GALING SA resultNamePattern ng Excel macro, hal. 4A25C20A -> Wafer 4A25C, Layer 20, Blk A.
      Ang pagkakasunod ng group: 1 = Wafer, 2 = Layer No., 3 = Blk. */
   FILE_NAME_PATTERN: /^([A-Z0-9]{5})([0-9]{1,3})([A-Z])/i,
+
+  /* ===== SHIFT (task 6) =====
+     Galing sa modMacroConfig: Shift 1 = 06:00-13:59, Shift 2 = 14:00-21:59, Shift 3 = 22:00-05:59.
+     Ang bilang ay ang oras (0-23) kung kailan nagsisimula ang shift. */
+  SHIFTS: Object.freeze({
+    shiftOneStartHour: 6,
+    shiftTwoStartHour: 14,
+    shiftThreeStartHour: 22,
+    shiftOneName: "Shift 1",
+    shiftTwoName: "Shift 2",
+    shiftThreeName: "Shift 3"
+  }),
+
+  /* ===== REMARKS (task 6) =====
+     Galing sa remarksChoiceList ng macro. Ang pagkakasunod ay ang numero ng pagpipilian.
+     Kapag "Manual input" ang napili, sariling Remarks ng operator ang gagamitin. */
+  REMARKS_CHOICES: Object.freeze([
+    "1st Meas.", "2nd Meas.", "1st Re-lap", "2nd Re-lap",
+    "1st Re-measure", "2nd Re-measure", "Final Meas.", "Manual input"
+  ]),
+  REMARKS_MANUAL_CHOICE_TEXT: "Manual input",
 
   /* ===== ID AT SELECTOR (Rule 5: nakalista dito lahat ng ginagamit ng JS) =====
      Ang may tatak na BAGO ay wala pa sa index.html; idadagdag sa HTML micro task. */
