@@ -24,7 +24,8 @@ export const CONFIG = Object.freeze({
     pcRegistry: "bmww.pcRegistry",
     activePcId: "bmww.activePcId",
     folderHandlesDatabase: "bmww.folderHandles",
-    folderHandlesStore: "handles"
+    folderHandlesStore: "handles",
+    pathSettings: "bmww.pathSettings"
   }),
 
   /* ===== MGA PC (default) =====
@@ -50,6 +51,25 @@ export const CONFIG = Object.freeze({
   ]),
   DEFAULT_SERVER_PATH: "\\\\PHLSVR215\\Slider MRPC MAT On-Hold\\Documentation\\MWW-FILES",
   DEFAULT_DATABASE_PATH: "C:\\Users\\Ceron Calsena\\OneDrive\\Desktop\\BM_ANALYZER_Files\\Tracking_lot",
+  /* ===== PATH SETTINGS (task 4) =====
+     Galing sa Sheet1 ng BM-ANALYZER.xlsm. SERVER at DATABASE ay gumagamit ng DEFAULT_SERVER_PATH
+     at DEFAULT_DATABASE_PATH sa itaas. Ang bawat PC ay may sariling Desktop / C$ / Calib path. */
+  PATH_LABELS: Object.freeze({
+    server: "SERVER", database: "DATABASE PATH",
+    desktop: "Desktop", adminShare: "C$ Share", calib: "Calib"
+  }),
+  PATH_KEYS_BY_PC_TYPE: Object.freeze({
+    mww:  Object.freeze(["desktop", "adminShare", "calib"]),
+    lead: Object.freeze(["desktop", "adminShare"])
+  }),
+  PATH_SHARED_GROUP_TITLE: "SERVER / DATABASE",
+  PC_PATH_DEFAULTS: Object.freeze({
+    mww1:  Object.freeze({ desktop: "C:\\Users\\MWWP1A01\\Desktop",       adminShare: "\\\\192.168.212.23\\C$", calib: "\\\\192.168.212.23\\C$\\BM-Logging\\Calib\\" }),
+    mww2:  Object.freeze({ desktop: "C:\\Users\\MWWP1A02.SAEPH\\Desktop", adminShare: "\\\\192.168.212.21\\C$", calib: "\\\\192.168.212.21\\C$\\BM-Logging\\Calib\\" }),
+    lead1: Object.freeze({ desktop: "C:\\Users\\A01028350\\Desktop",       adminShare: "\\\\10.120.8.46\\C$" }),
+    lead2: Object.freeze({ desktop: "C:\\Users\\a668533\\Desktop",         adminShare: "\\\\10.120.8.55\\C$" })
+  }),
+
   SCAN_INTERVAL_MS: 3000,
   MAX_SCAN_DEPTH: 5,
   MAX_SCAN_ENTRIES: 20000,
@@ -90,6 +110,7 @@ export const CONFIG = Object.freeze({
     addPcConfirmButton: "#addPcConfirmButton",
     addPcCancelButton: "#addPcCancelButton",
     pcIpList: "#pcIpList",
+    pathSettingsList: "#pathSettingsList",
     /* --- BAGO (micro 6b) --- */
     pcTabsStrip: "#pcTabsStrip",
     addPcError: "#addPcError",
@@ -120,7 +141,9 @@ export const CONFIG = Object.freeze({
     pcId: "data-pc-id",
     field: "data-field",
     pickKey: "data-pick-key",
-    pickStatus: "data-pick-status"
+    pickStatus: "data-pick-status",
+    pathKey: "data-path-key",
+    pathLabel: "data-path-label"
   }),
 
   /* ===== TOAST ===== */
@@ -180,6 +203,9 @@ export const CONFIG = Object.freeze({
     loteReady: "Handa na para sa susunod na lote.",
     folderPicked: "Naka-link na ang folder:",
     foldersNotLinked: "Hindi pa naka-link ang folder:",
-    folderPermissionDenied: "Walang pahintulot sa folder:"
+    folderPermissionDenied: "Walang pahintulot sa folder:",
+    pathSaved: "Naka-save ang path:",
+    pathNotSaved: "Hindi na-save ang path. Subukan ulit.",
+    databasePathMissing: "Wala pang DATABASE PATH. Ilagay ito sa PATH SETTINGS para malaman kung saan ang monitoring file."
   })
 });

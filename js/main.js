@@ -10,7 +10,9 @@
  */
 import { CONFIG } from "./config.js";
 import { addPc } from "./pcRegistryLogic.js";
-import { loadPcRegistry, savePcRegistry, loadActivePcId, saveActivePcId } from "./Storage.js";
+import { loadPcRegistry, savePcRegistry, loadActivePcId, saveActivePcId, loadPathSettings, savePathSettings } from "./Storage.js";
+import { withPathValue, getSharedPath } from "./pathSettings.js";
+import { initPathSettingsView, renderPathSettingsView } from "./pathSettingsView.js";
 import { initPcTabsView, renderPcTabsView } from "./pcTabsView.js";
 import { createMwwPanel } from "./mwwPanel.js";
 import { initLeadView } from "./leadView.js";
@@ -36,15 +38,29 @@ const panelTemplate = document.querySelector(CONFIG.SELECTORS.mwwPanelTemplate);
 const leadScreen = initLeadView();
 
 let registry = loadPcRegistry();
+// Mga path na ini-paste ng user (storeKey -> text); ang wala rito ay gumagamit ng default
+let savedPaths = loadPathSettings();
 let activePcId = loadActivePcId(registry);
 // pcId -> panel ng MWW PC na iyon
 const panelsByPcId = new Map();
+
+/** readSharedPaths — ang SERVER at DATABASE path na kasalukuyang naka-save (o default). */
+function readSharedPaths() {
+  return { server: getSharedPath(savedPaths, "server"), database: getSharedPath(savedPaths, "database") };
+}
+
+/** applySharedPaths — ipinapakita ang bagong SERVER/DATABASE path sa lahat ng MWW panel at sa LEAD notice. */
+function applySharedPaths() {
+  const sharedPaths = readSharedPaths();
+  panelsByPcId.forEach(function (panel) { panel.setSharedPaths(sharedPaths); });
+  leadScreen.setMonitoringFolder(sharedPaths.database);
+}
 
 /** ensurePanels — gumagawa ng panel para sa bawat MWW PC na wala pa. */
 function ensurePanels() {
   registry.forEach(function (pc) {
     if (pc.type === "mww" && !panelsByPcId.has(pc.id)) {
-      panelsByPcId.set(pc.id, createMwwPanel(pc, panelHost, panelTemplate));
+      panelsByPcId.set(pc.id, createMwwPanel(pc, panelHost, panelTemplate, readSharedPaths()));
     }
   });
 }
@@ -72,6 +88,7 @@ function showActivePc() {
 /** renderAll — ina-update ang lahat ng bahagi ng UI mula sa registry. */
 function renderAll(newPcId) {
   renderPcTabsView(registry, activePcId, newPcId);
+  renderPathSettingsView(registry, savedPaths);
   leadScreen.setMachineNames(registry.filter(function (pc) { return pc.type === "mww"; }).map(function (pc) { return pc.name; }));
   showActivePc();
 }
@@ -110,7 +127,19 @@ function handleIpChange(pcId, ipText) {
   savePcRegistry(registry);
 }
 
+/** handlePathChange — sine-save ang path na ini-paste. Ibinabalik ang true kapag naka-save. */
+function handlePathChange(storeKey, pathText) {
+  const nextPaths = withPathValue(savedPaths, storeKey, pathText);
+  const isSaved = savePathSettings(nextPaths);
+  if (isSaved) {
+    savedPaths = nextPaths;
+    applySharedPaths();
+  }
+  return isSaved;
+}
+
 initPcTabsView({ onSelectPc: selectPc, onAddPcRequest: handleAddPcRequest, onIpChange: handleIpChange });
+initPathSettingsView({ onPathChange: handlePathChange });
 
 // Mga sample button: para sa design preview ng LEAD screen lang
 document.querySelector(CONFIG.SELECTORS.loadSampleButton).addEventListener("click", function () {
@@ -123,4 +152,5 @@ document.querySelector(CONFIG.SELECTORS.clearSampleButton).addEventListener("cli
 });
 
 ensurePanels();
+applySharedPaths();
 renderAll(null);

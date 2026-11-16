@@ -6,7 +6,8 @@ TECH STACK: Plain HTML + CSS + JavaScript (ES modules). Walang framework, walang
 Browser: Chrome o Edge (File System Access API). Kailangang buksan sa http://localhost (hal. VS Code Live Server),
 hindi sa double-click na file://, dahil hindi pinapayagan ng browser ang ES module sa file://.
 
-DATABASE OVERVIEW: wala. localStorage keys: bmww.pcRegistry (listahan ng PC), bmww.activePcId (huling tab).
+DATABASE OVERVIEW: wala. localStorage keys: bmww.pcRegistry (listahan ng PC), bmww.activePcId (huling tab),
+bmww.pathSettings (mga path na ini-paste sa PATH SETTINGS: { "server"|"database"|"<pcId>:<desktop|adminShare|calib>": text }).
 IndexedDB "bmww.folderHandles" store "handles": mga piniling folder, susi = "<pcId>:<calib|clo1a|clo1a1>".
 
 DATA MODEL: PC = { id, type: "mww"|"lead", name, ip }. Ang registry order = order ng tab, dropdown, at IP row.
@@ -19,6 +20,8 @@ FILE MAP
   js/NewPcValidation.js    Validation ng Add PC dialog
   js/sqlInjectionDetector.js  Unang harang sa mapanganib na input (pattern + whitelist)
   js/Storage.js            Nag-iisang humahawak ng localStorage
+  js/pathSettings.js       Pure logic ng PATH SETTINGS: mga field, default (galing Sheet1), naka-save na value
+  js/pathSettingsView.js   UI ng PATH SETTINGS: card kada group, input na pwedeng i-paste, kusang save sa change
   js/pcTabsView.js         UI ng tab, PC ROLE dropdown, IP row, Add PC dialog
   js/mwwPanel.js           Isang MWW screen: Enter flow, simula ng lote, scan, RESULT
   js/folderScanner.js      Scan ng folder + baseline/diff (basa lang)
@@ -27,6 +30,9 @@ FILE MAP
   js/leadView.js           LEAD screen (sample data pa lang)
   css/*.css                main, variables, pcTabs, mwwView, leadView, mediaQueries
   FILE-PATHS.txt           Listahan ng mga path na ginagamit ng Excel version
+  docs/taskPlan.md         Master na listahan ng task (iisang source ng status) + NEXT UP na pointer
+  docs/openFindings.md     Mga babala at natitirang tanong (isang linya kada finding)
+  docs/tasks/              Isang file kada micro task (task-NN-slug.md)
 
 PROCESS: Pagsisimula ng lote (MWW tab)
   Step 1 : Pumili ng tab ng MWW PC. mwwPanel.focusNextField() ang naglalagay ng cursor (Machine -> Barcode -> Operator).
@@ -35,6 +41,8 @@ PROCESS: Pagsisimula ng lote (MWW tab)
   Step 4 : prepareBaselines(): humihingi ng permission sa bawat naka-link na folder, tapos kumukuha ng baseline.
   Step 5 : Kada 3 segundo, runScanTick(): ang item na wala sa baseline = bago, ipinapakita sa RESULT
            (Source, Date Created, Type, Path, Wafer, Blk, Layer No., File Name), pinakaluma sa taas.
+  (task 5) Ang Server Path at Database Path sa MWW panel ay read-only na salamin ng PATH SETTINGS; kapag may binago doon,
+           main.applySharedPaths() ang nag-a-update ng lahat ng MWW panel at ng notice sa LEAD screen.
   Step 6 : NEW LOTE button: linilinis ang Barcode, Operator, Start, RESULT; humihinto ang scan; cursor sa Barcode.
 PROCESS: Add PC
   Step 1 : "+ Add MWW / LEAD PC" -> dialog -> validateNewPc() -> main.handleAddPcRequest() -> addPc().
@@ -52,3 +60,7 @@ ENVIRONMENT VARIABLES: wala.
 
 ================ CHANGE LOG ================
 [2026-11-17] Task 1: dynamic PC tabs (MWW 1, MWW 2, LEAD PC1/2), Add PC dialog, PC ROLE dropdown, at IP rows na sumusunod sa registry. Task 2: Enter flow (Machine -> Barcode -> Operator), Start Date/Time, at pag-scan ng Calib/CLO1A/CLO1A1 papunta sa RESULT.
+[2026-11-17] Gumawa ng docs/taskPlan.md (task 3-18, base sa macro), docs/openFindings.md, at docs/tasks/task-03-remove-duplicate-registry.md.
+[2026-11-17] Task 3: inalis ang lumang duplicate na js/RegistryLogic.js; pcRegistryLogic.js na lang ang registry logic.
+[2026-11-17] Task 4: PATH SETTINGS panel (SERVER, DATABASE, at Desktop/C$/Calib kada PC) na may pasteable input, naka-save sa localStorage, at default galing Sheet1.
+[2026-11-17] Task 5: ang Server/Database path ng MWW panel at ang monitoring notice ng LEAD screen ay galing na sa PATH SETTINGS; tinanggal ang hard-coded na path sa leadView.js.

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/mediaQueries.css" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/pcTabs.css" />
+  <link rel="stylesheet" href="css/pathSettings.css" />
 </head>
 <body>
 
@@ -48,6 +49,13 @@
         </div>
       </article>
     </section>
+
+    <!-- ===================== PATH SETTINGS (galing sa Sheet1) =====================
+         I-paste ang path sa input; kusang nase-save. Ang mga input ay ginagawa ng js/pathSettingsView.js -->
+    <details class="pathSettings" id="pathSettingsPanel">
+      <summary class="pathSettings__summary">PATH SETTINGS - i-paste ang mga path dito</summary>
+      <div class="pathSettings__list" id="pathSettingsList"></div>
+    </details>
 
     <!-- ===================== MWW PC VIEW (LOT_TRACKING) =====================
          Ang mga panel ay ginagawa ng js/mwwPanel.js (isa bawat MWW PC) -->
@@ -169,11 +177,11 @@
             </div>
             <div class="fieldRow">
               <label>Server Path</label>
-              <input type="text" data-field="serverPath" class="pathInput" aria-label="Server Path" autocomplete="off" spellcheck="false" />
+              <input type="text" data-field="serverPath" class="pathInput" aria-label="Server Path" autocomplete="off" spellcheck="false" readonly />
             </div>
             <div class="fieldRow">
               <label>Database Path</label>
-              <input type="text" data-field="databasePath" class="pathInput" aria-label="Database Path" autocomplete="off" spellcheck="false" />
+              <input type="text" data-field="databasePath" class="pathInput" aria-label="Database Path" autocomplete="off" spellcheck="false" readonly />
             </div>
           </article>
           <article class="infoCard">

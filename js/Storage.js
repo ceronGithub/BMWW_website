@@ -11,6 +11,7 @@
  */
 import { CONFIG } from "./config.js";
 import { restoreRegistry } from "./pcRegistryLogic.js";
+import { restorePathSettings } from "./pathSettings.js";
 
 /**
  * readStoredJson
@@ -78,4 +79,20 @@ export function loadActivePcId(registry) {
  */
 export function saveActivePcId(pcId) {
   return writeStoredJson(CONFIG.STORAGE_KEYS.activePcId, pcId);
+}
+
+/**
+ * loadPathSettings
+ * Kinukuha ang mga path na ini-paste ng user. Laging { storeKey: text }; kapag wala o sira, walang laman ({}).
+ */
+export function loadPathSettings() {
+  return restorePathSettings(readStoredJson(CONFIG.STORAGE_KEYS.pathSettings));
+}
+
+/**
+ * savePathSettings
+ * Sine-save ang mga path. Ibinabalik ang true o false.
+ */
+export function savePathSettings(savedPaths) {
+  return writeStoredJson(CONFIG.STORAGE_KEYS.pathSettings, savedPaths);
 }

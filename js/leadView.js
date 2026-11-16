@@ -4,9 +4,10 @@
  * DESIGN PREVIEW: data comes from the sample button; later it will be read from the daily MONITORING file.
  * BINAGO (task 1): ginawang module; ang listahan ng machine sa "ongoing" ay galing na sa registry
  *                  (lahat ng MWW PC, hindi lang MWW 1 at 2).
- * OUTPUT:  initLeadView() -> { setLeadName, setMachineNames, loadSample, clearSample }
+ * OUTPUT:  initLeadView() -> { setLeadName, setMachineNames, setMonitoringFolder, loadSample, clearSample }
+ * BINAGO (task 5): ang folder ng monitoring file ay galing na sa DATABASE PATH ng PATH SETTINGS (setMonitoringFolder).
  */
-const monitoringFolder = "C:\\Users\\Ceron Calsena\\OneDrive\\Desktop\\BM_ANALYZER_Files\\Tracking_lot\\";
+import { CONFIG } from "./config.js";
 
 const sampleLeadRows = [
   { barcode: "LOT240116A", lotUnit: "1", wafer: "4A25C", blk: "A", layerNo: "12", startTime: "08:10:05", endTime: "08:51:39", duration: "41.6", operator: "Ceron", machine: "MWW 1", status: "Done",    filePath: "C:\\BM-Logging\\CLO1A\\4A25C" },
@@ -23,6 +24,8 @@ function todayFileName() {
 
 export function initLeadView() {
   let currentRows = [];
+  // folder ng monitoring file; galing sa DATABASE PATH ng PATH SETTINGS
+  let monitoringFolder = "";
   let machineNames = ["MWW 1", "MWW 2"];
 
   /** renderLeadRows — fills the lots table and toggles the empty state. */
@@ -54,10 +57,16 @@ export function initLeadView() {
   /** renderNotice — tells the lead whether today's monitoring file exists yet. */
   function renderNotice(hasRows) {
     const notice = document.getElementById("monitoringNotice");
-    notice.classList.toggle("isFound", hasRows);
+    notice.classList.toggle("isFound", hasRows && monitoringFolder !== "");
+    if (monitoringFolder === "") {
+      notice.textContent = CONFIG.MESSAGES.databasePathMissing;
+      return;
+    }
+    // may \ sa dulo ng folder para tama ang pagdugtong ng pangalan ng file
+    const folderWithSeparator = monitoringFolder.endsWith("\\") ? monitoringFolder : monitoringFolder + "\\";
     notice.textContent = hasRows
-      ? "Monitoring file: " + monitoringFolder + todayFileName()
-      : "Wala pang monitoring file para sa araw na ito: " + monitoringFolder + todayFileName();
+      ? "Monitoring file: " + folderWithSeparator + todayFileName()
+      : "Wala pang monitoring file para sa araw na ito: " + folderWithSeparator + todayFileName();
   }
 
   function renderLead(rows) {
@@ -74,6 +83,8 @@ export function initLeadView() {
     setLeadName: function (leadName) { document.getElementById("leadTitleText").textContent = leadName + " - RESULTS"; },
     /** setMachineNames — mga pangalan ng lahat ng MWW PC para sa "ongoing" na listahan. */
     setMachineNames: function (names) { machineNames = names; renderOngoing(currentRows); },
+    /** setMonitoringFolder — ang DATABASE PATH na kasalukuyang naka-save; ina-update agad ang notice. */
+    setMonitoringFolder: function (folderPath) { monitoringFolder = folderPath; renderNotice(currentRows.length > 0); },
     loadSample: function () { renderLead(sampleLeadRows); },
     clearSample: function () { renderLead([]); }
   };

@@ -8,10 +8,12 @@
  *      Calib, CLO1A, at CLO1A1.
  *   3) Kada CONFIG.SCAN_INTERVAL_MS: hinahanap ang mga bagong file at folder at ipinapakita sa RESULT.
  *   4) NEW LOTE button: nililinis ang form at ang RESULT para sa susunod na scan (kapareho ng macro).
- * INPUT:   pc (galing sa registry), panelHost (lalagyan), panelTemplate (<template>)
- * OUTPUT:  { setVisible(isVisible), focusNextField() }
+ * INPUT:   pc (galing sa registry), panelHost (lalagyan), panelTemplate (<template>),
+ *          sharedPaths = { server, database } (galing sa PATH SETTINGS)
+ * OUTPUT:  { setVisible(isVisible), focusNextField(), setSharedPaths(sharedPaths) }
  * TANDAAN: Ang mga folder ay pinipili ng user gamit ang "Pick folder" (kailangan ng Chrome o Edge).
  *          Ang laman ng Path text box ay pang-display lang; ang tunay na binabasa ay ang piniling folder.
+ *          Ang Server Path at Database Path ay read-only na salamin ng PATH SETTINGS (doon ine-edit).
  */
 import { CONFIG } from "./config.js";
 import { detectSqlInjection } from "./sqlInjectionDetector.js";
@@ -74,7 +76,7 @@ function onEnterKey(inputField, callback) {
   });
 }
 
-export function createMwwPanel(pc, panelHost, panelTemplate) {
+export function createMwwPanel(pc, panelHost, panelTemplate, sharedPaths) {
   const panelElement = panelTemplate.content.firstElementChild.cloneNode(true);
   panelElement.setAttribute(CONFIG.DATA_ATTRIBUTES.pcId, pc.id);
   panelHost.appendChild(panelElement);
@@ -113,8 +115,7 @@ export function createMwwPanel(pc, panelHost, panelTemplate) {
   /* ===================== SETUP NG MGA FIELD ===================== */
 
   machineNameInput.value = pc.name;
-  serverPathInput.value = CONFIG.DEFAULT_SERVER_PATH;
-  databasePathInput.value = CONFIG.DEFAULT_DATABASE_PATH;
+  setSharedPaths(sharedPaths);
 
   CONFIG.WATCH_PATHS.forEach(function (watchPath) {
     const pathInput = panelElement.querySelector('[' + CONFIG.DATA_ATTRIBUTES.field + '="' + watchPath.fieldName + '"]');
@@ -126,8 +127,6 @@ export function createMwwPanel(pc, panelHost, panelTemplate) {
   keepFieldSafe(barcodeInput, "barcode");
   keepFieldSafe(operatorInput, "operator");
   keepFieldSafe(machineNameInput, "machineName");
-  keepFieldSafe(serverPathInput, "networkPath");
-  keepFieldSafe(databasePathInput, "networkPath");
 
   /* ===================== PAGPILI NG FOLDER ===================== */
 
@@ -494,11 +493,17 @@ export function createMwwPanel(pc, panelHost, panelTemplate) {
     }
   }
 
+  /** setSharedPaths — ipinapakita ang Server at Database path mula sa PATH SETTINGS (binabago doon, hindi dito). */
+  function setSharedPaths(nextSharedPaths) {
+    serverPathInput.value = nextSharedPaths.server;
+    databasePathInput.value = nextSharedPaths.database;
+  }
+
   /** setVisible — ipinapakita o itinatago ang panel na ito (isa lang ang nakikita kada tab). */
   function setVisible(isVisible) {
     panelElement.classList.toggle(CONFIG.CSS_CLASSES.hidden, !isVisible);
   }
 
   renderResults();
-  return { setVisible: setVisible, focusNextField: focusNextField };
+  return { setVisible: setVisible, focusNextField: focusNextField, setSharedPaths: setSharedPaths };
 }

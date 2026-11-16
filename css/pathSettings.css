@@ -1,0 +1,42 @@
+/*
+ * FILE: css/pathSettings.css
+ * ANO ITO: Itsura ng PATH SETTINGS (lalagyan na pwedeng buksan/isara, mga card ng path, at ang input).
+ * GINAGAWA: Itsura lang. Walang behavior.
+ * TANDAAN: Kailangan ng css/main.css at css/variables.css (i-link muna). Mga token lang ang kulay at laki.
+ */
+
+/* Lalagyan: nakasara bilang default para hindi sagabal sa MWW/LEAD screen */
+.pathSettings {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background-color: var(--color-surface);
+}
+.pathSettings__summary {
+  display: flex; flex-direction: row; align-items: center;
+  min-height: var(--tap-target-min); padding: 0 var(--space-md);
+  color: var(--color-text-secondary); font-weight: 600; cursor: pointer; touch-action: manipulation;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.pathSettings__summary:hover, .pathSettings__summary:focus, .pathSettings__summary:active {
+  background-color: var(--color-surface-hover); color: var(--color-text-primary);
+}
+
+/* Mga card ng path: kusang nagre-reflow; ang minmax ay para sa column count lang */
+.pathSettings__list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+  gap: var(--space-lg); padding: var(--space-lg);
+}
+
+/* Row ng path: nagwa-wrap ang label at input sa makitid na screen */
+.pathSettings .fieldRow { flex-wrap: wrap; }
+.pathSettings .fieldRow label { flex: 0 0 5.5rem; }
+
+/* Input ng path: kaliwa ang text at monospace, para madaling basahin ang mahabang path */
+.pathSettings__input {
+  flex: 1 1 14rem; width: 100%; min-height: var(--tap-target-min); padding: 0 var(--space-sm);
+  background: var(--color-field-background); border: var(--border-width) solid var(--color-border);
+  border-radius: 6px; color: var(--color-text-primary);
+  font-family: Consolas, "Courier New", monospace; font-size: var(--font-size-small); text-align: left;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.pathSettings__input:hover { border-color: var(--color-border-hover); }
