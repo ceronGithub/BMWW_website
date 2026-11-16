@@ -1,0 +1,183 @@
+/*
+ * FILE: css/main.css
+ * PURPOSE: Global design tokens, reset, header, buttons, cards, tables, toast.
+ * Works fully offline: system fonts only, no external requests.
+ */
+:root {
+  --color-bg:             #0a0d14;
+  --color-surface:        rgba(255, 255, 255, 0.03);
+  --color-surface-hover:  rgba(255, 255, 255, 0.06);
+  --color-border:         rgba(255, 255, 255, 0.10);
+  --color-border-hover:   rgba(255, 255, 255, 0.20);
+  --color-text-primary:   #f1f3f7;
+  --color-text-secondary: rgba(255, 255, 255, 0.60);
+  --color-text-muted:     rgba(255, 255, 255, 0.40);
+  --color-accent:         #facc15;   /* same yellow as the Excel section headers */
+  --color-accent-text:    #1a1500;
+  --color-navy:           #0f2a66;   /* same navy as the Excel table headers */
+  --color-success:        #22c55e;
+  --color-warning:        #f59e0b;
+  --color-error:          #ef4444;
+
+  --space-xs: 0.25rem; --space-sm: 0.5rem; --space-md: 1rem;
+  --space-lg: 1.5rem;  --space-xl: 2rem;
+  --max-width-content: 1400px;
+
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+  --z-toast: 600;
+  --font-main: "Segoe UI", Calibri, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-main);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-user-select: none; user-select: none;
+}
+input { -webkit-user-select: text; user-select: text; }
+
+*:focus { outline: none; }
+*:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; border-radius: 4px; }
+input:focus-visible { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2); }
+
+/* ---------- Header ---------- */
+.appHeader {
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  align-items: center; justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+.brandBlock { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+.brandTitle { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.2; }
+.brandSubtitle { font-size: 0.875rem; color: var(--color-text-muted); }
+
+/* Segmented switch to preview each PC role's screen while designing */
+.roleSwitch {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden;
+}
+.roleButton {
+  min-height: 44px; padding: 0 var(--space-lg);
+  background: transparent; border: none; border-right: 1px solid var(--color-border);
+  color: var(--color-text-secondary); font: inherit; font-weight: 600; cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.roleButton:last-child { border-right: none; }
+.roleButton:hover, .roleButton:focus, .roleButton:active { background-color: var(--color-surface-hover); color: var(--color-text-primary); }
+.roleButton.isActive { background-color: var(--color-accent); color: var(--color-accent-text); }
+
+.previewActions { display: flex; flex-direction: row; align-items: center; gap: var(--space-sm); }
+
+/* ---------- Buttons ---------- */
+.buttonGhost {
+  min-height: 44px; padding: 0 var(--space-md);
+  background: transparent; border: 1px solid var(--color-border); border-radius: 8px;
+  color: var(--color-text-secondary); font: inherit; cursor: pointer; touch-action: manipulation;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+.buttonGhost:hover, .buttonGhost:focus, .buttonGhost:active {
+  background-color: var(--color-surface-hover); border-color: var(--color-border-hover); color: var(--color-text-primary);
+}
+.buttonPrimary {
+  width: 100%; min-height: 48px;
+  background: var(--color-success); border: none; border-radius: 8px;
+  color: #04210f; font: inherit; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; touch-action: manipulation;
+  transition: filter var(--transition-fast), transform var(--transition-slow);
+}
+.buttonPrimary:hover, .buttonPrimary:focus, .buttonPrimary:active { filter: brightness(1.1); }
+.buttonPrimary:active { transform: scale(0.98); }
+
+/* ---------- Page ---------- */
+.pageWrapper { width: 100%; max-width: var(--max-width-content); margin: 0 auto; padding: var(--space-lg); }
+.viewSection { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-xl); }
+.isHidden { display: none; }
+
+/* ---------- Cards ---------- */
+.infoCard {
+  display: flex; flex-direction: column; align-items: stretch;
+  border: 1px solid var(--color-border); border-radius: 10px;
+  background-color: var(--color-surface); overflow: hidden;
+}
+/* Yellow header band, carried over from the Excel macro */
+.cardHeader {
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-accent); color: var(--color-accent-text);
+  font-size: 0.9375rem; font-weight: 700; text-align: center;
+}
+.fieldRow, .valueRow {
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+  gap: var(--space-md); padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+.cardHeader + .fieldRow, .cardHeader + .valueRow { border-top: none; }
+.fieldRow label, .valueRow span { flex: 0 0 8rem; color: var(--color-text-secondary); font-size: 0.9375rem; }
+.fieldRow input {
+  flex: 1 1 auto; width: 100%; min-height: 40px; padding: 0 var(--space-sm);
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--color-border); border-radius: 6px;
+  color: var(--color-text-primary); font: inherit; text-align: center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.fieldRow input[readonly] { color: var(--color-text-secondary); }
+.valueRow code, .valueRow strong {
+  flex: 1 1 auto; text-align: right; font-family: Consolas, "Courier New", monospace;
+  font-size: 0.875rem; font-weight: 400; word-break: break-all; color: var(--color-text-primary);
+}
+.valueRow strong { font-family: var(--font-main); font-size: 1rem; font-weight: 700; text-align: center; }
+
+/* ---------- Tables ---------- */
+.tableScroll { width: 100%; overflow-x: auto; border: 1px solid var(--color-border); border-radius: 10px; }
+.dataTable { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+.dataTable th {
+  padding: var(--space-sm) var(--space-md); background-color: var(--color-navy);
+  color: #fff; font-weight: 700; text-align: left; white-space: nowrap;
+}
+.dataTable td { padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--color-border); white-space: nowrap; }
+.dataTable tbody tr { transition: background-color var(--transition-fast); }
+.dataTable tbody tr:hover { background-color: var(--color-surface-hover); }
+.dataTable td.pathCell { font-family: Consolas, "Courier New", monospace; font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+.statusBadge {
+  display: inline-block; padding: 0.125rem 0.625rem; border-radius: 999px;
+  font-size: 0.8125rem; font-weight: 600; border: 1px solid transparent;
+}
+.statusBadge.isOngoing { color: var(--color-warning); border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1); }
+.statusBadge.isDone    { color: var(--color-success); border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); }
+
+/* ---------- Empty state ---------- */
+.emptyState {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-sm); padding: var(--space-xl) var(--space-lg);
+  color: var(--color-text-muted); text-align: center;
+}
+.emptyTitle { color: var(--color-text-secondary); font-weight: 600; }
+.emptyHint { font-size: 0.9375rem; }
+
+/* ---------- Toast (top center, auto-dismiss 2s) ---------- */
+.toastStack {
+  position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-toast); pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+}
+.toastItem {
+  padding: var(--space-sm) var(--space-lg); border-radius: 8px; font-weight: 600;
+  border: 1px solid var(--color-border); background: #151a26;
+  animation: toastSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.toastItem.isSuccess { border-color: rgba(34, 197, 94, 0.5); color: var(--color-success); }
+.toastItem.isError   { border-color: rgba(239, 68, 68, 0.5); color: var(--color-error); }
+.toastItem.isWarning { border-color: rgba(245, 158, 11, 0.5); color: var(--color-warning); }
+.toastItem.isLeaving { opacity: 0; transform: translateY(-8px); transition: opacity 0.3s ease, transform 0.3s ease; }
+@keyframes toastSlideIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOT TRACKING | BM Analyzer</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/mwwView.css" />
+  <link rel="stylesheet" href="css/leadView.css" />
+  <link rel="stylesheet" href="css/mediaQueries.css" />
+</head>
+<body>
+
+  <!-- Top bar: brand, PC role preview switch, and design-preview sample data buttons -->
+  <header class="appHeader">
+    <div class="brandBlock">
+      <h1 class="brandTitle">LOT TRACKING</h1>
+      <p class="brandSubtitle">BM Analyzer</p>
+    </div>
+
+    <nav class="roleSwitch" aria-label="PC role preview">
+      <button type="button" class="roleButton isActive" data-role="mww">MWW PC</button>
+      <button type="button" class="roleButton" data-role="lead1">LEAD PC1</button>
+      <button type="button" class="roleButton" data-role="lead2">LEAD PC2</button>
+    </nav>
+
+    <div class="previewActions">
+      <button type="button" class="buttonGhost" id="loadSampleButton">Load sample data</button>
+      <button type="button" class="buttonGhost" id="clearSampleButton">Clear</button>
+    </div>
+  </header>
+
+  <main class="pageWrapper">
+
+    <!-- ===================== MWW PC VIEW (LOT_TRACKING) ===================== -->
+    <section id="mwwView" class="viewSection">
+      <div class="infoGrid">
+
+        <!-- Column 1: lot information + NEW LOTE -->
+        <div class="infoColumn">
+          <article class="infoCard">
+            <h2 class="cardHeader">LOTE INFORMATION</h2>
+            <div class="fieldRow">
+              <label for="barcodeInput">Barcode</label>
+              <input type="text" id="barcodeInput" autocomplete="off" autofocus />
+            </div>
+            <div class="fieldRow">
+              <label for="operatorInput">Operator</label>
+              <input type="text" id="operatorInput" autocomplete="off" />
+            </div>
+            <div class="fieldRow">
+              <label for="startDateInput">Start Date</label>
+              <input type="text" id="startDateInput" readonly />
+            </div>
+            <div class="fieldRow">
+              <label for="endDateInput">End Date</label>
+              <input type="text" id="endDateInput" readonly />
+            </div>
+            <div class="fieldRow">
+              <label for="startTimeInput">Start Time</label>
+              <input type="text" id="startTimeInput" readonly />
+            </div>
+            <div class="fieldRow">
+              <label for="endTimeInput">End Time</label>
+              <input type="text" id="endTimeInput" readonly />
+            </div>
+          </article>
+          <button type="button" class="buttonPrimary" id="newLoteButton">NEW LOTE</button>
+        </div>
+
+        <!-- Column 2: paths + machine -->
+        <div class="infoColumn">
+          <article class="infoCard">
+            <h2 class="cardHeader">SEARCH PATH / SEND PATH</h2>
+            <div class="valueRow"><span>File Path 1</span><code>C:\BM-Logging\CLO1A</code></div>
+            <div class="valueRow"><span>File Path 2</span><code>C:\BM-Logging\CLO1A1</code></div>
+            <div class="valueRow"><span>Server Path</span><code>…\RPC MAT On-Hold\Documentation\…</code></div>
+            <div class="valueRow"><span>Database Path</span><code>…\OneDrive\Desktop\BM_ANALYZER_Files\Tracking_lot</code></div>
+          </article>
+          <article class="infoCard">
+            <h2 class="cardHeader">Machine</h2>
+            <div class="fieldRow">
+              <label for="machineNameInput">Machine Name</label>
+              <input type="text" id="machineNameInput" value="MWW 1" autocomplete="off" />
+            </div>
+          </article>
+        </div>
+
+        <!-- Column 3: PCs + role -->
+        <div class="infoColumn">
+          <article class="infoCard">
+            <h2 class="cardHeader">PC'S</h2>
+            <div class="valueRow"><span>Lead PC1 IP</span><code>\\10.120.8.46</code></div>
+            <div class="valueRow"><span>Lead PC2 IP</span><code>\\10.120.8.55</code></div>
+            <div class="valueRow"><span>MWW 1 IP</span><code>\\192.168.212.23</code></div>
+            <div class="valueRow"><span>MWW 2 IP</span><code>\\192.168.212.21</code></div>
+          </article>
+          <article class="infoCard">
+            <h2 class="cardHeader">PC ROLE</h2>
+            <div class="valueRow"><span>This PC is</span><strong>MWW PC</strong></div>
+          </article>
+        </div>
+      </div>
+
+      <!-- RESULT: new files/folders detected by the scanner -->
+      <section class="resultSection">
+        <h2 class="resultTitle">RESULT</h2>
+        <div class="tableScroll">
+          <table class="dataTable">
+            <thead>
+              <tr>
+                <th>Source</th><th>Date Created</th><th>Type</th><th>Path</th>
+                <th>Wafer</th><th>Blk</th><th>Layer No.</th><th>File Name</th>
+              </tr>
+            </thead>
+            <tbody id="mwwResultBody"></tbody>
+          </table>
+        </div>
+        <div class="emptyState" id="mwwEmptyState">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <p class="emptyTitle">Wala pang bagong file o folder.</p>
+          <p class="emptyHint">Pindutin ang NEW LOTE para magsimulang mag-scan.</p>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===================== LEAD PC VIEW (LOT_TRACKING_LEAD) ===================== -->
+    <section id="leadView" class="viewSection isHidden">
+      <div class="leadTop">
+        <h2 class="leadTitle">LEAD PC - RESULTS</h2>
+        <article class="infoCard roleCard">
+          <h2 class="cardHeader">PC ROLE</h2>
+          <div class="valueRow"><span>This PC is</span><strong id="leadRoleText">LEAD PC1</strong></div>
+        </article>
+      </div>
+
+      <p class="monitoringNotice" id="monitoringNotice"></p>
+
+      <div class="tableScroll">
+        <table class="dataTable">
+          <thead>
+            <tr>
+              <th>Barcode</th><th>LOT Unit</th><th>Wafer</th><th>Blk</th><th>Layer No.</th>
+              <th>Start-Time</th><th>End-Time</th><th>Lot Duration (min)</th>
+              <th>Operator</th><th>Machine</th><th>Status</th><th>File Path</th>
+            </tr>
+          </thead>
+          <tbody id="leadResultBody"></tbody>
+        </table>
+      </div>
+      <div class="emptyState" id="leadEmptyState">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        <p class="emptyTitle">Wala pang lote sa monitoring file ngayong araw.</p>
+        <p class="emptyHint">Lalabas dito ang mga lote kapag may nag-send mula sa MWW PC.</p>
+      </div>
+
+      <!-- Live status per machine -->
+      <div class="ongoingStack" id="ongoingStack"></div>
+    </section>
+
+  </main>
+
+  <div class="toastStack" id="toastStack" aria-live="polite"></div>
+
+  <script src="js/main.js"></script>
+  <script src="js/mwwView.js"></script>
+  <script src="js/leadView.js"></script>
+</body>
+</html>

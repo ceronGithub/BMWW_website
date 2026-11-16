@@ -1,0 +1,19 @@
+/*
+ * FILE: css/mwwView.css
+ * PURPOSE: Layout for the MWW PC screen (LOT_TRACKING). Three info columns, then RESULT.
+ */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-lg);
+  align-items: start;
+}
+.infoColumn { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-lg); }
+
+.resultSection { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-md); }
+/* Navy tag, same look as the RESULT label in the Excel sheet */
+.resultTitle {
+  align-self: flex-start; padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-navy); border-radius: 6px;
+  font-size: 1.125rem; font-weight: 700; letter-spacing: 0.06em;
+}

@@ -1,0 +1,11 @@
+/*
+ * FILE: css/mediaQueries.css
+ * PURPOSE: All responsive breakpoints (mobile-first, min-width only).
+ */
+@media (min-width: 768px) {
+  .pageWrapper { padding: var(--space-xl); }
+  .appHeader { padding: var(--space-md) var(--space-xl); }
+}
+@media (min-width: 1280px) {
+  .brandTitle { font-size: 1.5rem; }
+}
