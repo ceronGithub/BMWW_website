@@ -17,3 +17,8 @@
   background-color: var(--color-navy); border-radius: 6px;
   font-size: 1.125rem; font-weight: 700; letter-spacing: 0.06em;
 }
+
+/* Editable path fields: monospace and left-aligned so long Windows paths stay readable */
+.fieldRow input.pathInput {
+  font-family: Consolas, "Courier New", monospace; font-size: 0.875rem; text-align: left;
+}

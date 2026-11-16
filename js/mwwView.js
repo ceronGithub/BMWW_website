@@ -16,6 +16,18 @@
     });
   });
 
+  // Path and PC IP fields must keep backslashes (C:\folder\sub, \\10.120.8.46), so they use a lighter filter:
+  // everything else on the forbidden list is still stripped silently.
+  const forbiddenPathCharacters = /[<>{}[\];'"`=]/g;
+
+  ["filePath1Input", "filePath2Input", "serverPathInput", "databasePathInput",
+   "leadPc1IpInput", "leadPc2IpInput", "mww1IpInput", "mww2IpInput"].forEach(function (inputId) {
+    const pathField = document.getElementById(inputId);
+    pathField.addEventListener("input", function () {
+      pathField.value = pathField.value.replace(forbiddenPathCharacters, "");
+    });
+  });
+
   function formatDate(dateValue) {
     return dateValue.getFullYear() + "-" +
       String(dateValue.getMonth() + 1).padStart(2, "0") + "-" +
