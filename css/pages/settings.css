@@ -3,8 +3,10 @@
  * PURPOSE : Style ng settings (naka-scope)
  * DEPENDS : css/components.css
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v2.3 | 2026-11-20 | naka-gray na row, Required marker, highlight
  * VERSION : v2.2 | 2026-11-20 | path rows, option tiles, sticky save bar (pinalitan ang folder-row)
  */
+.page-settings { padding-bottom: var(--space-6); }
 .page-settings .radio-group { grid-template-columns: 1fr; }
 .page-settings .radio-row { padding: 0 var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); cursor: pointer; transition: border-color var(--transition), background var(--transition); }
 .page-settings .radio-row:hover { border-color: var(--color-muted); }
@@ -15,6 +17,10 @@
 .page-settings .path-row:hover { border-color: var(--color-muted); }
 .page-settings .path-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
 .page-settings .path-label { font-weight: 600; }
+.page-settings .path-required { font-size: var(--font-size-label); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-danger); }
+.page-settings .path-row.is-locked { border-style: dashed; opacity: 0.65; }
+.page-settings .path-row.is-locked:hover { border-color: var(--color-border); }
+.page-settings .path-row.is-attention { outline: 2px solid var(--color-danger); outline-offset: 2px; }
 .page-settings .path-name { margin-top: var(--space-2); font-weight: 600; overflow-wrap: anywhere; }
 .page-settings .path-row .btn { align-self: flex-start; }
 .page-settings .save-bar { position: sticky; bottom: var(--space-4); z-index: 3; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover); }

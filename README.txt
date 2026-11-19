@@ -1,5 +1,6 @@
 BM ANALYZER WEB v1 | 2026-11-19
 v2 | 2026-11-20 | ayos ng design (CSS lang): green CTA, focus/active states, dark mode, layout
+v2.3 | 2026-11-20 | Settings flow (Saving path muna bago mabuksan ang ibang path), sidebar: Calibration at Master (placeholder page)
 v2.2 | 2026-11-20 | Settings: server path, saving path (BMWW), 3 data source path; bagong design ng Settings (badge, sticky save bar)
 v2.1 | 2026-11-20 | gumagana na sa double-click: walang fetch at walang type="module"; template at registry (Rule 18)
 
@@ -20,6 +21,7 @@ js/core/config.js       | constants, selectors, text
 js/core/app.js          | entry point | router.js: nagloload ng page | security.js: right click, sanitize | storage.js: folder access
 js/pages/dashboard.js, settings.js | init ng bawat page (nagre-register sa registry)
 js/core/registry.js     | [v2] talaan ng template at page module
+pages/calibration.html, master.html + css/pages + js/pages (+ js/templates) | [v2.3] placeholder page; wala pang laman
 js/templates/sidebar|dashboard|settings|404.template.js | [v2] kopya ng HTML ng component/page bilang string (ito ang ginagamit ng app)
 
 B. FUNCTIONS (File | Input->Output | Ginagawa | Tinatawag ng)
@@ -63,16 +65,20 @@ renderMachine()        | settings.js | - | field, lock state at lock badge [v2.2
 [BINURA v2.2] folderLabel(h, name) -> pinalitan ng getPathState(key)
 [LUMA v2.2] renderFolders() -> pinalitan ng renderPaths()
 getSavedName(key)      | settings.js | string->string | naka-save na pangalan ng folder (kasama ang lumang field) | getPathState, onSave
+isPathLocked(pathItem) | settings.js | object->bool | [v2.3] sarado ba ang path (gated at wala pang Saving path) | renderPaths, onPickFolder
 getPathState(key)      | settings.js | string->{name,text,variant} | pangalan at badge ng path | renderPaths
+clearAttention()       | settings.js | - | [v2.3] tanggal ng highlight sa row | onPickFolder, onSave
+focusRootRow()         | settings.js | - | [v2.3] highlight, scroll at focus sa Saving path row (respeto sa reduced motion) | onSave
+init() (calibration/master) | js/pages/calibration.js, master.js | - | [v2.3] walang ginagawa pa | router
 buildPathRows()        | settings.js | - | gumagawa ng row ng bawat path mula sa CONFIG.PATH_LIST (textContent lang) | init
-renderPaths()          | settings.js | - | pangalan, badge at button ng bawat path | init, onPickFolder, onSave
+renderPaths()          | settings.js | - | pangalan, badge, note, button at lock state ng bawat path [v2.3] | init, onPickFolder, onSave
 loadState()            | settings.js | ->Promise | basa ng naunang settings | init
 onPickFolder(key)      | settings.js | path key | pili at save ng handle; ang 'root' (saving path) ay dapat BMWW | click ng bawat path button
 onSave()               | settings.js | ->Promise | save sa file; lock ng machine name | click
 init() (settings)      | settings.js | ->Promise | simula ng page | router
 
 C. VARIABLES / CONSTANTS
-CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
+CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
   MACHINE_MODE, LEAD_PC_NAME, MACHINE_NAME_MAX, SELECTOR (lahat ng id/selector), TEXT (lahat ng mensahe)
 window.BMWW (config.js) | [v2] tanging global: namespace ng app (CONFIG, registry, router, security, storage)
@@ -109,6 +115,7 @@ settings.js -> config, security, storage | dashboard.js -> config, storage (laha
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
+PAGE: calibration, master | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
 PAGE: settings | INPUT: radio, #machine-name, folder picker, settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage
   HTML ID: machine-note, machine-lock, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
@@ -127,3 +134,6 @@ PAGE: settings | INPUT: radio, #machine-name, folder picker, settings.json | OUT
 2026-11-20 | Bilang ng path = 5 (server, saving, 3 data source); palitan ang CONFIG.PATH_LIST kung iba ang kailangan.
 2026-11-20 | Pangalan lang ng folder ang nakukuha ng browser (hindi ang buong path); kailangang piliin ulit ang folder kapag nag-expire ang permission.
 2026-11-20 | Dashboard ay nagpapakita pa lang ng saving path at data source 1; susunod ang bagong design na may lahat ng path.
+2026-11-20 | Calibration at Master ay placeholder lang; hinihintay ang laman na gusto ng user.
+2026-11-20 | Machine name ay nila-lock sa unang Save (kailangan muna ang Saving path); ang ibang path ay bubukas pagkapili ng BMWW.
+2026-11-20 | Dashboard ay hindi pa nagbabago ayon sa kumpleto/hindi kumpletong Settings (Part 2).

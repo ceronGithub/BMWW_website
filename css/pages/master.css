@@ -1,0 +1,7 @@
+/*
+ * FILE    : css/pages/master.css
+ * PURPOSE : Style ng master page (naka-scope)
+ * DEPENDS : css/components.css
+ * VERSION : v2.3 | 2026-11-20 | bagong file
+ */
+.page-master .empty-state { padding: var(--space-8) var(--space-4); text-align: center; border-style: dashed; }

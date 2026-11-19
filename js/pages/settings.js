@@ -5,6 +5,7 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
  * VERSION : v2.2 | 2026-11-20 | maraming path (CONFIG.PATH_LIST), status badge, lock badge
+ * VERSION : v2.3 | 2026-11-20 | ibang path ay sarado hanggang may Saving path; Required marker; highlight kapag kulang
  */
 (function () {
   'use strict';
@@ -53,6 +54,11 @@
     lockBadge.className = 'badge ' + (locked ? CONFIG.BADGE.ok : CONFIG.BADGE.empty);
   }
 
+  // Sarado ba ang path? Ang mga gated na path ay bukas lang kapag may Saving path na.
+  function isPathLocked(pathItem) {
+    return Boolean(pathItem.gated) && !handleMap[CONFIG.ROOT_KEY];
+  }
+
   // Kinukuha ang naka-save na pangalan ng folder (kasama ang lumang field).
   function getSavedName(key) {
     const names = settings.folderNames || {};
@@ -82,11 +88,17 @@
       const label = document.createElement('p');
       label.className = 'path-label';
       label.textContent = pathItem.label;
+      head.append(label);
+      if (pathItem.required) {
+        const requiredTag = document.createElement('span');
+        requiredTag.className = 'path-required';
+        requiredTag.textContent = TEXT.badgeRequired;
+        head.append(requiredTag);
+      }
       const badge = document.createElement('span');
-      head.append(label, badge);
+      head.append(badge);
       const note = document.createElement('p');
       note.className = 'card-note';
-      note.textContent = pathItem.note;
       const name = document.createElement('p');
       name.className = 'path-name';
       info.append(head, note, name);
@@ -97,21 +109,40 @@
       button.addEventListener('click', () => onPickFolder(pathItem.key));
       item.append(info, button);
       fragment.append(item);
-      rowMap[pathItem.key] = { nameElement: name, badgeElement: badge, buttonElement: button };
+      rowMap[pathItem.key] = { rowElement: item, noteElement: note, nameElement: name, badgeElement: badge, buttonElement: button };
     });
     query('pathList').replaceChildren(fragment);
   }
 
-  // Ina-update ang pangalan, badge at button ng bawat path.
+  // Ina-update ang pangalan, badge, note, button at lock state ng bawat path.
   function renderPaths() {
+    const isSupported = storage.isFolderAccessSupported();
     CONFIG.PATH_LIST.forEach((pathItem) => {
+      const locked = isPathLocked(pathItem);
       const state = getPathState(pathItem.key);
       const row = rowMap[pathItem.key];
       row.nameElement.textContent = state.name;
-      row.badgeElement.textContent = state.text;
+      row.badgeElement.textContent = locked && state.variant === CONFIG.BADGE.empty ? TEXT.badgeClosed : state.text;
       row.badgeElement.className = 'badge ' + state.variant;
+      row.noteElement.textContent = locked ? TEXT.lockedPathNote : pathItem.note;
       row.buttonElement.textContent = state.variant === CONFIG.BADGE.empty ? TEXT.pickButton : TEXT.changeButton;
+      row.buttonElement.disabled = locked || !isSupported;
+      row.rowElement.classList.toggle(CONFIG.ROW_CLASS.locked, locked);
     });
+  }
+
+  // Tinatanggal ang highlight ng row.
+  function clearAttention() {
+    Object.values(rowMap).forEach((row) => row.rowElement.classList.remove(CONFIG.ROW_CLASS.attention));
+  }
+
+  // Hina-highlight at ini-scroll ang Saving path row kapag ito ang kulang.
+  function focusRootRow() {
+    const row = rowMap[CONFIG.ROOT_KEY];
+    const wantsReducedMotion = typeof window.matchMedia === 'function' && window.matchMedia(CONFIG.REDUCED_MOTION_QUERY).matches;
+    row.rowElement.classList.add(CONFIG.ROW_CLASS.attention);
+    row.rowElement.scrollIntoView({ behavior: wantsReducedMotion ? CONFIG.SCROLL_BEHAVIOR.reduced : CONFIG.SCROLL_BEHAVIOR.normal, block: 'center' });
+    row.buttonElement.focus({ preventScroll: true });
   }
 
   // Binabasa ang naunang settings (file ang pangunahin, localStorage ang backup).
@@ -137,16 +168,20 @@
 
   // Pumipili ng folder para sa path na may ganitong key; ang saving path ay dapat BMWW.
   async function onPickFolder(key) {
+    const pathItem = CONFIG.PATH_LIST.find((item) => item.key === key);
+    if (!pathItem || isPathLocked(pathItem)) { setStatus(TEXT.lockedPathNote, true); return; }
     try {
       const handle = await storage.pickFolder();
       if (key === CONFIG.ROOT_KEY && handle.name.toLowerCase() !== CONFIG.ROOT_FOLDER_NAME.toLowerCase()) {
         setStatus(TEXT.wrongRoot, true);
         return;
       }
+      const wasRootReady = Boolean(handleMap[CONFIG.ROOT_KEY]);
       handleMap[key] = handle;
       await storage.saveHandle(CONFIG.HANDLE_KEY[key], handle);
+      if (key === CONFIG.ROOT_KEY) clearAttention();
       renderPaths();
-      setStatus(TEXT.folderPicked, false);
+      setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
     } catch (error) {
       if (error && error.name === 'AbortError') return;
       setStatus(TEXT.folderError, true);
@@ -156,7 +191,7 @@
   // Sine-save ang settings sa BMWW\settings\settings.json.
   async function onSave() {
     const rootHandle = handleMap[CONFIG.ROOT_KEY];
-    if (!rootHandle) { setStatus(TEXT.rootMissing, true); return; }
+    if (!rootHandle) { setStatus(TEXT.rootMissing, true); focusRootRow(); return; }
     try {
       if (!(await storage.hasPermission(rootHandle, true))) { setStatus(TEXT.noPermission, true); return; }
       const next = { ...settings };
@@ -181,6 +216,7 @@
       await storage.writeSettingsFile(rootHandle, next);
       settings = next;
       storage.writeLocalSettings(settings);
+      clearAttention();
       renderMachine();
       renderPaths();
       setStatus(TEXT.saved + CONFIG.SETTINGS_PATH_LABEL, false);
@@ -200,10 +236,7 @@
     query('saveButton').addEventListener('click', onSave);
     renderMachine();
     renderPaths();
-    if (!storage.isFolderAccessSupported()) {
-      Object.values(rowMap).forEach((row) => { row.buttonElement.disabled = true; });
-      setStatus(TEXT.unsupported, true);
-    }
+    if (!storage.isFolderAccessSupported()) setStatus(TEXT.unsupported, true);
   }
 
   root.registry.registerPage('settings', Object.freeze({ init }));
