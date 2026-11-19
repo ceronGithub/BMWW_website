@@ -3,7 +3,11 @@
  * PURPOSE : Style ng dashboard (naka-scope)
  * DEPENDS : css/base.css
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v2 | 2026-11-20 | mas malinaw na card hierarchy
  */
 .page-dashboard .card-grid { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
-.page-dashboard .card { margin-bottom: 0; }
+.page-dashboard .card { margin-bottom: 0; border-top: 3px solid var(--color-primary); }
+.page-dashboard .card-title { font-size: var(--font-size-label); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.page-dashboard .card-value { font-size: 1.5rem; font-weight: 700; }
 @media (min-width: 768px) { .page-dashboard .card-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .page-dashboard .card-grid { grid-template-columns: repeat(4, 1fr); } }

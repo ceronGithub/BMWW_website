@@ -1,20 +1,29 @@
 <!--
   FILE    : pages/settings.html
-  PURPOSE : Settings page: machine name at folders
+  PURPOSE : Settings page: machine name at mga path
   DEPENDS : css/pages/settings.css, js/pages/settings.js
   VERSION : v1 | 2026-11-19 | unang bersyon
+  VERSION : v2.2 | 2026-11-20 | bagong layout: page header, card head, path list, sticky save bar
 -->
 <!-- PAGE: settings -->
 <link rel="stylesheet" href="css/pages/settings.css">
 <section class="page page-settings" data-page="settings">
-  <h1 class="page-title">Settings</h1>
+  <header class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Itakda ang pangalan ng machine at ang mga folder na gagamitin ng BM Analyzer.</p>
+  </header>
 
   <div class="card">
-    <h2 class="card-title">Machine name</h2>
-    <p id="machine-note" class="card-note"></p>
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Machine name</h2>
+        <p id="machine-note" class="card-note"></p>
+      </div>
+      <span id="machine-lock" class="badge badge-neutral"></span>
+    </div>
     <div class="radio-group" role="radiogroup" aria-label="Uri ng machine name">
-      <label class="radio-row"><input type="radio" name="machine-mode" value="user-input"> User input</label>
-      <label class="radio-row"><input type="radio" name="machine-mode" value="lead-pc"> Lead PC</label>
+      <label class="radio-row"><input type="radio" name="machine-mode" value="user-input"><span>User input</span></label>
+      <label class="radio-row"><input type="radio" name="machine-mode" value="lead-pc"><span>Lead PC</span></label>
     </div>
     <div class="form-group">
       <label class="form-label" for="machine-name">Pangalan ng machine</label>
@@ -23,18 +32,18 @@
   </div>
 
   <div class="card">
-    <h2 class="card-title">Folders</h2>
-    <div class="folder-row">
-      <div><p class="form-label">Save folder (piliin ang BMWW)</p><p class="card-note">Settings ay isasave sa C:\desktop\BMWW\settings</p><p id="root-label" class="folder-name"></p></div>
-      <button id="pick-root" class="btn btn-secondary" type="button">Piliin ang folder</button>
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Mga path</h2>
+        <p class="card-note">Piliin ang bawat folder. Pangalan lang ng folder ang ipinapakita ng browser, hindi ang buong path.</p>
+      </div>
     </div>
-    <div class="folder-row">
-      <div><p class="form-label">Data source folder</p><p class="card-note">Dito kukunin ang data.</p><p id="source-label" class="folder-name"></p></div>
-      <button id="pick-source" class="btn btn-secondary" type="button">Piliin ang folder</button>
-    </div>
+    <ul id="path-list" class="path-list"></ul>
   </div>
 
-  <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
-  <p id="settings-status" class="status" role="status"></p>
+  <div class="save-bar">
+    <p id="settings-status" class="status" role="status"></p>
+    <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
+  </div>
 </section>
-<script type="module" src="js/pages/settings.js"></script>
+<script src="js/pages/settings.js"></script>

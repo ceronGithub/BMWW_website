@@ -1,8 +1,9 @@
 <!--
   FILE    : index.html
   PURPOSE : Shell: sidebar at content area
-  DEPENDS : css/*.css, js/core/app.js
+  DEPENDS : css/*.css, js/core/*.js, js/templates/*.js
   VERSION : v1 | 2026-11-19 | unang bersyon
+  VERSION : v2 | 2026-11-20 | classic scripts (walang module) para gumana sa double-click
 -->
 <!doctype html>
 <html lang="fil">
@@ -26,6 +27,15 @@
       <main id="content" class="main" tabindex="-1"></main>
     </div>
   </div>
-  <script type="module" src="js/core/app.js"></script>
+  <script defer src="js/core/config.js"></script>
+  <script defer src="js/core/registry.js"></script>
+  <script defer src="js/core/security.js"></script>
+  <script defer src="js/core/storage.js"></script>
+  <script defer src="js/core/router.js"></script>
+  <script defer src="js/templates/sidebar.template.js"></script>
+  <script defer src="js/templates/dashboard.template.js"></script>
+  <script defer src="js/templates/settings.template.js"></script>
+  <script defer src="js/templates/404.template.js"></script>
+  <script defer src="js/core/app.js"></script>
 </body>
 </html>

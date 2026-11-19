@@ -1,52 +1,56 @@
 /*
  * FILE    : js/core/app.js
  * PURPOSE : Entry point: sidebar, menu, routing
- * DEPENDS : config.js, security.js, router.js
+ * DEPENDS : config.js, registry.js, security.js, router.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v2 | 2026-11-20 | sidebar mula sa registry (walang fetch, walang import)
  */
-'use strict';
-import { CONFIG } from './config.js';
-import { initSecurity } from './security.js';
-import { loadPage, getPageFromHash } from './router.js';
+(function () {
+  'use strict';
+  const root = window.BMWW;
+  const CONFIG = root.CONFIG;
+  const { initSecurity } = root.security;
+  const { loadPage, getPageFromHash } = root.router;
 
-// Nilo-load ang sidebar component.
-async function loadSidebar() {
-  const holder = document.querySelector(CONFIG.SELECTOR.sidebar);
-  try {
-    const response = await fetch(CONFIG.COMPONENT_FOLDER + 'sidebar.html');
-    if (!response.ok) throw new Error('sidebar');
-    holder.innerHTML = await response.text();
-  } catch (error) {
-    holder.textContent = CONFIG.TEXT.sidebarError;
+  // Nilalagay ang sidebar component (template mula sa registry).
+  async function loadSidebar() {
+    const holder = document.querySelector(CONFIG.SELECTOR.sidebar);
+    try {
+      const html = root.registry.getTemplate(CONFIG.SIDEBAR_TEMPLATE);
+      if (html === null) throw new Error('sidebar');
+      holder.innerHTML = html;
+    } catch (error) {
+      holder.textContent = CONFIG.TEXT.sidebarError;
+    }
   }
-}
 
-// Binubuksan o isinasara ang mobile menu.
-function setMenuOpen(isOpen) {
-  document.body.classList.toggle(CONFIG.OPEN_CLASS, isOpen);
-}
+  // Binubuksan o isinasara ang mobile menu.
+  function setMenuOpen(isOpen) {
+    document.body.classList.toggle(CONFIG.OPEN_CLASS, isOpen);
+  }
 
-// Nilalagay ang click handlers ng menu.
-function bindMenu() {
-  document.querySelector(CONFIG.SELECTOR.menuButton).addEventListener('click', () => setMenuOpen(!document.body.classList.contains(CONFIG.OPEN_CLASS)));
-  document.querySelector(CONFIG.SELECTOR.overlay).addEventListener('click', () => setMenuOpen(false));
-  document.addEventListener('click', (event) => {
-    if (event.target instanceof Element && event.target.closest(CONFIG.SELECTOR.navLink)) setMenuOpen(false);
-  });
-}
+  // Nilalagay ang click handlers ng menu.
+  function bindMenu() {
+    document.querySelector(CONFIG.SELECTOR.menuButton).addEventListener('click', () => setMenuOpen(!document.body.classList.contains(CONFIG.OPEN_CLASS)));
+    document.querySelector(CONFIG.SELECTOR.overlay).addEventListener('click', () => setMenuOpen(false));
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest(CONFIG.SELECTOR.navLink)) setMenuOpen(false);
+    });
+  }
 
-// Nagbubukas ng page ayon sa hash.
-function handleNavigate() {
-  return loadPage(getPageFromHash());
-}
+  // Nagbubukas ng page ayon sa hash.
+  function handleNavigate() {
+    return loadPage(getPageFromHash());
+  }
 
-// Simula ng app.
-async function initApp() {
-  initSecurity();
-  await loadSidebar();
-  bindMenu();
-  window.addEventListener('hashchange', handleNavigate);
-  await handleNavigate();
-}
+  // Simula ng app.
+  async function initApp() {
+    initSecurity();
+    await loadSidebar();
+    bindMenu();
+    window.addEventListener('hashchange', handleNavigate);
+    await handleNavigate();
+  }
 
-initApp();
+  initApp();
+})();

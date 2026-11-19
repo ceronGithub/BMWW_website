@@ -3,8 +3,27 @@
  * PURPOSE : Style ng settings (naka-scope)
  * DEPENDS : css/components.css
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v2.2 | 2026-11-20 | path rows, option tiles, sticky save bar (pinalitan ang folder-row)
  */
-.page-settings .folder-row { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
-.page-settings .folder-row:first-of-type { border-top: 0; }
-.page-settings .folder-name { font-weight: 600; overflow-wrap: anywhere; }
-@media (min-width: 768px) { .page-settings .folder-row { flex-direction: row; align-items: center; justify-content: space-between; } }
+.page-settings .radio-group { grid-template-columns: 1fr; }
+.page-settings .radio-row { padding: 0 var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); cursor: pointer; transition: border-color var(--transition), background var(--transition); }
+.page-settings .radio-row:hover { border-color: var(--color-muted); }
+.page-settings .radio-row:has(input:checked) { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.page-settings .radio-row:has(input:disabled) { cursor: not-allowed; opacity: 0.7; }
+.page-settings .path-list { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.page-settings .path-row { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); transition: border-color var(--transition); }
+.page-settings .path-row:hover { border-color: var(--color-muted); }
+.page-settings .path-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+.page-settings .path-label { font-weight: 600; }
+.page-settings .path-name { margin-top: var(--space-2); font-weight: 600; overflow-wrap: anywhere; }
+.page-settings .path-row .btn { align-self: flex-start; }
+.page-settings .save-bar { position: sticky; bottom: var(--space-4); z-index: 3; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover); }
+.page-settings .save-bar .status { margin: 0; }
+.page-settings .save-bar .btn { align-self: flex-start; }
+@media (min-width: 768px) {
+  .page-settings .radio-group { grid-template-columns: 1fr 1fr; }
+  .page-settings .path-row { flex-direction: row; align-items: center; justify-content: space-between; }
+  .page-settings .path-row .btn { flex-shrink: 0; align-self: center; min-width: 7rem; }
+  .page-settings .save-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+  .page-settings .save-bar .btn { align-self: center; }
+}

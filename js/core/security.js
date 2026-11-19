@@ -3,35 +3,42 @@
  * PURPOSE : Right click block, sanitize
  * DEPENDS : wala
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module)
  */
-'use strict';
-// Pampahirap lang ito, hindi tunay na proteksyon. Walang secrets sa frontend.
+(function () {
+  'use strict';
+  const root = window.BMWW;
 
-// Tinitingnan kung nasa input o textarea ang target.
-function isEditable(target) {
-  return target instanceof Element && target.closest('input, textarea') !== null;
-}
+  // Pampahirap lang ito, hindi tunay na proteksyon. Walang secrets sa frontend.
 
-// Hinaharangan ang right click maliban sa input/textarea.
-function blockContextMenu(event) {
-  if (!isEditable(event.target)) event.preventDefault();
-}
+  // Tinitingnan kung nasa input o textarea ang target.
+  function isEditable(target) {
+    return target instanceof Element && target.closest('input, textarea') !== null;
+  }
 
-// Hinaharangan ang F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I/J/C.
-function blockShortcut(event) {
-  const key = event.key.toLowerCase();
-  const ctrl = event.ctrlKey || event.metaKey;
-  const blocked = key === 'f12' || (ctrl && (key === 'u' || key === 's')) || (ctrl && event.shiftKey && ['i', 'j', 'c'].includes(key));
-  if (blocked) event.preventDefault();
-}
+  // Hinaharangan ang right click maliban sa input/textarea.
+  function blockContextMenu(event) {
+    if (!isEditable(event.target)) event.preventDefault();
+  }
 
-// Nililinis ang input: tanggal control characters, trim, limit ang haba.
-export function sanitizeInput(value, maxLength) {
-  return String(value).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, maxLength);
-}
+  // Hinaharangan ang F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I/J/C.
+  function blockShortcut(event) {
+    const key = event.key.toLowerCase();
+    const ctrl = event.ctrlKey || event.metaKey;
+    const blocked = key === 'f12' || (ctrl && (key === 'u' || key === 's')) || (ctrl && event.shiftKey && ['i', 'j', 'c'].includes(key));
+    if (blocked) event.preventDefault();
+  }
 
-// Ini-install ang mga listener.
-export function initSecurity() {
-  document.addEventListener('contextmenu', blockContextMenu);
-  document.addEventListener('keydown', blockShortcut);
-}
+  // Nililinis ang input: tanggal control characters, trim, limit ang haba.
+  function sanitizeInput(value, maxLength) {
+    return String(value).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, maxLength);
+  }
+
+  // Ini-install ang mga listener.
+  function initSecurity() {
+    document.addEventListener('contextmenu', blockContextMenu);
+    document.addEventListener('keydown', blockShortcut);
+  }
+
+  root.security = Object.freeze({ initSecurity, sanitizeInput });
+})();
