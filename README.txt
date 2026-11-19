@@ -1,5 +1,6 @@
 BM ANALYZER WEB v1 | 2026-11-19
 v2.4 | 2026-11-20 | Settings: full path ng bawat folder (type/paste, may validation); tinanggal ang lock ng machine name
+v2.5 | 2026-11-20 | LOT Tracking page (link sa sidebar, Barcode -> Operator -> bantay ng bagong file/folder sa Data source ng Settings)
 v2 | 2026-11-20 | ayos ng design (CSS lang): green CTA, focus/active states, dark mode, layout
 v2.3 | 2026-11-20 | Settings flow (Saving path muna bago mabuksan ang ibang path), sidebar: Calibration at Master (placeholder page)
 v2.2 | 2026-11-20 | Settings: server path, saving path (BMWW), 3 data source path; bagong design ng Settings (badge, sticky save bar)
@@ -24,6 +25,9 @@ js/pages/dashboard.js, settings.js | init ng bawat page (nagre-register sa regis
 js/core/registry.js     | [v2] talaan ng template at page module
 pages/calibration.html, master.html + css/pages + js/pages (+ js/templates) | [v2.3] placeholder page; wala pang laman
 js/templates/sidebar|dashboard|settings|404.template.js | [v2] kopya ng HTML ng component/page bilang string (ito ang ginagamit ng app)
+pages/lot-tracking.html | [v2.5] LOT Tracking page (markup; kopya ay js/templates/lot-tracking.template.js)
+css/pages/lot-tracking.css | [v2.5] style ng LOT Tracking (naka-scope sa .page-lot-tracking)
+js/pages/lot-tracking.js | [v2.5] logic ng LOT Tracking | js/templates/lot-tracking.template.js | [v2.5] kopya ng pages/lot-tracking.html bilang string
 
 B. FUNCTIONS (File | Input->Output | Ginagawa | Tinatawag ng)
 loadSidebar()          | app.js | ->Promise | [v2] kinukuha ang template 'sidebar' sa registry (walang fetch) | initApp
@@ -84,6 +88,24 @@ loadState()            | settings.js | ->Promise | basa ng naunang settings | in
 onPickFolder(key)      | settings.js | path key | pili at save ng handle; ang 'root' (saving path) ay dapat BMWW | click ng bawat path button
 onSave()               | settings.js | ->Promise | [v2.4] save ng machine name (walang lock) at full path sa file at localStorage | click
 init() (settings)      | settings.js | ->Promise | simula ng page | router
+createEmptyLote()     | lot-tracking.js | ->{barcode,operator,startMs,endMs} | [v2.5] walang laman na lote | module, onNewLote
+query(key)             | lot-tracking.js | string->Element | [v2.5] hanap ng elemento sa CONFIG.LOT.SELECTOR | lahat
+isActive()             | lot-tracking.js | ->bool | [v2.5] may simula at wala pang wakas ang lote | renderLote, handleBarcode, onNewLote, init
+pad(n), formatDate(ms), formatTime(ms), formatDateTime(ms) | lot-tracking.js | ms->string | [v2.5] yyyy-mm-dd, hh:mm:ss | renderLote, renderResults
+setStatus(msg, isErr)  | lot-tracking.js | - | [v2.5] status sa ilalim ng form | lahat
+setResultNote(msg)     | lot-tracking.js | - | [v2.5] tala sa ibabaw ng RESULT | renderResults, clearResults, refreshResults
+renderLote()           | lot-tracking.js | - | [v2.5] form values at badge (ONGOING/DONE/Walang lote) | startLote, endLote, onNewLote, init
+parseName(name)        | lot-tracking.js | string->{wafer,blk,layer} | [v2.5] regex CONFIG.LOT.NAME_PATTERN (hal. 4A05520A -> 4A055, A, 20) | buildItem
+buildItem(...)         | lot-tracking.js | -> item | [v2.5] isang row ng RESULT | scanDirectory
+scanDirectory(handle, label, path, depth, earliestMs, list) | lot-tracking.js | ->Promise<ms> | [v2.5] basa-lang na hanap ng bagong file/folder, hanggang MAX_DEPTH; ibinabalik ang pinakabagong modified sa loob | refreshResults
+loadSources()          | lot-tracking.js | ->Promise | [v2.5] kuha ng handle ng source1..3 mula sa IndexedDB (HANDLE_KEY) | init
+requestAccess()        | lot-tracking.js | ->Promise | [v2.5] hingi ng permission sa bawat source (kapag may kilos ng user) | startLote
+renderResults(list, warnings) / clearResults() | lot-tracking.js | - | [v2.5] talaan ng RESULT (textContent lang) | refreshResults, startLote, onNewLote
+refreshResults()       | lot-tracking.js | ->Promise | [v2.5] isang beses na hanap sa lahat ng source (may guard laban sa dobleng takbo) | timer, startLote, endLote, init
+startTimer() / stopTimer() | lot-tracking.js | - | [v2.5] auto refresh kada CONFIG.LOT.REFRESH_MS | startLote, endLote, onNewLote, init
+endLote() / startLote(operator) | lot-tracking.js | ->Promise | [v2.5] tapusin / simulan ang lote (Start/End = ngayon) | handleBarcode, handleOperator
+handleBarcode() / handleOperator() | lot-tracking.js | - | [v2.5] Enter sa Barcode (parehong barcode = END) / Operator (2-30 chars) | keydown
+onNewLote() / isEnterKey(event) / init() | lot-tracking.js | - | [v2.5] NEW LOTE button; Enter key lang; init ng page | click, keydown, router
 
 C. VARIABLES / CONSTANTS
 CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
@@ -95,6 +117,8 @@ settings (let), handleMap, rowMap (const object) sa settings.js, nasa loob ng II
 SEL, TEXT (settings.js, const) | shortcut sa CONFIG
 INPUT (settings.js, const) | [v2.4] shortcut sa CONFIG.ROW_INPUT_CLASS (class ng full path input)
 [BINURA v2.4] SELECTOR.settings.lockBadge, TEXT.machineWarn / machineLocked / confirmLock / badgeLocked / badgeOpen; pinalitan ng TEXT.machineNote
+CONFIG.LOT (config.js, v2.5): PAGE, SOURCE_KEYS, SOURCE_LABEL, REFRESH_MS (3000), START_TOLERANCE_MS (1000), MAX_DEPTH (5), MAX_ROWS (30), BARCODE_MAX, OPERATOR_MIN, OPERATOR_MAX, IGNORED_PREFIX, NAME_PATTERN, TYPE, PATH_COLUMN, EMPTY_CELL, SELECTOR, TEXT; PAGE_LIST ay may 'lot-tracking'
+lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nasa loob ng IIFE) | [v2.5] kasalukuyang lote, barcode na hinihintay ang operator, mga source handle, timer, guard
 
 D. EVENTS
 click       | #menu-button, #overlay, .sidebar-link | app.js | buksan/isara ang menu
@@ -105,12 +129,17 @@ change      | input[name=machine-mode] | settings.js | renderMachine
 click       | button ng bawat path (gawa ng JS), #save-settings | settings.js | pili/save
 input       | full path input ng bawat path (gawa ng JS) | settings.js | onFullPathInput
 [BINURA v2.2] #pick-root, #pick-source -> pinalitan ng mga button sa path list
+keydown     | #lot-barcode, #lot-operator | lot-tracking.js | [v2.5] Enter: handleBarcode / handleOperator
+focus       | #lot-barcode | lot-tracking.js | [v2.5] select ng laman para mapalitan ng bagong scan
+click       | #lot-new | lot-tracking.js | [v2.5] onNewLote
+setInterval | window | lot-tracking.js | [v2.5] refreshResults kada 3 segundo habang ONGOING
 
 E. STORAGE / API
 localStorage "bmww.settings" | settings.js, dashboard.js | {machineMode, machineName, [BINURA v2.4: machineNameLocked], [v2.4] folderPaths{server,root,source1,source2,source3}, rootFolderName, sourceFolderName (para sa Dashboard), folderNames{server,root,source1,source2,source3}, savedAt} | cache
 IndexedDB "bmww-db" / store "handles" (keys rootFolder, serverFolder, sourceFolder, sourceFolder2, sourceFolder3) | storage.js | folder handles | iwas pili ulit
 File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing tala (C:\desktop\BMWW\settings)
 Walang backend/API sa v1 (api/ ay walang laman).
+[v2.5] LOT Tracking: binabasa ang machineName mula sa localStorage "bmww.settings" at ang handle ng source1..3 mula sa IndexedDB (key sa CONFIG.HANDLE_KEY). Walang sinusulat; basa lang sa mga folder.
 
 F. CSS VARIABLES (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
@@ -130,6 +159,9 @@ PAGE: calibration, master | INPUT: wala pa | OUTPUT: placeholder (wala pang lama
 PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage
   HTML ID: machine-note, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
+PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), folder handle ng Data source 1-3 | OUTPUT: Start/End Date at Time, badge, talaan ng bagong file/folder (walang sine-save)
+  HTML ID: lot-badge, lot-machine, lot-barcode, lot-operator, lot-start-date, lot-start-time, lot-end-date, lot-end-time, lot-new, lot-status, lot-result-note, lot-result-body (nasa CONFIG.LOT.SELECTOR)
+  DEPENDS: sanitizeInput, readLocalSettings, isFolderAccessSupported, loadHandle, hasPermission
 
 === KNOWN ISSUES / TODO ===
 2026-11-20 | [v2.4] Hindi makukuha ng browser ang full path; tina-type/pine-paste ng user. Sinusuri lang kung tugma ang dulo ng path sa pangalan ng folder; hindi nito nalalaman kung tama ang buong path.
@@ -151,3 +183,9 @@ PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (ty
 2026-11-20 | Calibration at Master ay placeholder lang; hinihintay ang laman na gusto ng user.
 2026-11-20 | [AYOS v2.4: walang lock na ang machine name] Machine name ay nila-lock sa unang Save (kailangan muna ang Saving path); ang ibang path ay bubukas pagkapili ng BMWW.
 2026-11-20 | Dashboard ay hindi pa nagbabago ayon sa kumpleto/hindi kumpletong Settings (Part 2).
+2026-11-20 | LOT Tracking: hindi nasubukan sa browser ang v2.5; unang test ay sa device ng user.
+2026-11-20 | LOT Tracking: walang "date created" sa browser; Date Modified (lastModified) ang gamit. Ang folder ay may petsa lang kung may file sa loob nito (petsa = pinakabagong file).
+2026-11-20 | LOT Tracking: file na luma pero na-edit pagkatapos ng Start Time ay lalabas din sa RESULT.
+2026-11-20 | LOT Tracking: ang hanap kada 3 segundo ay maaaring mabigat sa folder na napakaraming file; palitan ang CONFIG.LOT.REFRESH_MS o MAX_DEPTH.
+2026-11-20 | LOT Tracking: ang lote ay nasa memorya lang (nawawala kapag nag-refresh ang browser); wala pang monitoring file, Remarks, SERVER/SEND PC, at LEAD PC view.
+2026-11-20 | LOT Tracking: ginagamit ang Data source 1-3 ng Settings (ang Excel ay may File Path 1 at 2 lang).

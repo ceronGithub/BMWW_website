@@ -4,6 +4,7 @@
  * DEPENDS : wala
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
+ * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
  * VERSION : v2.2 | 2026-11-20 | PATH_LIST (server, saving, 3 data source), ROOT_KEY, BADGE, LEGACY_NAME_FIELD, bagong selector at text
@@ -18,7 +19,7 @@
     SIDEBAR_TEMPLATE: 'sidebar',
     DEFAULT_PAGE: 'dashboard',
     NOT_FOUND_PAGE: '404',
-    PAGE_LIST: ['dashboard', 'settings', 'calibration', 'master'],
+    PAGE_LIST: ['dashboard', 'lot-tracking', 'settings', 'calibration', 'master'],
     OPEN_CLASS: 'sidebar-open',
     ACTIVE_CLASS: 'is-active',
     STORAGE_KEY: 'bmww.settings',
@@ -53,6 +54,46 @@
     PATH_SEPARATOR: '\\',
     FOLDER_PATHS_FIELD: 'folderPaths',
     ROW_INPUT_CLASS: { wrap: 'path-full', input: 'form-input path-full-input', error: 'is-error' },
+    LOT: {
+      PAGE: 'lot-tracking',
+      SOURCE_KEYS: ['source1', 'source2', 'source3'],
+      SOURCE_LABEL: { source1: 'Data source 1', source2: 'Data source 2', source3: 'Data source 3' },
+      REFRESH_MS: 3000,
+      START_TOLERANCE_MS: 1000,
+      MAX_DEPTH: 5,
+      MAX_ROWS: 30,
+      BARCODE_MAX: 30,
+      OPERATOR_MIN: 2,
+      OPERATOR_MAX: 30,
+      IGNORED_PREFIX: '~$',
+      NAME_PATTERN: /^([A-Z0-9]{5})([0-9]{1,3})([A-Z])/i,
+      TYPE: { file: 'File', folder: 'Folder' },
+      PATH_COLUMN: 3,
+      EMPTY_CELL: '-',
+      SELECTOR: {
+        machine: '#lot-machine', barcode: '#lot-barcode', operator: '#lot-operator',
+        startDate: '#lot-start-date', startTime: '#lot-start-time', endDate: '#lot-end-date', endTime: '#lot-end-time',
+        newButton: '#lot-new', badge: '#lot-badge', status: '#lot-status',
+        resultNote: '#lot-result-note', resultBody: '#lot-result-body'
+      },
+      TEXT: {
+        stateOngoing: 'ONGOING', stateDone: 'DONE', stateIdle: 'Walang lote',
+        machineMissing: 'Walang Machine name. Itakda muna ito sa Settings, tapos bumalik dito.',
+        scanBarcode: 'I-scan o i-type ang Barcode, tapos Enter.',
+        enterOperator: 'Ilagay ang Operator, tapos Enter.',
+        barcodeFirst: 'I-scan muna ang Barcode.',
+        operatorInvalid: 'Operator: 2 hanggang 30 characters.',
+        started: 'Nagsimula ang lote ', ended: 'Natapos ang lote ',
+        confirmNew: 'I-clear ang lote? Hindi na ito mababawi.',
+        newReady: 'Handa na para sa susunod na lote.',
+        waiting: 'Naghihintay ng bagong file o folder simula ',
+        found: ' bagong file/folder simula ',
+        showing: 'Ipinapakita ang pinakabagong ',
+        noSource: 'Walang naka-set na Data source sa Settings.',
+        noPermission: ': walang permission. Payagan ulit sa Settings.',
+        scanError: 'May error sa paghahanap ng file. Subukan ulit.'
+      }
+    },
     SELECTOR: {
       content: '#content', sidebar: '#sidebar', overlay: '#overlay', menuButton: '#menu-button', navLink: '.sidebar-link',
       dashboard: { machine: '#dash-machine', mode: '#dash-mode', root: '#dash-root', source: '#dash-source', saved: '#dash-saved' },
