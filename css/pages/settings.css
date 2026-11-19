@@ -1,0 +1,10 @@
+/*
+ * FILE    : css/pages/settings.css
+ * PURPOSE : Style ng settings (naka-scope)
+ * DEPENDS : css/components.css
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+.page-settings .folder-row { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
+.page-settings .folder-row:first-of-type { border-top: 0; }
+.page-settings .folder-name { font-weight: 600; overflow-wrap: anywhere; }
+@media (min-width: 768px) { .page-settings .folder-row { flex-direction: row; align-items: center; justify-content: space-between; } }

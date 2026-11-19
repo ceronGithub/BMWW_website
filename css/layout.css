@@ -1,0 +1,29 @@
+/*
+ * FILE    : css/layout.css
+ * PURPOSE : Sidebar, content, responsive
+ * DEPENDS : css/base.css
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+.app { min-height: 100vh; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); background: var(--color-surface); border-right: 1px solid var(--color-border); transform: translateX(-100%); transition: transform var(--transition); z-index: 20; overflow-y: auto; }
+.sidebar-open .sidebar { transform: none; }
+.overlay { position: fixed; inset: 0; background: var(--color-overlay); opacity: 0; visibility: hidden; transition: opacity var(--transition); z-index: 10; }
+.sidebar-open .overlay { opacity: 1; visibility: visible; }
+.sidebar-nav { padding: var(--space-4); }
+.sidebar-brand { font-size: 1.25rem; font-weight: 700; padding: var(--space-2) var(--space-3) var(--space-4); }
+.sidebar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.sidebar-link { display: flex; align-items: center; min-height: var(--touch-size); padding: 0 var(--space-3); border-radius: var(--radius); color: var(--color-text); text-decoration: none; transition: background var(--transition); }
+.sidebar-link:hover { background: var(--color-bg); }
+.sidebar-link.is-active { background: var(--color-primary); color: #ffffff; }
+.topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.topbar-title { font-weight: 600; }
+.menu-button { min-width: var(--touch-size); min-height: var(--touch-size); font-size: 1.5rem; background: none; border: 0; border-radius: var(--radius); cursor: pointer; }
+.menu-button:hover { background: var(--color-bg); }
+.main { padding: var(--space-4); max-width: 60rem; }
+.main:focus { outline: none; }
+@media (min-width: 768px) { .main { padding: var(--space-6); } }
+@media (min-width: 1024px) {
+  .sidebar { transform: none; }
+  .main-wrap { margin-left: var(--sidebar-width); }
+  .topbar, .overlay { display: none; }
+}

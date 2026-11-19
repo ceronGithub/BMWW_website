@@ -1,0 +1,28 @@
+/*
+ * FILE    : css/components.css
+ * PURPOSE : Buttons, cards, forms, status
+ * DEPENDS : css/base.css
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+.page-title { font-size: 1.5rem; margin-bottom: var(--space-4); }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--space-4); margin-bottom: var(--space-4); }
+.card-title { font-size: 1rem; font-weight: 600; margin-bottom: var(--space-2); }
+.card-value { font-size: 1.25rem; font-weight: 600; overflow-wrap: anywhere; }
+.card-note { color: var(--color-muted); font-size: 0.875rem; }
+.btn { min-height: var(--touch-size); padding: 0 var(--space-4); font: inherit; font-weight: 600; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: background var(--transition); }
+.btn-primary { background: var(--color-primary); color: #ffffff; }
+.btn-primary:hover { background: var(--color-primary-dark); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border); }
+.btn-secondary:hover { background: var(--color-bg); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.form-group { margin-top: var(--space-3); }
+.form-label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+.form-input { width: 100%; min-height: var(--touch-size); padding: 0 var(--space-3); font: inherit; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); color: var(--color-text); }
+.form-input:disabled { background: var(--color-bg); color: var(--color-muted); }
+.radio-group { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.radio-row { display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch-size); }
+.radio-row input { width: 1.25rem; height: 1.25rem; }
+.status { margin-top: var(--space-3); min-height: 1.5rem; }
+.status.is-error { color: var(--color-danger); }
+.status.is-success { color: var(--color-success); }
+.state-message { padding: var(--space-6); color: var(--color-muted); }

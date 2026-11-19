@@ -1,0 +1,26 @@
+/*
+ * FILE    : js/pages/dashboard.js
+ * PURPOSE : Ipinapakita ang naka-save na settings
+ * DEPENDS : config.js, storage.js
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+'use strict';
+import { CONFIG } from '../core/config.js';
+import { readLocalSettings } from '../core/storage.js';
+
+// Nilalagay ang text sa elementong may key sa selector.
+function setText(key, value) {
+  const element = document.querySelector(CONFIG.SELECTOR.dashboard[key]);
+  if (element) element.textContent = value;
+}
+
+// Init ng page, tinatawag ng router.
+export function init() {
+  const settings = readLocalSettings();
+  const text = CONFIG.TEXT;
+  setText('machine', settings.machineName || text.notSet);
+  setText('mode', settings.machineMode === CONFIG.MACHINE_MODE.LEAD_PC ? text.modeLead : settings.machineMode ? text.modeUser : '');
+  setText('root', settings.rootFolderName || text.notSet);
+  setText('source', settings.sourceFolderName || text.notSet);
+  setText('saved', settings.savedAt ? new Date(settings.savedAt).toLocaleString() : text.notSet);
+}

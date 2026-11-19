@@ -1,0 +1,36 @@
+/*
+ * FILE    : css/base.css
+ * PURPOSE : Reset, variables, typography
+ * DEPENDS : wala
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+/* Breakpoints: mobile hanggang 767px | tablet 768-1023px | desktop 1024px pataas */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #4b5563;
+  --color-border: #e5e7eb;
+  --color-success: #15803d;
+  --color-danger: #b91c1c;
+  --color-overlay: rgba(17, 24, 39, 0.45);
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --radius: 10px;
+  --shadow: 0 2px 8px rgba(17, 24, 39, 0.08);
+  --transition: 200ms ease;
+  --sidebar-width: 16rem;
+  --touch-size: 2.75rem;
+  --font-main: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-main); font-size: 1rem; line-height: 1.5; color: var(--color-text); background: var(--color-bg); }
+h1, h2, p { margin: 0; }
+a { color: var(--color-primary); }
+:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+/* kailangan ng !important: patayin lahat ng motion kapag hiniling ng user */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

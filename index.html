@@ -1,0 +1,31 @@
+<!--
+  FILE    : index.html
+  PURPOSE : Shell: sidebar at content area
+  DEPENDS : css/*.css, js/core/app.js
+  VERSION : v1 | 2026-11-19 | unang bersyon
+-->
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BM Analyzer</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div class="app">
+    <aside id="sidebar" class="sidebar"></aside>
+    <div id="overlay" class="overlay"></div>
+    <div class="main-wrap">
+      <header class="topbar">
+        <button id="menu-button" class="menu-button" type="button" aria-label="Buksan ang menu" aria-controls="sidebar">&#9776;</button>
+        <span class="topbar-title">BM Analyzer</span>
+      </header>
+      <main id="content" class="main" tabindex="-1"></main>
+    </div>
+  </div>
+  <script type="module" src="js/core/app.js"></script>
+</body>
+</html>

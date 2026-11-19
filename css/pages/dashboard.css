@@ -1,0 +1,9 @@
+/*
+ * FILE    : css/pages/dashboard.css
+ * PURPOSE : Style ng dashboard (naka-scope)
+ * DEPENDS : css/base.css
+ * VERSION : v1 | 2026-11-19 | unang bersyon
+ */
+.page-dashboard .card-grid { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
+.page-dashboard .card { margin-bottom: 0; }
+@media (min-width: 768px) { .page-dashboard .card-grid { grid-template-columns: repeat(2, 1fr); } }
