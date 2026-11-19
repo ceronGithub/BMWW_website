@@ -4,6 +4,7 @@
  * DEPENDS : js/core/registry.js
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.2 | 2026-11-20 | kasabay ng pages/settings.html (bagong layout)
+ * VERSION : v2.4 | 2026-11-20 | kasabay ng pages/settings.html (walang lock badge)
  */
 (function () {
   'use strict';
@@ -21,7 +22,6 @@
         <h2 class="card-title">Machine name</h2>
         <p id="machine-note" class="card-note"></p>
       </div>
-      <span id="machine-lock" class="badge badge-neutral"></span>
     </div>
     <div class="radio-group" role="radiogroup" aria-label="Uri ng machine name">
       <label class="radio-row"><input type="radio" name="machine-mode" value="user-input"><span>User input</span></label>
@@ -37,7 +37,7 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Mga path</h2>
-        <p class="card-note">Piliin ang bawat folder. Pangalan lang ng folder ang ipinapakita ng browser, hindi ang buong path.</p>
+        <p class="card-note">Piliin ang bawat folder, tapos i-type o i-paste ang full path nito. Hindi maibibigay ng browser ang buong path, pangalan lang ng folder.</p>
       </div>
     </div>
     <ul id="path-list" class="path-list"></ul>

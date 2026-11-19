@@ -4,6 +4,7 @@
  * DEPENDS : css/components.css
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2.3 | 2026-11-20 | naka-gray na row, Required marker, highlight
+ * VERSION : v2.4 | 2026-11-20 | full path input
  * VERSION : v2.2 | 2026-11-20 | path rows, option tiles, sticky save bar (pinalitan ang folder-row)
  */
 .page-settings { padding-bottom: var(--space-6); }
@@ -23,6 +24,10 @@
 .page-settings .path-row.is-attention { outline: 2px solid var(--color-danger); outline-offset: 2px; }
 .page-settings .path-name { margin-top: var(--space-2); font-weight: 600; overflow-wrap: anywhere; }
 .page-settings .path-row .btn { align-self: flex-start; }
+.page-settings .path-info { flex: 1; min-width: 0; }
+.page-settings .path-full { margin-top: var(--space-3); }
+.page-settings .path-full-input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9rem; }
+.page-settings .path-full-input.is-error { border-color: var(--color-danger); }
 .page-settings .save-bar { position: sticky; bottom: var(--space-4); z-index: 3; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover); }
 .page-settings .save-bar .status { margin: 0; }
 .page-settings .save-bar .btn { align-self: flex-start; }

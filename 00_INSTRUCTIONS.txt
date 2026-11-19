@@ -1,0 +1,4 @@
+INSTRUCTIONS v2.4 (Settings: full path + walang lock)
+1. I-unzip ang BMWW_website_v2.4.zip. Huwag galawin ang original mong folder.
+2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click).
+3. Dapat gumana ang Settings; ang folder picker ay Chrome/Edge lang.

@@ -5,6 +5,7 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
+ * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
  * VERSION : v2.2 | 2026-11-20 | PATH_LIST (server, saving, 3 data source), ROOT_KEY, BADGE, LEGACY_NAME_FIELD, bagong selector at text
  */
 (function () {
@@ -46,12 +47,18 @@
     MACHINE_MODE: { USER_INPUT: 'user-input', LEAD_PC: 'lead-pc' },
     LEAD_PC_NAME: 'LEAD PC',
     MACHINE_NAME_MAX: 30,
+    // Full path ng folder: hindi ito maibibigay ng browser, kaya tina-type/pine-paste ng user.
+    FULL_PATH_MAX: 260,
+    FULL_PATH_PATTERN: /^(?:[A-Za-z]:\\|\\\\)[^<>"|?*]*$/,
+    PATH_SEPARATOR: '\\',
+    FOLDER_PATHS_FIELD: 'folderPaths',
+    ROW_INPUT_CLASS: { wrap: 'path-full', input: 'form-input path-full-input', error: 'is-error' },
     SELECTOR: {
       content: '#content', sidebar: '#sidebar', overlay: '#overlay', menuButton: '#menu-button', navLink: '.sidebar-link',
       dashboard: { machine: '#dash-machine', mode: '#dash-mode', root: '#dash-root', source: '#dash-source', saved: '#dash-saved' },
       settings: {
         modeRadio: 'input[name="machine-mode"]', nameInput: '#machine-name', note: '#machine-note',
-        pathList: '#path-list', lockBadge: '#machine-lock',
+        pathList: '#path-list',
         saveButton: '#save-settings', status: '#settings-status'
       }
     },
@@ -59,9 +66,7 @@
       loading: 'Nilo-load ang page...', pageError: 'Hindi mabuksan ang page. Subukan ulit.', sidebarError: 'Hindi mabuksan ang menu.',
       notSet: 'Hindi pa naka-set', needReselect: ' (piliin ulit para ma-access)',
       modeUser: 'Uri: User input', modeLead: 'Uri: Lead PC',
-      machineWarn: 'Isang beses lang itong ma-set. Pagkatapos ma-save, hindi na mababago.',
-      machineLocked: 'Naka-lock na ang machine name. Hindi na ito mababago.',
-      confirmLock: 'Isang beses lang ito ma-set at hindi na mababago. Ituloy?',
+      machineNote: 'Puwede mong palitan ang machine name anumang oras. I-save para magamit.',
       machineMissing: 'Pumili ng uri at maglagay ng machine name.',
       rootMissing: 'Piliin muna ang Saving path (BMWW folder). Kailangan ito bago mag-save.', wrongRoot: 'Ang piliing folder ay dapat na may pangalang BMWW.',
       noPermission: 'Hindi pinayagan ang access sa folder.', folderPicked: 'Napili ang folder. I-save ang settings.',
@@ -69,10 +74,13 @@
       saved: 'Na-save sa ', loadError: 'Hindi mabasa ang naunang settings.',
       unsupported: 'Gamitin ang Chrome o Edge sa laptop para makapili ng folder.',
       badgeSet: 'Naka-set', badgeEmpty: 'Hindi pa naka-set', badgeReselect: 'Piliin ulit',
-      badgeLocked: 'Naka-lock', badgeOpen: 'Hindi pa naka-lock',
       pickButton: 'Piliin', changeButton: 'Palitan',
       badgeRequired: 'Required', badgeClosed: 'Hindi pa bukas',
       lockedPathNote: 'Piliin muna ang Saving path (BMWW) para mabuksan ito.',
+      fullPathLabel: 'Full path', fullPathPlaceholder: 'Hal. C:\\Users\\Name\\Desktop\\BMWW', fullPathAria: 'Full path ng ',
+      fullPathHint: 'Hindi ito makukuha ng browser. I-type o i-paste ang buong path.', fullPathEmpty: 'Wala pang full path',
+      fullPathInvalid: 'Hindi tama ang full path. Dapat nagsisimula sa drive (C:\\) o network (\\\\server).',
+      fullPathMismatch: 'Hindi tugma ang dulo ng full path sa napiling folder: ', folderLabel: 'Folder: ',
       pathsUnlocked: 'Bukas na ang ibang path. Piliin ang mga ito, tapos i-save.'
     }
   });

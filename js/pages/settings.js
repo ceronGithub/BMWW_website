@@ -1,10 +1,11 @@
 /*
  * FILE    : js/pages/settings.js
- * PURPOSE : Settings: machine name (isang beses) at mga path (server, saving, data source)
+ * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
  * VERSION : v2.2 | 2026-11-20 | maraming path (CONFIG.PATH_LIST), status badge, lock badge
+ * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path ng bawat folder (type/paste, may validation)
  * VERSION : v2.3 | 2026-11-20 | ibang path ay sarado hanggang may Saving path; Required marker; highlight kapag kulang
  */
 (function () {
@@ -19,6 +20,7 @@
   let settings = {};
   const handleMap = {};
   const rowMap = {};
+  const INPUT = CONFIG.ROW_INPUT_CLASS;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -39,19 +41,14 @@
     return checked ? checked.value : '';
   }
 
-  // Ina-update ang machine name fields, lock state at lock badge.
+  // Ina-update ang machine name field ayon sa napiling uri (walang lock; puwedeng palitan anumang oras).
   function renderMachine() {
-    const locked = Boolean(settings.machineNameLocked);
     const mode = getSelectedMode();
     const input = query('nameInput');
-    const lockBadge = query('lockBadge');
-    document.querySelectorAll(SEL.modeRadio).forEach((radio) => { radio.disabled = locked; });
     if (mode === CONFIG.MACHINE_MODE.LEAD_PC) input.value = CONFIG.LEAD_PC_NAME;
-    else if (locked) input.value = settings.machineName || '';
-    input.disabled = locked || mode !== CONFIG.MACHINE_MODE.USER_INPUT;
-    query('note').textContent = locked ? TEXT.machineLocked : TEXT.machineWarn;
-    lockBadge.textContent = locked ? TEXT.badgeLocked : TEXT.badgeOpen;
-    lockBadge.className = 'badge ' + (locked ? CONFIG.BADGE.ok : CONFIG.BADGE.empty);
+    else if (input.value === CONFIG.LEAD_PC_NAME) input.value = '';
+    input.disabled = mode !== CONFIG.MACHINE_MODE.USER_INPUT;
+    query('note').textContent = TEXT.machineNote;
   }
 
   // Sarado ba ang path? Ang mga gated na path ay bukas lang kapag may Saving path na.
@@ -73,6 +70,34 @@
     const savedName = getSavedName(key);
     if (savedName) return { name: savedName, text: TEXT.badgeReselect, variant: CONFIG.BADGE.info };
     return { name: TEXT.notSet, text: TEXT.badgeEmpty, variant: CONFIG.BADGE.empty };
+  }
+
+  // Kinukuha ang naka-save na full path ng folder.
+  function getSavedFullPath(key) {
+    const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+    return paths[key] || '';
+  }
+
+  // Kinukuha ang full path na nasa input (nililinis).
+  function getInputFullPath(key) {
+    return sanitizeInput(rowMap[key].inputElement.value, CONFIG.FULL_PATH_MAX);
+  }
+
+  // Huling bahagi ng path (pangalan ng folder), walang sobrang separator sa dulo.
+  function getLastSegment(fullPath) {
+    const parts = fullPath.split(CONFIG.PATH_SEPARATOR).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : '';
+  }
+
+  // Sinusuri ang full path. Ibinibigay ang error message o '' kung ayos (o walang laman).
+  function validateFullPath(key, fullPath) {
+    if (!fullPath) return '';
+    if (!CONFIG.FULL_PATH_PATTERN.test(fullPath)) return TEXT.fullPathInvalid;
+    const lastSegment = getLastSegment(fullPath);
+    const folderName = handleMap[key] ? handleMap[key].name : getSavedName(key);
+    const isDriveRoot = /^[A-Za-z]:$/.test(lastSegment);
+    if (folderName && !isDriveRoot && lastSegment.toLowerCase() !== folderName.toLowerCase()) return TEXT.fullPathMismatch + folderName;
+    return '';
   }
 
   // Ginagawa ang row ng bawat path mula sa CONFIG.PATH_LIST (textContent lang, walang innerHTML).
@@ -101,7 +126,25 @@
       note.className = 'card-note';
       const name = document.createElement('p');
       name.className = 'path-name';
-      info.append(head, note, name);
+      const fullWrap = document.createElement('div');
+      fullWrap.className = INPUT.wrap;
+      const fullLabel = document.createElement('label');
+      fullLabel.className = 'form-label';
+      fullLabel.textContent = TEXT.fullPathLabel;
+      const fullInput = document.createElement('input');
+      fullInput.type = 'text';
+      fullInput.className = INPUT.input;
+      fullInput.maxLength = CONFIG.FULL_PATH_MAX;
+      fullInput.autocomplete = 'off';
+      fullInput.spellcheck = false;
+      fullInput.placeholder = TEXT.fullPathPlaceholder;
+      fullInput.setAttribute('aria-label', TEXT.fullPathAria + pathItem.label);
+      fullInput.addEventListener('input', () => onFullPathInput(pathItem.key));
+      const fullHint = document.createElement('p');
+      fullHint.className = 'card-note';
+      fullHint.textContent = TEXT.fullPathHint;
+      fullWrap.append(fullLabel, fullInput, fullHint);
+      info.append(head, note, name, fullWrap);
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'btn btn-secondary';
@@ -109,7 +152,7 @@
       button.addEventListener('click', () => onPickFolder(pathItem.key));
       item.append(info, button);
       fragment.append(item);
-      rowMap[pathItem.key] = { rowElement: item, noteElement: note, nameElement: name, badgeElement: badge, buttonElement: button };
+      rowMap[pathItem.key] = { rowElement: item, noteElement: note, nameElement: name, badgeElement: badge, buttonElement: button, inputElement: fullInput, hintElement: fullHint };
     });
     query('pathList').replaceChildren(fragment);
   }
@@ -121,7 +164,9 @@
       const locked = isPathLocked(pathItem);
       const state = getPathState(pathItem.key);
       const row = rowMap[pathItem.key];
-      row.nameElement.textContent = state.name;
+      const fullPath = getInputFullPath(pathItem.key);
+      row.nameElement.textContent = fullPath || state.name;
+      row.inputElement.disabled = locked;
       row.badgeElement.textContent = locked && state.variant === CONFIG.BADGE.empty ? TEXT.badgeClosed : state.text;
       row.badgeElement.className = 'badge ' + state.variant;
       row.noteElement.textContent = locked ? TEXT.lockedPathNote : pathItem.note;
@@ -133,7 +178,10 @@
 
   // Tinatanggal ang highlight ng row.
   function clearAttention() {
-    Object.values(rowMap).forEach((row) => row.rowElement.classList.remove(CONFIG.ROW_CLASS.attention));
+    Object.values(rowMap).forEach((row) => {
+      row.rowElement.classList.remove(CONFIG.ROW_CLASS.attention);
+      row.inputElement.classList.remove(INPUT.error);
+    });
   }
 
   // Hina-highlight at ini-scroll ang Saving path row kapag ito ang kulang.
@@ -143,6 +191,30 @@
     row.rowElement.classList.add(CONFIG.ROW_CLASS.attention);
     row.rowElement.scrollIntoView({ behavior: wantsReducedMotion ? CONFIG.SCROLL_BEHAVIOR.reduced : CONFIG.SCROLL_BEHAVIOR.normal, block: 'center' });
     row.buttonElement.focus({ preventScroll: true });
+  }
+
+  // Kapag may tina-type sa full path: i-update ang ipinapakitang path at tanggalin ang error.
+  function onFullPathInput(key) {
+    const row = rowMap[key];
+    row.inputElement.classList.remove(INPUT.error);
+    row.rowElement.classList.remove(CONFIG.ROW_CLASS.attention);
+    renderPaths();
+  }
+
+  // Sinusuri lahat ng full path bago mag-save. Ibinibigay ang unang error (at hina-highlight ang row) o ''.
+  function checkAllFullPaths(fullPathMap) {
+    for (const pathItem of CONFIG.PATH_LIST) {
+      const message = validateFullPath(pathItem.key, fullPathMap[pathItem.key]);
+      if (message) {
+        const row = rowMap[pathItem.key];
+        row.inputElement.classList.add(INPUT.error);
+        row.rowElement.classList.add(CONFIG.ROW_CLASS.attention);
+        if (typeof row.rowElement.scrollIntoView === 'function') row.rowElement.scrollIntoView({ block: 'center' });
+        row.inputElement.focus({ preventScroll: true });
+        return pathItem.label + ': ' + message;
+      }
+    }
+    return '';
   }
 
   // Binabasa ang naunang settings (file ang pangunahin, localStorage ang backup).
@@ -188,38 +260,47 @@
     }
   }
 
+  // Ibinibigay ang lokasyon ng settings.json para sa mensahe (full path kung alam, kung hindi ang default label).
+  function getSettingsLocation(rootFullPath) {
+    if (!rootFullPath) return CONFIG.SETTINGS_PATH_LABEL;
+    const base = rootFullPath.replace(/[\\]+$/, '');
+    return base + CONFIG.PATH_SEPARATOR + CONFIG.SETTINGS_SUBFOLDER;
+  }
+
   // Sine-save ang settings sa BMWW\settings\settings.json.
   async function onSave() {
     const rootHandle = handleMap[CONFIG.ROOT_KEY];
     if (!rootHandle) { setStatus(TEXT.rootMissing, true); focusRootRow(); return; }
     try {
+      clearAttention();
+      const mode = getSelectedMode();
+      const name = mode === CONFIG.MACHINE_MODE.LEAD_PC ? CONFIG.LEAD_PC_NAME : sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX);
+      if (!mode || !name) { setStatus(TEXT.machineMissing, true); return; }
+      const fullPathMap = {};
+      CONFIG.PATH_LIST.forEach((pathItem) => { fullPathMap[pathItem.key] = getInputFullPath(pathItem.key); });
+      const pathError = checkAllFullPaths(fullPathMap);
+      if (pathError) { setStatus(pathError, true); return; }
       if (!(await storage.hasPermission(rootHandle, true))) { setStatus(TEXT.noPermission, true); return; }
       const next = { ...settings };
-      if (!settings.machineNameLocked) {
-        const mode = getSelectedMode();
-        const name = mode === CONFIG.MACHINE_MODE.LEAD_PC ? CONFIG.LEAD_PC_NAME : sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX);
-        if (!mode || !name) { setStatus(TEXT.machineMissing, true); return; }
-        if (!window.confirm(TEXT.confirmLock)) return;
-        next.machineMode = mode;
-        next.machineName = name;
-        next.machineNameLocked = true;
-      }
+      delete next.machineNameLocked;
+      next.machineMode = mode;
+      next.machineName = name;
       const folderNames = {};
       CONFIG.PATH_LIST.forEach((pathItem) => {
-        const name = handleMap[pathItem.key] ? handleMap[pathItem.key].name : getSavedName(pathItem.key);
-        folderNames[pathItem.key] = name;
+        const folderName = handleMap[pathItem.key] ? handleMap[pathItem.key].name : getSavedName(pathItem.key);
+        folderNames[pathItem.key] = folderName;
         const legacyField = CONFIG.LEGACY_NAME_FIELD[pathItem.key];
-        if (legacyField) next[legacyField] = name;
+        if (legacyField) next[legacyField] = folderName;
       });
       next.folderNames = folderNames;
+      next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
       await storage.writeSettingsFile(rootHandle, next);
       settings = next;
       storage.writeLocalSettings(settings);
-      clearAttention();
       renderMachine();
       renderPaths();
-      setStatus(TEXT.saved + CONFIG.SETTINGS_PATH_LABEL, false);
+      setStatus(TEXT.saved + getSettingsLocation(fullPathMap[CONFIG.ROOT_KEY]), false);
     } catch (error) {
       setStatus(TEXT.saveError, true);
     }
@@ -229,11 +310,13 @@
   async function init() {
     await loadState();
     buildPathRows();
+    CONFIG.PATH_LIST.forEach((pathItem) => { rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key); });
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => {
       radio.checked = radio.value === settings.machineMode;
       radio.addEventListener('change', renderMachine);
     });
     query('saveButton').addEventListener('click', onSave);
+    if (settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT) query('nameInput').value = settings.machineName || '';
     renderMachine();
     renderPaths();
     if (!storage.isFolderAccessSupported()) setStatus(TEXT.unsupported, true);
