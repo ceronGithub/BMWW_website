@@ -5,12 +5,15 @@
  * VERSION : v2.3 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-20 | Latest Master at Range Master; error trapping
  * VERSION : v2.7 | 2026-11-20 | kulay green / yellow / red kada reading (point, dot, cell); legend; mas maliit na chart
+ * VERSION : v2.9 | 2026-11-20 | Range Master: legend sa ilalim ng chart para sa napiling file lang (kasama ang MASTER)
+ * VERSION : v2.8 | 2026-11-20 | Range Master: listahan ng file sa gilid ng chart (lahat naka-check); kapag na-uncheck, nawawala ang linya ng file sa chart
  */
 (function () {
   'use strict';
   const root = window.BMWW;
   const CONFIG = root.CONFIG;
   const MASTER = CONFIG.MASTER;
+  const CHART = CONFIG.CHART;
   const SEL = CONFIG.SELECTOR.master;
   const TEXT = CONFIG.TEXT.master;
   const { storage, csv, masterAnalysis, chart } = root;
@@ -166,6 +169,84 @@
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
   }
 
+  // Pinagsasama ang mga linya ayon sa file: pangalan, kulay (colorIndex) at bilang ng record. Ayon sa unang labas ng file.
+  function groupByFile(columnList) {
+    const groupList = [];
+    const groupMap = new Map();
+    columnList.forEach((column) => {
+      if (!groupMap.has(column.fileName)) {
+        const group = { name: column.fileName, colorIndex: groupList.length % CHART.PALETTE_SIZE, recordCount: 0 };
+        groupMap.set(column.fileName, group);
+        groupList.push(group);
+      }
+      groupMap.get(column.fileName).recordCount += 1;
+    });
+    return { groupList, groupMap };
+  }
+
+  // Legend sa ilalim ng chart: MASTER at ang mga napiling file lang (kulay ay kapareho ng linya).
+  function makeSelectedLegend(groupMap, selectedNameSet) {
+    const list = makeElement('ul', 'chart-legend');
+    list.append(makeElement('li', 'chart-legend-item chart-master', TEXT.masterSeries));
+    Array.from(groupMap.values()).forEach((group) => {
+      if (selectedNameSet.has(group.name)) list.append(makeElement('li', 'chart-legend-item chart-series-' + group.colorIndex, group.name));
+    });
+    return list;
+  }
+
+  // Iginuguhit ang line chart ng Range Master; ang mga linya lang ng napiling file (at ang MASTER) ang kasama.
+  function drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet) {
+    const seriesList = shownList
+      .filter((column) => selectedNameSet.has(column.fileName))
+      .map((column) => ({
+        name: column.key, values: column.values, isMaster: false, colorIndex: groupMap.get(column.fileName).colorIndex,
+        levelList: column.values.map((value, index) => levelOf(value, result.masterList[index]))
+      }));
+    seriesList.push({ name: TEXT.masterSeries, values: result.masterList, isMaster: true });
+    chart.drawLines(lineBox, { title: TEXT.lineTitle, categoryList: result.barcodeList, seriesList, hideLegend: true });
+    lineBox.append(makeSelectedLegend(groupMap, selectedNameSet));
+  }
+
+  // Panel sa gilid ng chart: checkbox ng bawat file (lahat naka-check). Tinatawag ang onChange kapag may binago.
+  function makeFilePanel(groupList, selectedNameSet, onChange) {
+    const panel = makeElement('aside', 'file-panel');
+    panel.setAttribute('aria-label', TEXT.filePanelTitle);
+    const summary = makeElement('p', 'file-panel-summary');
+    summary.setAttribute('aria-live', 'polite');
+    const updateSummary = () => {
+      summary.textContent = selectedNameSet.size
+        ? TEXT.fileSelected.replace('{n}', String(selectedNameSet.size)).replace('{total}', String(groupList.length))
+        : TEXT.fileNoneSelected;
+    };
+    const list = makeElement('ul', 'file-list');
+    const masterItem = makeElement('li', 'file-item file-item-master chart-master');
+    masterItem.append(makeElement('span', 'file-swatch'), makeElement('span', 'file-name', TEXT.masterSeries));
+    list.append(masterItem);
+    groupList.forEach((group) => {
+      const item = makeElement('li', 'file-item');
+      const label = makeElement('label', 'file-label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'file-checkbox';
+      checkbox.checked = true;
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) selectedNameSet.add(group.name);
+        else selectedNameSet.delete(group.name);
+        updateSummary();
+        onChange();
+      });
+      const name = makeElement('span', 'file-name', group.name);
+      name.title = group.name;
+      label.append(checkbox, makeElement('span', 'file-swatch chart-series-' + group.colorIndex), name,
+        makeElement('span', 'file-count', group.recordCount + TEXT.fileRecords));
+      item.append(label);
+      list.append(item);
+    });
+    updateSummary();
+    panel.append(makeElement('h3', 'file-panel-title', TEXT.filePanelTitle), makeElement('p', 'file-panel-note', TEXT.filePanelNote), summary, list);
+    return panel;
+  }
+
   // Nagre-render ng resulta ng Range Master.
   function renderRange(result) {
     const area = query('rangeResult');
@@ -187,11 +268,14 @@
     area.append(makeTable([TEXT.barcode, TEXT.master, TEXT.actualAverageShort, TEXT.averageDifference, TEXT.maxDifference],
       stats.perBarcodeList.map((entry) => [entry.barcode, formatNumber(entry.master), { text: formatNumber(entry.actualAverage), level: levelOf(entry.actualAverage, entry.master) }, formatNumber(entry.averageDifference), { text: formatNumber(entry.maxDifference), level: entry.maxDifference === null ? '' : levelOf(entry.maxDifference, 0) }])));
     const lineBox = makeElement('div', 'chart-box chart-box-wide');
-    area.append(makeLevelLegend(), lineBox);
     const shownList = result.columnList.slice(-MASTER.RANGE.MAX_LINES);
-    const seriesList = shownList.map((column) => ({ name: column.key, values: column.values, isMaster: false, levelList: column.values.map((value, index) => levelOf(value, result.masterList[index])) }));
-    seriesList.push({ name: TEXT.masterSeries, values: result.masterList, isMaster: true });
-    chart.drawLines(lineBox, { title: TEXT.lineTitle, categoryList: result.barcodeList, seriesList });
+    const { groupList, groupMap } = groupByFile(shownList);
+    const selectedNameSet = new Set(groupList.map((group) => group.name));
+    const redraw = () => drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet);
+    const layout = makeElement('div', 'range-chart-layout');
+    layout.append(lineBox, makeFilePanel(groupList, selectedNameSet, redraw));
+    area.append(makeLevelLegend(), layout);
+    redraw();
     if (shownList.length < result.columnList.length) area.append(makeElement('p', 'result-note', TEXT.linesLimited.replace('{n}', String(shownList.length))));
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
   }

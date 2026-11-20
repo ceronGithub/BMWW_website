@@ -222,7 +222,7 @@
         recordCount += 1;
         const points = readPoints(rowList, rowIndex);
         const key = csv.formatDateTime(rowDate, false);
-        if (!columnMap.has(key)) columnMap.set(key, { key, time: rowDate.getTime(), values: points.actualList });
+        if (!columnMap.has(key)) columnMap.set(key, { key, time: rowDate.getTime(), values: points.actualList, fileName: item.name });
         if (!latestDate || rowDate > latestDate) { latestDate = rowDate; latestMaster = points.masterList; }
       }
     }

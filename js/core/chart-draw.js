@@ -4,6 +4,7 @@
  * DEPENDS : js/core/config.js (kulay ay galing sa CSS class sa css/pages/master.css)
  * VERSION : v2.6 | 2026-11-20 | bagong file (para sa Master)
  * VERSION : v2.7 | 2026-11-20 | zoom out (PAD_RATIO sa scatter); kulay ng point at dot ayon sa level (green / yellow / red)
+ * VERSION : v2.8 | 2026-11-20 | drawLines: series.colorIndex (matatag na kulay kapag may na-unselect) at options.hideLegend
  */
 (function () {
   'use strict';
@@ -105,6 +106,11 @@
     pointList.forEach((point) => svg.append(svgElement('circle', { cx: xScale(point.x), cy: yScale(point.y), r: 4, class: point.level ? 'chart-point ' + point.level : 'chart-point' })));
   }
 
+  // Index ng kulay: colorIndex ng series kung meron (hindi gumagalaw ang kulay kapag may na-unselect), kung wala ay ang posisyon.
+  function getColorIndex(series, seriesIndex) {
+    return (series.colorIndex !== undefined ? series.colorIndex : seriesIndex) % CHART.PALETTE_SIZE;
+  }
+
   // Line chart: bawat series ay isang linya sa bawat barcode; ang master ay mas makapal.
   function drawLines(container, options) {
     const svg = createSvg(container, options.title);
@@ -116,7 +122,7 @@
     const yScale = (value) => PLOT.top + PLOT.height - ((value - yTicks.minimum) / (yTicks.maximum - yTicks.minimum)) * PLOT.height;
     drawAxes(svg, xScale, yScale, options.categoryList.map((label, index) => ({ value: index, label, rotate: true })), yTicks.tickList, '', '');
     options.seriesList.forEach((series, seriesIndex) => {
-      const group = svgElement('g', { class: series.isMaster ? 'chart-series chart-master' : 'chart-series chart-series-' + (seriesIndex % CHART.PALETTE_SIZE) });
+      const group = svgElement('g', { class: series.isMaster ? 'chart-series chart-master' : 'chart-series chart-series-' + getColorIndex(series, seriesIndex) });
       let segment = [];
       const flushSegment = () => {
         if (segment.length > 1) group.append(svgElement('polyline', { points: segment.join(' '), class: series.isMaster ? 'chart-line chart-line-master' : 'chart-line' }));
@@ -131,7 +137,7 @@
       flushSegment();
       svg.append(group);
     });
-    appendLegend(container, options.seriesList);
+    if (!options.hideLegend) appendLegend(container, options.seriesList);
   }
 
   // Legend: lahat ng series kung kakaunti; kung marami, master lang at bilang.
@@ -142,7 +148,7 @@
     seriesList.forEach((series, index) => {
       if (!showAll && !series.isMaster) return;
       const item = document.createElement('li');
-      item.className = 'chart-legend-item ' + (series.isMaster ? 'chart-master' : 'chart-series-' + (index % CHART.PALETTE_SIZE));
+      item.className = 'chart-legend-item ' + (series.isMaster ? 'chart-master' : 'chart-series-' + getColorIndex(series, index));
       item.textContent = series.name;
       list.append(item);
     });

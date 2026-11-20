@@ -6,6 +6,7 @@
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
+ * VERSION : v2.8 | 2026-11-20 | TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected
  * VERSION : v2.7 | 2026-11-20 | MASTER.DEVIATION (green/yellow/red), CHART.PAD_RATIO, TEXT.master legend
  * VERSION : v2.6 | 2026-11-20 | MASTER (column, threshold), CHART, SELECTOR.master, TEXT.master
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
@@ -149,6 +150,8 @@
         barcode: 'Barcode', actual: 'Actual', master: 'Master', actualAverageShort: 'Actual avg',
         scatterTitle: 'Actual Reading vs Master Reading', scatterX: 'Master Reading', scatterY: 'Actual Reading',
         barTitle: 'Actual AVG vs Master AVG', lineTitle: 'MASTER REPEATABILITY', masterSeries: 'MASTER',
+        filePanelTitle: 'Files', filePanelNote: 'I-uncheck ang file para alisin ang linya nito sa chart.',
+        fileRecords: ' record', fileSelected: 'Napili: {n} / {total} na file', fileNoneSelected: 'Walang napiling file. MASTER lang ang ipinapakita.',
         levelLegendTitle: 'Actual vs Master: ',
         levelGreen: 'Green: ±{low} pababa', levelYellow: 'Yellow: higit ±{low} hanggang ±{high}', levelRed: 'Red: higit ±{high}',
         unreadable: ' file ang hindi nabasa at nilaktawan.', linesLimited: 'Ipinapakita ang huling {n} na record sa chart; kumpleto ang kalkulasyon.',

@@ -1,4 +1,6 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v2.9 | 2026-11-20 | Master (Range): mas maliit na font ng file panel; legend sa ilalim ng chart para sa napiling file lang (kasama ang MASTER)
+v2.8 | 2026-11-20 | Master (Range): listahan ng file sa gilid ng chart, lahat naka-check; kapag na-uncheck ang file, nawawala ang linya nito sa chart
 v2.7 | 2026-11-20 | Master: chart mas maliit (zoom out), kulay green / yellow / red kada reading (actual vs master)
 v2.6 | 2026-11-20 | Master page: Latest Master (today, readonly) at Range Master analysis; gumagamit ng Data source 1 ng Settings; error trapping
 v2.4 | 2026-11-20 | Settings: full path ng bawat folder (type/paste, may validation); tinanggal ang lock ng machine name
@@ -77,7 +79,7 @@ classifyDeviation(actual, master) | master-analysis.js | ->'level-green'|'level-
 classifyRange(avgDiff) | master-analysis.js | ->string | PASS <=1, WARNING <=3, FAIL >3 | computeRepeatability
 computeRepeatability(columns, master, barcodes) | master-analysis.js | ->object | avg diff, score (100-avg diff), max diff, worst barcode, averages, kada barcode | analyzeRange
 analyzeLatest(handle, date, onProgress) | master-analysis.js | ->Promise<object> | pinakabagong file (lastModified) na may 15 headers at record sa araw na iyon; MAX_FILES lang ang sinusuri | master.js (onRunLatest)
-analyzeRange(handle, start, end, onProgress) | master-analysis.js | ->Promise<object> | lahat ng master file na ang lastModified ay nasa range; master = pinakabagong record | master.js (onRunRange)
+analyzeRange(handle, start, end, onProgress) | master-analysis.js | ->Promise<object> | lahat ng master file na ang lastModified ay nasa range; master = pinakabagong record; [v2.8] bawat column ay may fileName (pangalan ng CSV na pinanggalingan) | master.js (onRunRange)
 [v2.6] chart-draw.js (window.BMWW.chart):
 svgElement(name, attrs, text) | chart-draw.js | ->SVGElement | gawa ng SVG element (walang innerHTML) | lahat ng draw function
 buildTicks(min, max)   | chart-draw.js | ->{tickList,minimum,maximum} | maayos na tick ng axis | drawScatter, drawLines, drawBars
@@ -86,7 +88,8 @@ createSvg(container, title) | chart-draw.js | ->SVG | bagong SVG na may pamagat 
 drawAxes(svg, xScale, yScale, xTicks, yTicks, xTitle, yTitle) | chart-draw.js | - | grid, axis, label | draw functions
 getPaddedRange(values) | chart-draw.js | ->{low,high} | [v2.7] saklaw ng data na may espasyo (CHART.PAD_RATIO), zoom out | drawScatter
 drawScatter(container, options) | chart-draw.js | - | Actual vs Master, may trendline, equation at R square | master.js (renderLatest)
-drawLines(container, options)   | chart-draw.js | - | line kada petsa + MASTER (makapal) | master.js (renderRange)
+drawLines(container, options)   | chart-draw.js | - | line kada petsa + MASTER (makapal); [v2.8] series.colorIndex at options.hideLegend | master.js (drawRangeLines)
+getColorIndex(series, seriesIndex) | chart-draw.js | ->number | [v2.8] colorIndex ng series (kung meron) o posisyon, modulo PALETTE_SIZE; hindi gumagalaw ang kulay kapag may na-uncheck | drawLines, appendLegend
 appendLegend(container, seriesList) | chart-draw.js | - | legend (master lang kapag higit 12 series) | drawLines
 drawBars(container, options)    | chart-draw.js | - | bar ng Actual AVG at Master AVG | master.js (renderLatest)
 [v2.6] master.js (page):
@@ -97,7 +100,13 @@ getReadyHandle()       | master.js | ->Promise<Handle> | handle ng Data source 1
 renderSource()         | master.js | - | ipinapakita ang full path (o pangalan) ng Data source 1 | init
 clearSection(statusKey, resultKey) | master.js | - | linis ng mensahe at resulta | onRunLatest, onRunRange
 makeStatusBadge(status), makeStatList(entries), makeTable(headers, rows), formatNumber(v, digits) | master.js | gawa ng elemento ng resulta (textContent lang)
-renderLatest(result), renderRange(result) | master.js | - | ipinapakita ang status, stats, table, chart | onRunLatest, onRunRange
+renderLatest(result), renderRange(result) | master.js | - | ipinapakita ang status, stats, table, chart; [v2.8] renderRange: chart + file panel sa gilid | onRunLatest, onRunRange
+groupByFile(columnList) | master.js | array->{groupList,groupMap} | [v2.8] pinagsasama ang linya kada file: {name, colorIndex, recordCount}, ayon sa unang labas | renderRange
+drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet) | master.js | - | [v2.8] iginuguhit ang line chart; napiling file lang (at MASTER) ang kasama; walang legend sa ilalim | renderRange (redraw)
+makeSelectedLegend(groupMap, selectedNameSet) | master.js | ->ul | [v2.9] legend: MASTER + napiling file lang, kulay ng linya | drawRangeLines
+makeFilePanel(groupList, selectedNameSet, onChange) | master.js | ->aside | [v2.8] checkbox ng bawat file (lahat naka-check) + 'Napili: n / total'; change event ay nag-a-update ng selectedNameSet at tumatawag ng onChange | renderRange
+[v2.8] CONFIG.TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected | js/core/config.js | text ng file panel
+[v2.8] Events: change | .file-checkbox | master.js | tatawag ng redraw ng line chart | (isang listener kada checkbox; nawawala kasama ng resulta kapag nag-Run ulit)
 onRunLatest()          | master.js | ->Promise | click ng Run Latest Master (today) | click
 onRunRange()           | master.js | ->Promise | click ng Run Range Master; sinusuri ang petsa bago magbasa | click
 init() (master)        | master.js | ->Promise | [v2.6] default na petsa, source, listener | router
@@ -229,6 +238,9 @@ PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), fo
   DEPENDS: sanitizeInput, readLocalSettings, isFolderAccessSupported, loadHandle, hasPermission
 
 === KNOWN ISSUES / TODO ===
+2026-11-20 | [v2.8] Hindi pa nasubukan sa tunay na browser at tunay na CSV; jsdom test lang (3 gawa-gawang file: uncheck/re-check, kulay, Run ulit).
+2026-11-20 | [v2.8] Kada FILE ang checkbox (maraming linya/record ang isang file; sabay silang nawawala). Kung gusto mo kada record (petsa) ang checkbox, sabihin.
+2026-11-20 | [v2.8] Mahigit 8 file: umuulit ang kulay (8 ang PALETTE_SIZE). Kapag may na-uncheck, nagre-rescale ang y-axis ayon sa natitirang linya. Ang MASTER ay laging nakikita (walang checkbox).
 2026-11-20 | [v2.7] Ang kulay ay para sa bawat reading (point sa scatter, dot sa line chart, cell sa table). Ang 1.6 hanggang 2.5 ay yellow; ang pagitan ng 1.5 at 1.6 (hal. 1.55) ay yellow rin. Nasa CONFIG.MASTER.DEVIATION ang limitasyon.
 2026-11-20 | [v2.7] Hindi pa nakita sa tunay na screen ang laki ng chart (jsdom lang); sabihin kung kulang pa ang zoom out.
 2026-11-20 | [v2.6] Hindi pa nasubukan sa tunay na CSV at browser; jsdom test lang gamit ang gawa-gawang CSV. Ang column ay galing sa Excel macro (F:T actual, DA:DO master, U at DQ average, row 4 barcode, row 2 header = 15).

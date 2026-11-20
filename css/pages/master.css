@@ -3,6 +3,8 @@
  * PURPOSE : Style ng master page (naka-scope): date row, result, status badge, table, chart
  * DEPENDS : css/components.css
  * VERSION : v2.3 | 2026-11-20 | bagong file
+ * VERSION : v2.9 | 2026-11-20 | mas maliit na font ng file panel; legend ng napiling file
+ * VERSION : v2.8 | 2026-11-20 | file panel sa gilid ng Range Master chart (checkbox, swatch, scroll)
  * VERSION : v2.7 | 2026-11-20 | chart mas maliit (max-width, grid); kulay level-green / level-yellow / level-red; legend
  * VERSION : v2.6 | 2026-11-20 | date row, status badge, stats, table, SVG chart (walang library)
  */
@@ -75,6 +77,23 @@
 .page-master .chart-legend-item { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.8125rem; }
 .page-master .chart-legend-item::before { content: ""; width: 1.25rem; height: 0.25rem; background: currentColor; border-radius: 2px; }
 .page-master .chart-legend-note { color: var(--color-muted); font-size: 0.8125rem; }
+.page-master .range-chart-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; margin-bottom: var(--space-4); }
+.page-master .range-chart-layout .chart-box-wide { max-width: none; margin: 0; }
+.page-master .file-panel { padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-master .file-panel-title { margin: 0 0 var(--space-1); font-size: 0.875rem; }
+.page-master .file-panel-note, .page-master .file-panel-summary { margin: 0 0 var(--space-2); color: var(--color-muted); font-size: 0.6875rem; }
+.page-master .file-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 22rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.page-master .file-item-master { display: flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-2); font-weight: 700; }
+.page-master .file-label { display: flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; transition: background-color 150ms ease; }
+.page-master .file-label:hover { background: var(--color-primary-soft); }
+.page-master .file-label:focus-within { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+.page-master .file-checkbox { flex: none; width: 1.125rem; height: 1.125rem; accent-color: var(--color-primary); cursor: pointer; }
+.page-master .file-swatch { flex: none; width: 0.75rem; height: 0.75rem; border-radius: 2px; background: currentColor; }
+.page-master .file-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.75rem; }
+.page-master .file-count { flex: none; color: var(--color-muted); font-size: 0.625rem; }
+@media (prefers-reduced-motion: reduce) {
+  .page-master .file-label { transition: none; }
+}
 @media (min-width: 768px) {
   .page-master .stat-list { grid-template-columns: 1fr 1fr; }
   .page-master .date-row { max-width: 36rem; }
@@ -83,4 +102,5 @@
   .page-master .stat-list { grid-template-columns: 1fr 1fr 1fr; }
   .page-master .chart-grid { grid-template-columns: 1fr 1fr; align-items: start; }
   .page-master .chart-grid .chart-box { max-width: none; margin-bottom: 0; }
+  .page-master .range-chart-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
 }

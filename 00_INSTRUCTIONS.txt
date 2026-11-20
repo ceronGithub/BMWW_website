@@ -1,4 +1,10 @@
-INSTRUCTIONS v2.4 (Settings: full path + walang lock)
-1. I-unzip ang BMWW_website_v2.4.zip. Huwag galawin ang original mong folder.
+INSTRUCTIONS v2.9 (Master Repeatability: file list sa gilid ng chart)
+1. I-unzip ang BMWW_website_v2.9.zip. Huwag galawin ang original mong folder.
 2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click).
-3. Dapat gumana ang Settings; ang folder picker ay Chrome/Edge lang.
+3. Settings: piliin ang Data source 1 (folder ng CSV). Master > Range Master analysis: pumili ng Start/End date > Run Range Master.
+4. TEST STEPS:
+   - DAPAT makita: sa gilid (desktop) o sa ilalim (mobile) ng chart ang panel na "Files"; lahat ng file ay naka-check.
+   - DAPAT makita: i-uncheck ang isang file -> nawawala ang mga linya nito sa chart; ang "Napili: n / total" ay bumababa.
+   - DAPAT makita: i-check ulit -> bumabalik ang linya sa dating kulay.
+   - DAPAT makita: kapag lahat naka-uncheck, MASTER (makapal na linya) lang ang natitira.
+   - DAPAT HINDI makita: legend ng mga petsa sa ilalim ng chart; error sa console.
