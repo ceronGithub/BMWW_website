@@ -5,6 +5,9 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v3 | 2026-11-20 | EVENTS (constants ng Dashboard events), SELECTOR.events, TEXT.events
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
+ * VERSION : v3.0 | 2026-11-21 | FILE_SEARCH.PREVIEW (preview kada file sa Result: text, CSV, larawan, PDF)
+ * VERSION : v2.9 | 2026-11-21 | FILE_SEARCH: overwrite (REPLACED), send log sa Saving path (LOG), alaala ng huling manual destination (MANUAL_*)
+ * VERSION : v2.8 | 2026-11-20 | PAGE_LIST (file-search) at CONFIG.FILE_SEARCH (CLO1A/CLO1A1, search by name/date/latest, send to Path o manual input)
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
  * VERSION : v2.8 | 2026-11-20 | TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected
@@ -26,7 +29,7 @@
     SIDEBAR_TEMPLATE: 'sidebar',
     DEFAULT_PAGE: 'dashboard',
     NOT_FOUND_PAGE: '404',
-    PAGE_LIST: ['dashboard', 'lot-tracking', 'settings', 'calibration', 'master'],
+    PAGE_LIST: ['dashboard', 'lot-tracking', 'file-search', 'settings', 'calibration', 'master'],
     OPEN_CLASS: 'sidebar-open',
     ACTIVE_CLASS: 'is-active',
     STORAGE_KEY: 'bmww.settings',
@@ -189,6 +192,100 @@
         noSource: 'Walang naka-set na Data source sa Settings.',
         noPermission: ': walang permission. Payagan ulit sa Settings.',
         scanError: 'May error sa paghahanap ng file. Subukan ulit.'
+      }
+    },
+    // Search Files (v2.8). Ang File Path 1 (CLO1A) at File Path 2 (CLO1A1) ng Excel ay Data source 2 at 3 ng Settings.
+    // Basa lang sa mga source. Ang pagpapadala ay kopya; ang kapangalan sa destination ay papalitan lang kapag pumayag ang user.
+    FILE_SEARCH: {
+      PAGE: 'file-search',
+      SOURCE_LIST: [
+        { key: 'source2', label: 'CLO1A' },
+        { key: 'source3', label: 'CLO1A1' }
+      ],
+      SERVER_KEY: 'server',
+      // Send log: <Saving path>\logs\send-log.txt (dagdag lang sa dulo, UTF-8, CRLF)
+      LOG: { FOLDER: 'logs', FILE: 'send-log.txt', SEPARATOR: ' | ', LINE_END: '\r\n' },
+      // Huling manual destination: path text sa localStorage, folder handle sa IndexedDB
+      MANUAL_STORAGE_KEY: 'bmww.fileSearch', MANUAL_PATH_FIELD: 'manualPath', MANUAL_HANDLE_KEY: 'fileSearchManualFolder',
+      // Preview: basa lang; text/CSV ay unang MAX_BYTES lang ang binabasa.
+      PREVIEW: {
+        MAX_BYTES: 262144, MAX_ROWS: 200, MAX_COLUMNS: 40, IMAGE_MAX_BYTES: 20971520, PDF_MAX_BYTES: 31457280,
+        TEXT_EXT: ['txt', 'log', 'json', 'xml', 'ini', 'cfg', 'md', 'bat', 'js', 'html', 'htm', 'css'],
+        CSV_EXT: ['csv'],
+        IMAGE_EXT: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'],
+        PDF_EXT: ['pdf']
+      },
+      MAX_DEPTH: 6,
+      MAX_RESULTS: 5000,
+      MAX_SCANNED: 200000,
+      YIELD_EVERY: 100,
+      NAME_MAX: 100,
+      LATEST_DAYS: 2,
+      RANGE_DEFAULT_DAYS: 7,
+      IGNORED_PREFIX: '~$',
+      EMPTY_CELL: '-',
+      MODE: { name: 'name', range: 'range', latest: 'latest' },
+      SEND_MODE: { path: 'path', manual: 'manual' },
+      TYPE: { file: 'File', folder: 'Folder' },
+      STATUS: { pending: 'PENDING', sent: 'SENT', replaced: 'REPLACED', failed: 'FAILED', exists: 'EXISTS' },
+      STATUS_CLASS: { PENDING: 'is-pending', SENT: 'is-sent', REPLACED: 'is-replaced', FAILED: 'is-failed', EXISTS: 'is-exists' },
+      SIZE_UNIT_LIST: ['B', 'KB', 'MB', 'GB', 'TB'],
+      SELECTOR: {
+        sourceList: '#fs-source-list',
+        nameInput: '#fs-name', nameButton: '#fs-name-run',
+        rangeStart: '#fs-range-start', rangeEnd: '#fs-range-end', rangeButton: '#fs-range-run',
+        latestButton: '#fs-latest-run', latestNote: '#fs-latest-note',
+        stopButton: '#fs-stop', clearButton: '#fs-clear',
+        status: '#fs-status',
+        found: '#fs-found', resultNote: '#fs-result-note', resultBody: '#fs-result-body', selectAll: '#fs-select-all',
+        sendModeRadio: 'input[name="fs-send-mode"]', sendPathText: '#fs-send-path-text',
+        manualWrap: '#fs-send-manual', manualPath: '#fs-manual-path', manualPick: '#fs-manual-pick', manualFolder: '#fs-manual-folder',
+        selectedCount: '#fs-selected', sendButton: '#fs-send-run', sendStatus: '#fs-send-status',
+        previewDialog: '#fs-preview', previewTitle: '#fs-preview-title', previewMeta: '#fs-preview-meta', previewBody: '#fs-preview-body', previewClose: '#fs-preview-close'
+      },
+      TEXT: {
+        found: 'FILES FOUND : ',
+        sourceNotSet: 'Hindi pa naka-set sa Settings', sourceReselect: 'Piliin ulit sa Settings', sourceFolder: 'Folder: ',
+        sourceBadgeSet: 'Naka-set', sourceBadgeEmpty: 'Hindi pa naka-set',
+        working: 'Naghahanap...', progress: 'Naghahanap... nasuri na: ',
+        unsupported: 'Gamitin ang Chrome o Edge sa laptop para mabasa ang folder.',
+        noSourceChecked: 'Pumili ng kahit isang folder na hahanapin (CLO1A o CLO1A1).',
+        noSourceReady: 'Walang mahahanap: hindi pa naka-set ang napiling folder sa Settings.',
+        sourceNoPermission: ': walang permission. Subukan ulit at pindutin ang Allow.',
+        sourceUnreadable: ': hindi mabuksan ang folder. Piliin ulit ito sa Settings.',
+        nameEmpty: 'Maglagay ng file name na hahanapin.',
+        badDates: 'Maglagay ng valid na Start date at End date.',
+        startAfterEnd: 'Hindi puwedeng mas huli ang Start date kaysa sa End date.',
+        stopped: 'Itinigil ang paghahanap. Ipinapakita ang mga nakita na.',
+        none: 'Walang nakitang file.',
+        resultLimited: 'Umabot sa limit na {n} ang resulta. Paliitin ang hanap (pangalan o petsa).',
+        scanLimited: 'Umabot sa limit ng pag-scan ({n}). Paliitin ang hanap para kumpleto.',
+        skipped: ' folder ang hindi nabasa at nilaktawan.',
+        latestNote: 'Mga file at folder na bago ngayong araw at kahapon (hanggang {days} araw).',
+        modeNote: { name: 'Hanap sa pangalan: ', range: 'Hanap sa petsa: ', latest: 'Pinakabago: ' },
+        searchError: 'May problema sa paghahanap ng file. Subukan ulit.',
+        selected: 'Napili: ',
+        sendPathNone: 'Walang Server path na naka-set sa Settings.', sendPathLabel: 'Server path: ',
+        manualPlaceholder: 'Hal. \\\\192.168.254.180\\BMWW o D:\\Backup', manualFolderNone: 'Wala pang napiling folder', manualFolderLabel: 'Napiling folder: ',
+        manualInvalid: 'Hindi tama ang path. Dapat nagsisimula sa drive (C:\\) o network (\\\\server).',
+        manualMismatch: 'Hindi tugma ang dulo ng path sa napiling folder: ',
+        manualNeedFolder: 'Piliin muna ang destination folder (Choose folder).',
+        pickError: 'Hindi mapili ang folder.',
+        noneSelected: 'Pumili muna ng file na ipapadala.',
+        destinationNoPermission: 'Hindi pinayagan ang access sa destination folder. Subukan ulit at pindutin ang Allow.',
+        destinationIsSource: 'Hindi puwedeng ipadala sa mismong CLO1A o CLO1A1 (source folder).',
+        sending: 'Nagpapadala: ', sendStopped: 'Itinigil ang pagpapadala. ',
+        sendSummary: 'Tapos: {sent} SENT, {replaced} REPLACED, {exists} EXISTS (hindi pinalitan), {failed} FAILED.',
+        confirmOverwrite: '{n} file ang nasa destination na (kapareho ang pangalan).\n\nOK = PALITAN ang mga ito.\nCancel = HUWAG palitan (EXISTS), ipadala lang ang iba.',
+        logSaved: ' Na-log sa ', logNoRoot: ' Hindi na-log: wala pang Saving path sa Settings.', logNoPermission: ' Hindi na-log: walang permission sa Saving path.', logFailed: ' Hindi na-log: may problema sa pagsulat ng log.',
+        manualRemembered: 'Naalala ang huling destination.', manualReselect: ' (pindutin ang Send para payagan ulit)',
+        sendError: 'May problema sa pagpapadala. Subukan ulit.',
+        previewButton: 'Preview', previewAria: 'Preview ng ', previewLoading: 'Binabasa ang file...',
+        previewNone: 'Walang preview para sa ganitong uri ng file.', previewBinary: 'Mukhang hindi ito text file, kaya walang preview.',
+        previewEmpty: 'Walang laman ang file.', previewTooBig: 'Masyadong malaki ang file para i-preview.',
+        previewError: 'Hindi mabuksan ang file para sa preview. Maaaring wala nang permission o nailipat na ito.',
+        previewPartial: 'Ipinapakita ang unang {shown} ng {total}.', previewRows: 'Ipinapakita ang unang {n} na row.', previewColumns: ' (unang {n} na column lang)',
+        previewImageAlt: 'Preview ng larawan'
       }
     },
     SELECTOR: {

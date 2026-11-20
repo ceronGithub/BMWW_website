@@ -1,0 +1,133 @@
+/*
+ * FILE    : js/templates/file-search.template.js
+ * PURPOSE : Kopya ng pages/file-search.html bilang template string, para gumana sa double-click (file://)
+ * DEPENDS : js/core/registry.js
+ * VERSION : v2.8 | 2026-11-20 | bagong file
+ * VERSION : v2.9 | 2026-11-21 | kasabay ng pages/file-search.html
+ * VERSION : v3.0 | 2026-11-21 | kasabay ng pages/file-search.html (Preview)
+ * VERSION : v2.8.1 | 2026-11-21 | kasabay ng pages/file-search.html (Send to sa ibabaw ng Result)
+ */
+(function () {
+  'use strict';
+  window.BMWW.registry.registerTemplate('file-search', `<!-- PAGE: file-search -->
+<link rel="stylesheet" href="css/pages/file-search.css">
+<section class="page page-file-search" data-page="file-search">
+  <header class="page-header">
+    <h1 class="page-title">Search Files</h1>
+    <p class="page-subtitle">Hanapin ang file sa CLO1A at CLO1A1 ayon sa pangalan, saklaw ng petsa, o pinakabago. Basa lang ang paghahanap; walang binabago sa mga folder.</p>
+  </header>
+
+  <article class="card">
+    <h2 class="card-title">Saan hahanapin</h2>
+    <p class="card-note">Ang CLO1A at CLO1A1 ay Data source 2 at 3 sa Settings. <a href="#settings">Buksan ang Settings</a></p>
+    <ul id="fs-source-list" class="fs-source-list"></ul>
+  </article>
+
+  <article class="card">
+    <h2 class="card-title">Search</h2>
+    <div class="fs-search-grid">
+      <section class="fs-box" aria-labelledby="fs-name-title">
+        <h3 id="fs-name-title" class="fs-box-title">Search by name</h3>
+        <div class="form-group">
+          <label class="form-label" for="fs-name">File name</label>
+          <input id="fs-name" class="form-input" type="text" autocomplete="off" spellcheck="false" placeholder="Hal. 4A055 o *.csv">
+        </div>
+        <p class="card-note">Walang * o ?: hahanapin ang pangalang may ganitong salita. May * o ?: wildcard.</p>
+        <button id="fs-name-run" class="btn btn-primary" type="button">SEARCH FILE NAME</button>
+      </section>
+      <section class="fs-box" aria-labelledby="fs-range-title">
+        <h3 id="fs-range-title" class="fs-box-title">Search by range date</h3>
+        <div class="fs-date-row">
+          <div class="form-group">
+            <label class="form-label" for="fs-range-start">Start date</label>
+            <input id="fs-range-start" class="form-input" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fs-range-end">End date</label>
+            <input id="fs-range-end" class="form-input" type="date">
+          </div>
+        </div>
+        <p class="card-note">Ang petsa ng file (last modified) ang gamit.</p>
+        <button id="fs-range-run" class="btn btn-primary" type="button">SEARCH DATE</button>
+      </section>
+      <section class="fs-box" aria-labelledby="fs-latest-title">
+        <h3 id="fs-latest-title" class="fs-box-title">Search latest files</h3>
+        <p id="fs-latest-note" class="card-note"></p>
+        <button id="fs-latest-run" class="btn btn-primary" type="button">GET LATEST FILES</button>
+      </section>
+    </div>
+    <div class="fs-actions">
+      <button id="fs-stop" class="btn btn-secondary" type="button" disabled>STOP</button>
+      <button id="fs-clear" class="btn btn-secondary" type="button">CLEAR RESULT</button>
+    </div>
+    <p id="fs-status" class="status" role="status"></p>
+  </article>
+
+  <article class="card">
+    <h2 class="card-title">Send to</h2>
+    <p class="card-note">Kokopyahin ang napiling file. Kung may kapangalan na sa destination, tatanungin ka kung papalitan. Ang tala ng naipadala ay isusulat sa Saving path (logs\\send-log.txt).</p>
+    <div class="radio-group">
+      <label class="radio-row"><input type="radio" name="fs-send-mode" value="path" checked><span>Path (Server path ng Settings)</span></label>
+      <p id="fs-send-path-text" class="fs-path-text"></p>
+      <label class="radio-row"><input type="radio" name="fs-send-mode" value="manual"><span>User manual input</span></label>
+    </div>
+    <div id="fs-send-manual" class="fs-manual" hidden>
+      <div class="form-group">
+        <label class="form-label" for="fs-manual-path">Destination path</label>
+        <input id="fs-manual-path" class="form-input" type="text" autocomplete="off" spellcheck="false" placeholder="">
+      </div>
+      <div class="fs-manual-row">
+        <button id="fs-manual-pick" class="btn btn-secondary" type="button">Choose folder</button>
+        <span id="fs-manual-folder" class="fs-path-text"></span>
+      </div>
+      <p class="card-note">Hindi makukuha ng browser ang path mula sa folder. I-type ang path at piliin din ang folder para magamit.</p>
+    </div>
+    <div class="fs-actions">
+      <button id="fs-send-run" class="btn btn-primary" type="button">SEND</button>
+      <span id="fs-selected" class="card-note"></span>
+    </div>
+    <p id="fs-send-status" class="status" role="status"></p>
+  </article>
+
+  <article class="card">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Result</h2>
+        <p id="fs-result-note" class="card-note"></p>
+        <p class="card-note fs-legend"><strong>Status:</strong> PENDING = hindi pa naipapadala | SENT = naipadala na | REPLACED = napalitan ang kapangalan | EXISTS = nasa destination na (hindi pinalitan) | FAILED = hindi naipadala</p>
+      </div>
+      <span id="fs-found" class="fs-found">FILES FOUND : 0</span>
+    </div>
+    <dialog id="fs-preview" class="fs-preview" aria-labelledby="fs-preview-title">
+      <div class="fs-preview-head">
+        <div>
+          <h3 id="fs-preview-title" class="fs-box-title"></h3>
+          <p id="fs-preview-meta" class="card-note"></p>
+        </div>
+        <button id="fs-preview-close" class="btn btn-secondary" type="button">Close</button>
+      </div>
+      <div id="fs-preview-body" class="fs-preview-body" tabindex="0"></div>
+    </dialog>
+    <div class="fs-scroll" tabindex="0" role="region" aria-label="Resulta ng paghahanap">
+      <table class="fs-table">
+        <thead>
+          <tr>
+            <th scope="col" class="fs-col-check"><input id="fs-select-all" type="checkbox" aria-label="Piliin lahat"></th>
+            <th scope="col">File Name</th>
+            <th scope="col">Type</th>
+            <th scope="col">Date Modified</th>
+            <th scope="col">Size</th>
+            <th scope="col">Source</th>
+            <th scope="col">Folder</th>
+            <th scope="col">Status</th>
+            <th scope="col">Preview</th>
+          </tr>
+        </thead>
+        <tbody id="fs-result-body"></tbody>
+      </table>
+    </div>
+  </article>
+</section>
+<script src="js/pages/file-search.js"></script>
+`);
+})();

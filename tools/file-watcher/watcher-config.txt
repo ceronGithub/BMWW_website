@@ -1,0 +1,29 @@
+# BMWW File Watcher - config
+# Isang setting kada linya: pangalan=halaga. Ang linyang may # sa unahan ay tala lang.
+# Pagkatapos magbago dito, patakbuhin ulit ang install-watcher.bat para magamit ang bago.
+
+# Mga folder na babantayan (hiwalay gamit ang ; ). Kasama ang mga subfolder.
+WatchPaths=C:\BM-Logging\CLO1A;C:\BM-Logging\CLO1A1
+
+# Browser na bubuksan: edge, chrome o default (default = browser ng Windows; maaaring mawala ang #file-search)
+Browser=edge
+
+# Page na bubuksan sa website
+Page=#file-search
+
+# Full path ng index.html. Kung blangko, ang index.html sa labas ng tools folder ang gagamitin.
+IndexPath=
+
+# Segundo na hihintayin pagkatapos makita ang bagong file (para tapos nang isulat)
+SettleSeconds=3
+
+# Segundo na hindi na magbubukas ulit pagkatapos magbukas (iwas dami ng tab)
+CooldownSeconds=120
+
+# Huwag magbukas kung may bukas nang window na may pamagat na "BM Analyzer" (yes/no)
+SkipIfOpen=yes
+
+# Hindi bibilangin ang file na nagsisimula sa mga ito (hiwalay gamit ang ; )
+IgnorePrefixes=~$;.~
+# Hindi bibilangin ang file na nagtatapos sa mga ito (hiwalay gamit ang ; )
+IgnoreSuffixes=.tmp;.crdownload

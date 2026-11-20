@@ -1,0 +1,66 @@
+/*
+ * FILE    : css/pages/file-search.css
+ * PURPOSE : Style ng Search Files page (naka-scope sa .page-file-search); scrollable na resulta
+ * DEPENDS : css/base.css, css/components.css
+ * VERSION : v2.8 | 2026-11-20 | bagong file
+ * VERSION : v2.8.1 | 2026-11-21 | laging kita ang scrollbar ng resulta; legend ng Status
+ */
+.page-file-search { --fs-pending: #4b5563; --fs-sent: #15803d; --fs-failed: #b91c1c; --fs-exists: #b45309; --fs-replaced: #1d4ed8; padding-bottom: var(--space-6); }
+.page-file-search .fs-source-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+.page-file-search .fs-source-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-file-search .fs-source-row label { display: flex; align-items: center; gap: var(--space-2); min-height: var(--touch-size); font-weight: 600; cursor: pointer; }
+.page-file-search .fs-source-row input { width: 1.25rem; height: 1.25rem; accent-color: var(--color-primary); }
+.page-file-search .fs-source-path { color: var(--color-muted); overflow-wrap: anywhere; flex: 1 1 12rem; }
+.page-file-search .fs-search-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); margin-top: var(--space-3); }
+.page-file-search .fs-box { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); }
+.page-file-search .fs-box .btn { align-self: flex-start; margin-top: auto; }
+.page-file-search .fs-box-title { font-size: 1rem; font-weight: 700; margin: 0; }
+.page-file-search .fs-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.page-file-search .fs-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-4); }
+.page-file-search .fs-found { font-weight: 700; white-space: nowrap; }
+.page-file-search .fs-scroll { max-height: 26rem; overflow: scroll; border: 1px solid var(--color-border); border-radius: var(--radius-sm); scrollbar-width: auto; scrollbar-color: var(--color-muted) var(--color-bg); }
+.page-file-search .fs-scroll::-webkit-scrollbar { width: 14px; height: 14px; }
+.page-file-search .fs-scroll::-webkit-scrollbar-track { background: var(--color-bg); }
+.page-file-search .fs-scroll::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 7px; border: 3px solid var(--color-bg); }
+.page-file-search .fs-legend { margin-top: var(--space-1); }
+.page-file-search .fs-table { width: 100%; min-width: 56rem; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+.page-file-search .fs-table th,
+.page-file-search .fs-table td { padding: var(--space-2) var(--space-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-border); }
+.page-file-search .fs-table th { position: sticky; top: 0; z-index: 1; background: var(--color-primary-soft); font-weight: 700; white-space: nowrap; }
+.page-file-search .fs-table tbody tr:nth-child(even) { background: var(--color-bg); }
+.page-file-search .fs-table tbody tr:hover { background: var(--color-primary-soft); }
+.page-file-search .fs-table .fs-col-check { width: 2.5rem; text-align: center; }
+.page-file-search .fs-table .fs-name { font-weight: 600; overflow-wrap: anywhere; }
+.page-file-search .fs-table .fs-folder { color: var(--color-muted); overflow-wrap: anywhere; }
+.page-file-search .fs-table .fs-nowrap { white-space: nowrap; }
+.page-file-search .fs-table input[type="checkbox"] { width: 1.125rem; height: 1.125rem; accent-color: var(--color-primary); }
+.page-file-search .fs-status-cell { font-weight: 700; white-space: nowrap; }
+.page-file-search .fs-status-cell.is-pending { color: var(--fs-pending); }
+.page-file-search .fs-status-cell.is-sent { color: var(--fs-sent); }
+.page-file-search .fs-status-cell.is-replaced { color: var(--fs-replaced); }
+.page-file-search .fs-status-cell.is-failed { color: var(--fs-failed); }
+.page-file-search .fs-status-cell.is-exists { color: var(--fs-exists); }
+.page-file-search .fs-path-text { margin-left: 2rem; color: var(--color-muted); overflow-wrap: anywhere; }
+.page-file-search .fs-manual { margin-top: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-file-search .fs-manual[hidden] { display: none; }
+.page-file-search .fs-manual-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+.page-file-search .fs-manual-row .fs-path-text { margin-left: 0; }
+.page-file-search .form-input.is-error { border-color: var(--color-danger); }
+.page-file-search .status.is-info { color: var(--color-muted); }
+@media (min-width: 768px) {
+  .page-file-search .fs-search-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.page-file-search .fs-preview-button { min-height: 2rem; padding: 0 var(--space-3); font-size: 0.8125rem; }
+.page-file-search .fs-preview { width: min(60rem, 94vw); max-height: 90vh; padding: var(--space-4); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover); }
+.page-file-search .fs-preview::backdrop { background: var(--color-overlay); }
+.page-file-search .fs-preview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.page-file-search .fs-preview-head .fs-box-title { overflow-wrap: anywhere; }
+.page-file-search .fs-preview-body { max-height: 65vh; overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); }
+.page-file-search .fs-preview-text { margin: 0; padding: var(--space-3); font-family: Consolas, "Courier New", monospace; font-size: 0.8125rem; white-space: pre; }
+.page-file-search .fs-preview-message { padding: var(--space-4); color: var(--color-muted); }
+.page-file-search .fs-preview-image { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.page-file-search .fs-preview-frame { display: block; width: 100%; height: 65vh; border: 0; }
+.page-file-search .fs-csv { border-collapse: collapse; font-size: 0.8125rem; background: var(--color-surface); }
+.page-file-search .fs-csv th, .page-file-search .fs-csv td { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); white-space: nowrap; text-align: left; }
+.page-file-search .fs-csv th { background: var(--color-primary-soft); color: var(--color-muted); font-weight: 600; }

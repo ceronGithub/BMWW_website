@@ -1,4 +1,8 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v3.1 | 2026-11-21 | tools/file-watcher: script sa Windows na kusang nagbubukas ng website kapag may bagong file sa CLO1A/CLO1A1 (hindi parte ng website)
+v3.0 | 2026-11-21 | Search Files: Preview kada file sa Result (text, CSV, larawan, PDF)
+v2.9 | 2026-11-21 | Search Files: tanong kung papalitan ang kapangalan (overwrite), send log sa <Saving path>\logs\send-log.txt, alaala ng huling manual destination
+v2.8 | 2026-11-20 | Search Files page: hanap sa CLO1A/CLO1A1 (by name, by range date, latest), resulta na may scroll, Send to (Path o manual input)
 v5.2 | 2026-11-21 | Task 1C: monitor ng Data source 1, 2, 3 sa not-LEAD PC (Calibration/Master, Online/Offline; ONGOING at DONE) at sulat ng status sa <Server path>\queue. Bagong js/core/monitor.js; sinisimulan ng app.js. Wala pang UI (1D)
 v5.1 | 2026-11-21 | Task 1B: queue sa Server path (<Server path>\queue\<machine name>.json): sulat ng status ng sariling machine, basa ng lahat, listahan ng machine mula sa server settings. Bagong js/core/queue.js; wala pang UI at wala pang tumatawag (1C monitor, 1D Dashboard)
 v5 | 2026-11-20 | Task 1A: Settings ay sine-save kada machine (<machine name>.json) sa <Saving path>\settings at <Server path>\settings. Config.js, storage.js, settings.js lang ang binago
@@ -449,3 +453,33 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
 2026-11-21 | [v5.2] Pagkatapos magsara ng browser, maaaring humingi ulit ng permission ang Chrome/Edge; walang kusang prompt. Pindutin ang Save sa Settings para ma-allow ulit (ang button na Payagan ay sa 1D).
 2026-11-21 | [v5.2] Ang DONE ay nananatili hanggang may susunod na pagbabago (o hanggang mag-restart ang page). Ang scan ng malalaking folder kada 5 segundo sa network drive ay maaaring mabigat; hanggang 5000 entry lang ang binabasa kada source.
 2026-11-21 | [v5.2] Hindi pa nasubukan sa totoong Chrome/Edge, totoong instrument at totoong server; jsdom at fake folder handle lang (30 test sa monitor). Ang unang test ay sa device mo.
+
+=== [v2.8] SEARCH FILES ===
+FILES: pages/file-search.html (+ kopya js/templates/file-search.template.js) | css/pages/file-search.css | js/pages/file-search.js | js/core/file-scanner.js | js/core/file-sender.js
+SOURCE: CLO1A = Data source 2, CLO1A1 = Data source 3 ng Settings (CONFIG.FILE_SEARCH.SOURCE_LIST). Basa lang; subfolder hanggang MAX_DEPTH (6).
+SEARCH: SEARCH FILE NAME (naglalaman ng salita, o wildcard * ?) | SEARCH DATE (Start/End, lastModified) | GET LATEST FILES (ngayon at kahapon; kasama ang bagong folder)
+RESULT: FILES FOUND : n, table na may scroll (sticky header), checkbox kada file, Status (PENDING/SENT/EXISTS/FAILED). Limit: MAX_RESULTS 5000, MAX_SCANNED 200000.
+SEND TO: (1) Path = Server path ng Settings (2) User manual input = i-type ang path at Choose folder. Kopya lang. [v2.9] Kung may kapangalan na sa destination: tanong (OK = REPLACED, Cancel = EXISTS, hindi pinalitan). Dalawang napiling file na magkapareho ang pangalan: ang una lang ang kokopyahin. Hindi puwedeng ipadala sa loob ng CLO1A/CLO1A1.
+FUNCTIONS: fileScanner.createControl/getLatestStartMs/getRangeMs/buildNameMatcher/scanSources | fileSender.isInsideSource/ensureWriteAccess/sendItems | file-search.js: buildSourceRows, prepareSources, runSearch, onSearchName/onSearchDate/onGetLatest/onStop/onClear, renderResults, onSend, onPickManual, validateManual, init
+CONFIG: CONFIG.FILE_SEARCH (SOURCE_LIST, SERVER_KEY, MAX_DEPTH, MAX_RESULTS, MAX_SCANNED, LATEST_DAYS, RANGE_DEFAULT_DAYS, STATUS, SELECTOR, TEXT) | PAGE_LIST may 'file-search'
+KNOWN ISSUES [v2.8]:
+- Hindi nababasa ng browser ang created date; lastModified ang gamit. Ang folder ay may petsa ng pinakabagong file sa loob.
+- Ang manual path na tina-type ay hindi nagagamit ng browser para magsulat; ang Choose folder ang tunay na destination. Sinusuri lang kung tugma ang dulo ng path.
+- Ang Send ay kopya sa mismong destination folder (walang subfolder structure).
+- Unang test sa tunay na Chrome/Edge ng user; ang automated test ay gumamit ng gawa-gawang folder (OPFS).
+
+[v2.9] SEND LOG: <Saving path>\logs\send-log.txt, dagdag lang sa dulo (UTF-8, CRLF). Linya: [yyyy-mm-dd hh:mm:ss] | machine | status | file | galing | destination. Kasama ang SENT, REPLACED, EXISTS, FAILED; ang hindi naproseso (PENDING, kapag Stop) ay hindi nilalagay. Kapag walang Saving path o permission, tuloy pa rin ang pagpapadala at may mensaheng hindi na-log.
+[v2.9] ALAALA NG MANUAL DESTINATION: path text sa localStorage 'bmww.fileSearch' (manualPath); folder handle sa IndexedDB key 'fileSearchManualFolder'. Kailangang payagan ulit ang folder (Allow) sa unang Send pagkabukas ng browser.
+[v2.9] FUNCTIONS: fileSender.countExisting, sendItems(items, dest, control, overwrite, onItem) | sendLog.appendLog(rootHandle, machine, items, destination), getLogLocation | file-search.js: rememberManual, restoreManual, getDestinationLabel, prepareLogHandle, writeSendLog
+[v2.9] KNOWN ISSUE: ang log ay nasa Saving path ng PC na iyon (hindi sa Server). Ang Cancel sa tanong ay laktawan lang ang kapangalan, hindi ihihinto ang pagpapadala ng iba.
+
+[v3.0] PREVIEW: may Preview button kada file sa Result (hindi sa folder). Bubukas ang dialog; basa lang ang file.
+  - CSV: table ng unang 200 row at 40 column (CONFIG.FILE_SEARCH.PREVIEW.MAX_ROWS / MAX_COLUMNS)
+  - TEXT (txt, log, json, xml, ini, cfg, md, bat, js, html, css): unang 256 KB (MAX_BYTES)
+  - LARAWAN (png, jpg, gif, bmp, webp, hanggang 20 MB) at PDF (hanggang 30 MB): ipinapakita nang buo
+  - Iba pang uri (hal. .xlsx, .dat, .zip): "Walang preview para sa ganitong uri"; may NUL byte ang text: "hindi text file"
+  FUNCTIONS: file-search.js: getExtension, getPreviewKind, resetPreviewBody, showPreviewMessage, setPreviewMeta, readPreviewText, buildCsvTable, openPreview, closePreview
+  KNOWN ISSUE: ang unang 256 KB lang ng malaking CSV ang nababasa; ang putol na huling row ay hindi ipinapakita. Ang PDF preview ay depende sa PDF viewer ng Chrome/Edge.
+
+[v3.1] TOOLS/FILE-WATCHER (hiwalay sa website; PowerShell sa Windows): watch-new-files.ps1, watcher-config.txt, install-watcher.bat/.ps1, uninstall-watcher.bat/.ps1, run-watcher-visible.bat, README-WATCHER.txt. Basahin ang README-WATCHER.txt.
+  KNOWN ISSUE: hindi pa nasubukan sa Windows. Kailangan pa ring pindutin ang Allow sa folder pagkabukas ng website.
