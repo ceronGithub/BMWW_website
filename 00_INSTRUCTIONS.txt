@@ -1,10 +1,16 @@
-INSTRUCTIONS v2.9 (Master Repeatability: file list sa gilid ng chart)
-1. I-unzip ang BMWW_website_v2.9.zip. Huwag galawin ang original mong folder.
-2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click).
-3. Settings: piliin ang Data source 1 (folder ng CSV). Master > Range Master analysis: pumili ng Start/End date > Run Range Master.
-4. TEST STEPS:
-   - DAPAT makita: sa gilid (desktop) o sa ilalim (mobile) ng chart ang panel na "Files"; lahat ng file ay naka-check.
-   - DAPAT makita: i-uncheck ang isang file -> nawawala ang mga linya nito sa chart; ang "Napili: n / total" ay bumababa.
-   - DAPAT makita: i-check ulit -> bumabalik ang linya sa dating kulay.
-   - DAPAT makita: kapag lahat naka-uncheck, MASTER (makapal na linya) lang ang natitira.
-   - DAPAT HINDI makita: legend ng mga petsa sa ilalim ng chart; error sa console.
+INSTRUCTIONS v4 (Overall design: itim-at-puti, modern, simple, elegant, may animation at effects)
+1. I-unzip ang BMWW_website_v4.zip sa BAGONG folder. Huwag galawin ang original mong folder. Kailangang kumpleto ang folder (may css/theme.css at js/core/effects.js).
+2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click), tapos pindutin ang Ctrl+F5.
+3. TEST STEPS:
+   - DAPAT makita: itim-at-puting design; ang sidebar ay may itim na indicator sa active na link.
+   - DAPAT makita: pindutin ang ibang link sa sidebar -> DUMUDULAS ang itim na indicator papunta sa link.
+   - DAPAT makita: sa bawat page, isa-isang lumalabas (fade at pataas) ang title at mga card.
+   - DAPAT makita: i-hover ang card -> bahagyang umaangat, lumalakas ang shadow, at may malambot na liwanag na sumusunod sa cursor.
+   - DAPAT makita: pindutin ang anumang button -> may ripple at bahagyang lumiliit; ang primary button ay itim na.
+   - DAPAT makita: Dashboard: orasan, kalendaryo at Events gumagana pa rin; ang napiling petsa ay itim.
+   - DAPAT makita: mobile (paliitin ang browser sa mas mababa sa 768px): hamburger menu, slide-in na sidebar na may blur na overlay.
+   - DAPAT makita: Master chart ay buo pa rin ang kulay (green/yellow/red at linya ng chart).
+   - Dark mode: palitan ang theme ng Windows/browser sa Dark -> itim, charcoal at puti.
+   - Reduced motion: kapag naka-on ang "Show animations" off sa Windows, walang galaw ang page.
+   - DAPAT HINDI makita: error sa console; kumikislap o nawawalang text; nawawalang kulay sa Master chart.
+   - Hindi pa ito nakikita ng gumawa sa totoong Chrome/Edge (walang browser sa kanya); ang unang visual test ay sa device mo.

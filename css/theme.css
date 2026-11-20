@@ -1,0 +1,138 @@
+/*
+ * FILE    : css/theme.css
+ * PURPOSE : Overall design: modern, simple, elegant (black and white), may animation at effects. Pinapalitan ang mga variable ng base.css; naka-load sa huli.
+ * DEPENDS : css/base.css, css/layout.css, css/components.css, js/core/effects.js (spotlight, ripple, sliding indicator)
+ * VERSION : v4 | 2026-11-20 | bagong file
+ */
+:root {
+  --color-primary: #0a0a0a;
+  --color-primary-dark: #262626;
+  --color-primary-soft: #f4f4f5;
+  --color-on-primary: #ffffff;
+  --color-cta: #0a0a0a;
+  --color-cta-dark: #262626;
+  --color-on-cta: #ffffff;
+  --color-focus: #0a0a0a;
+  --color-bg: #f7f7f8;
+  --color-surface: #ffffff;
+  --color-text: #0a0a0a;
+  --color-muted: #52525b;
+  --color-border: #e4e4e7;
+  --color-overlay: rgba(10, 10, 10, 0.35);
+  --glow: rgba(10, 10, 10, 0.05);
+  --spot: rgba(10, 10, 10, 0.05);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 6px 20px rgba(10, 10, 10, 0.05);
+  --shadow-hover: 0 2px 4px rgba(10, 10, 10, 0.05), 0 14px 34px rgba(10, 10, 10, 0.1);
+  --ring: 0 0 0 4px rgba(10, 10, 10, 0.1);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition: 260ms var(--ease);
+  --font-main: Inter, "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #fafafa;
+    --color-primary-dark: #d4d4d8;
+    --color-primary-soft: #18181b;
+    --color-on-primary: #0a0a0a;
+    --color-cta: #fafafa;
+    --color-cta-dark: #d4d4d8;
+    --color-on-cta: #0a0a0a;
+    --color-focus: #fafafa;
+    --color-bg: #09090b;
+    --color-surface: #101012;
+    --color-text: #fafafa;
+    --color-muted: #a1a1aa;
+    --color-border: #27272a;
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    --glow: rgba(255, 255, 255, 0.06);
+    --spot: rgba(255, 255, 255, 0.07);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+    --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 14px 34px rgba(0, 0, 0, 0.55);
+    --ring: 0 0 0 4px rgba(250, 250, 250, 0.14);
+  }
+}
+
+/* ---- BASE ---- */
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  background: radial-gradient(60rem 28rem at 100% -8%, var(--glow), transparent 70%), var(--color-bg);
+  background-attachment: fixed;
+  letter-spacing: -0.005em;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+::selection { color: var(--color-on-primary); background: var(--color-primary); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+/* ---- PAGE TITLE ---- */
+.page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; }
+.page-title::after { content: ""; display: block; width: 2.5rem; height: 3px; margin-top: var(--space-2); background: var(--color-primary); border-radius: 3px; transform-origin: left; animation: lineGrow 700ms var(--ease) 150ms backwards; }
+
+/* ---- SIDEBAR ---- */
+.sidebar { background: var(--color-surface); border-right: 1px solid var(--color-border); }
+.sidebar-brand { display: flex; align-items: center; gap: var(--space-3); font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; }
+.sidebar-brand::before { content: ""; width: 0.875rem; height: 0.875rem; background: var(--color-primary); border-radius: 4px; transition: transform 500ms var(--ease); }
+.sidebar-brand:hover::before { transform: rotate(90deg) scale(1.1); }
+.sidebar-list { position: relative; }
+.sidebar-link { position: relative; z-index: 1; border-radius: var(--radius-sm); transition: color var(--transition), background var(--transition), transform var(--transition); }
+.sidebar-link:hover { transform: translateX(3px); }
+.sidebar-link.is-active:hover { transform: none; }
+.sidebar-indicator { position: absolute; top: 0; left: 0; width: 100%; background: var(--color-primary); border-radius: var(--radius-sm); box-shadow: var(--shadow); transition: transform 380ms var(--ease), height 380ms var(--ease); pointer-events: none; z-index: 0; }
+.sidebar-list.has-indicator .sidebar-link.is-active { color: var(--color-on-primary); background: transparent; }
+.overlay { backdrop-filter: blur(4px); }
+.topbar { background: var(--color-surface); background: color-mix(in srgb, var(--color-surface) 82%, transparent); backdrop-filter: blur(12px); }
+
+/* ---- CARDS ---- */
+body .card { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition); }
+body .page-dashboard .card { border-top: 1px solid var(--color-border); }
+body .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); border-color: var(--color-muted); }
+.card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), var(--spot), transparent 65%); opacity: 0; transition: opacity var(--transition); pointer-events: none; }
+.card:hover::after { opacity: 1; }
+.card-value { letter-spacing: -0.02em; }
+
+/* ---- BUTTONS ---- */
+.btn { position: relative; overflow: hidden; border-radius: var(--radius-sm); transition: background var(--transition), box-shadow var(--transition), transform var(--transition), border-color var(--transition); }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); box-shadow: var(--shadow-hover); }
+.btn-secondary:hover:not(:disabled) { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: 0.22; transform: scale(0); animation: ripple 620ms ease-out forwards; pointer-events: none; }
+
+/* ---- FORMS ---- */
+.form-input { border-radius: var(--radius-sm); }
+.form-input:focus { border-color: var(--color-primary); box-shadow: var(--ring); }
+.radio-row input, .file-checkbox { accent-color: var(--color-primary); }
+
+/* ---- DASHBOARD: ORAS, KALENDARYO, EVENTS ---- */
+.page-dashboard .clock-time { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.04em; }
+.page-dashboard .calendar-day { border-radius: var(--radius-sm); transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition); }
+.page-dashboard .calendar-day:hover { transform: translateY(-1px); }
+.page-dashboard .calendar-day.is-selected { box-shadow: var(--shadow); }
+.page-dashboard .calendar-day.has-event::after { animation: pop 420ms var(--ease) backwards; }
+.page-dashboard .event-item { transition: background var(--transition), border-color var(--transition); animation: riseIn 360ms var(--ease) backwards; }
+.page-dashboard .event-item:hover { background: var(--color-primary-soft); border-color: var(--color-muted); }
+.page-dashboard .event-time { color: var(--color-text); }
+.page-dashboard .event-form:not([hidden]) { animation: riseIn 340ms var(--ease) backwards; }
+.status:not(:empty) { animation: fadeIn 300ms var(--ease) backwards; }
+
+/* ---- ENTRANCE: bawat page at card ay isa-isang lumalabas (ang wrapper ng grid ay hindi na-a-animate, ang mga card sa loob ang oo) ---- */
+.page > :not(.card-grid):not(.dash-events), .page .card-grid > *, .page .dash-events > * { animation: riseIn 560ms var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+.page > :nth-child(1), .page .card-grid > :nth-child(1) { --i: 0; }
+.page > :nth-child(2), .page .card-grid > :nth-child(2) { --i: 1; }
+.page > :nth-child(3), .page .card-grid > :nth-child(3) { --i: 2; }
+.page > :nth-child(4), .page .card-grid > :nth-child(4) { --i: 3; }
+.page > :nth-child(5) { --i: 4; }
+.page > :nth-child(6) { --i: 5; }
+.page > :nth-child(n+7) { --i: 6; }
+.page .dash-events > :nth-child(1) { --i: 4; }
+.page .dash-events > :nth-child(2) { --i: 5; }
+.page .dash-events > :nth-child(3) { --i: 6; }
+
+@keyframes riseIn { from { opacity: 0; transform: translateY(14px); } }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes lineGrow { from { transform: scaleX(0); } }
+@keyframes pop { from { opacity: 0; transform: scale(0); } }
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+/* Ang prefers-reduced-motion (base.css) ay pinapatay na ang lahat ng animation at transition. */

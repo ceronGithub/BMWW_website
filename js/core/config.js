@@ -3,6 +3,7 @@
  * PURPOSE : Lahat ng constants, selectors at text
  * DEPENDS : wala
  * VERSION : v1 | 2026-11-19 | unang bersyon
+ * VERSION : v3 | 2026-11-20 | EVENTS (constants ng Dashboard events), SELECTOR.events, TEXT.events
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
@@ -85,6 +86,27 @@
     PATH_SEPARATOR: '\\',
     FOLDER_PATHS_FIELD: 'folderPaths',
     ROW_INPUT_CLASS: { wrap: 'path-full', input: 'form-input path-full-input', error: 'is-error' },
+    // Dashboard events: petsa 'YYYY-MM-DD', oras 'HH:MM' (opsyonal). Sine-save sa localStorage at sa <BMWW>\settings\events.json.
+    EVENTS: {
+      STORAGE_KEY: 'bmww.events',
+      FILE_NAME: 'events.json',
+      FILE_VERSION: 1,
+      ID_PREFIX: 'ev-',
+      LOCALE: 'en-PH',
+      WEEK_START: 0,
+      CELL_COUNT: 42,
+      CLOCK_MS: 1000,
+      TITLE_MAX: 60,
+      NOTE_MAX: 300,
+      ID_MAX: 64,
+      MAX_EVENTS: 500,
+      DATE_PATTERN: /^\d{4}-\d{2}-\d{2}$/,
+      TIME_PATTERN: /^([01]\d|2[0-3]):[0-5]\d$/,
+      ATTR: { date: 'data-date', id: 'data-id', action: 'data-action' },
+      ACTION: { edit: 'edit', remove: 'delete' },
+      CLASS: { today: 'is-today', selected: 'is-selected', hasEvent: 'has-event', outside: 'is-outside', error: 'is-error', success: 'is-success' },
+      FILE_STATE: { ok: 'ok', noFolder: 'noFolder', noPermission: 'noPermission', unsupported: 'unsupported', error: 'error' }
+    },
     LOT: {
       PAGE: 'lot-tracking',
       SOURCE_KEYS: ['source1', 'source2', 'source3'],
@@ -128,6 +150,16 @@
     SELECTOR: {
       content: '#content', sidebar: '#sidebar', overlay: '#overlay', menuButton: '#menu-button', navLink: '.sidebar-link',
       dashboard: { machine: '#dash-machine', mode: '#dash-mode', root: '#dash-root', source: '#dash-source', saved: '#dash-saved' },
+      eventDay: '[data-date]',
+      eventAction: '[data-action]',
+      events: {
+        clockTime: '#dash-clock-time', clockDate: '#dash-clock-date',
+        calPrev: '#cal-prev', calNext: '#cal-next', calToday: '#cal-today', calTitle: '#cal-title', calWeekdays: '#cal-weekdays', calGrid: '#cal-grid',
+        selectedLabel: '#ev-selected-label', list: '#ev-list', addButton: '#ev-add',
+        form: '#ev-form', formTitle: '#ev-form-title', titleInput: '#ev-title', dateInput: '#ev-date', timeInput: '#ev-time', noteInput: '#ev-note',
+        saveButton: '#ev-save', cancelButton: '#ev-cancel', formStatus: '#ev-form-status',
+        message: '#ev-message', storageNote: '#ev-status', grantButton: '#ev-grant'
+      },
       settings: {
         modeRadio: 'input[name="machine-mode"]', nameInput: '#machine-name', note: '#machine-note',
         pathList: '#path-list',
@@ -141,6 +173,22 @@
       }
     },
     TEXT: {
+      events: {
+        addButton: '+ Add event', editButton: 'Edit', deleteButton: 'Delete',
+        prevMonth: 'Nakaraang buwan', nextMonth: 'Susunod na buwan',
+        selectedPrefix: 'Events sa ', noEvents: 'Walang event sa petsang ito.', allDay: 'Buong araw', eventCount: ' event',
+        formAdd: 'Bagong event', formEdit: 'I-edit ang event', editAria: 'I-edit ang ', deleteAria: 'Burahin ang ',
+        confirmDelete: 'Burahin ang event na ito?',
+        titleRequired: 'Kailangan ng title.', dateInvalid: 'Maglagay ng valid na petsa.', timeInvalid: 'Hindi tama ang oras.',
+        tooMany: 'Puno na ang listahan ng event.', saveError: 'Hindi na-save ang event. Subukan ulit.', loadError: 'Hindi mabuksan ang events.',
+        saved: 'Na-save ang event.', deleted: 'Nabura ang event.',
+        grantButton: 'Payagan ang folder',
+        stateOk: 'Naka-save sa browser na ito at sa events.json sa BMWW folder.',
+        stateNoFolder: 'Naka-save lang sa browser na ito. Piliin ang Saving path (BMWW) sa Settings para magkaroon ng file.',
+        stateNoPermission: 'Naka-save lang sa browser na ito. Pindutin ang Payagan ang folder para ma-save din sa BMWW folder.',
+        stateUnsupported: 'Hindi kayang pumili ng folder ng browser na ito (gamitin ang Chrome o Edge). Naka-save lang sa browser na ito.',
+        stateError: 'Hindi mabasa o masulat ang events.json. Naka-save pa rin sa browser na ito.'
+      },
       master: {
         working: 'Binabasa ang mga file...', progress: 'Binabasa: ',
         sourceNotSet: 'Hindi pa naka-set ang Data source 1. Pumunta sa Settings.',

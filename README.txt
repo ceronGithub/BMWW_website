@@ -1,4 +1,6 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v4 | 2026-11-20 | Overall design: itim-at-puti, modern, simple, elegant; animation (page/card entrance, hover, ripple, spotlight, sliding sidebar indicator). Bagong css/theme.css at js/core/effects.js; index.html lang ang binago
+v3 | 2026-11-20 | Dashboard: Date at oras (live), buwanang kalendaryo, Events (Add/Edit/Delete) na offline; naka-save sa localStorage at <BMWW>\settings\events.json
 v2.9 | 2026-11-20 | Master (Range): mas maliit na font ng file panel; legend sa ilalim ng chart para sa napiling file lang (kasama ang MASTER)
 v2.8 | 2026-11-20 | Master (Range): listahan ng file sa gilid ng chart, lahat naka-check; kapag na-uncheck ang file, nawawala ang linya nito sa chart
 v2.7 | 2026-11-20 | Master: chart mas maliit (zoom out), kulay green / yellow / red kada reading (actual vs master)
@@ -36,6 +38,13 @@ js/templates/sidebar|dashboard|settings|404.template.js | [v2] kopya ng HTML ng 
 pages/lot-tracking.html | [v2.5] LOT Tracking page (markup; kopya ay js/templates/lot-tracking.template.js)
 css/pages/lot-tracking.css | [v2.5] style ng LOT Tracking (naka-scope sa .page-lot-tracking)
 js/pages/lot-tracking.js | [v2.5] logic ng LOT Tracking | js/templates/lot-tracking.template.js | [v2.5] kopya ng pages/lot-tracking.html bilang string
+
+js/core/events-store.js | [v3] basa/sulat ng events (localStorage at settings/events.json)
+js/pages/dashboard-events.js | [v3] orasan, kalendaryo, listahan at form ng events ng Dashboard (nagre-register sa window.BMWW.dashboardEvents)
+css/pages/dashboard-events.css | [v3] style ng seksyon (naka-scope sa .page-dashboard)
+
+css/theme.css | [v4] buong design: pinapalitan ang mga variable ng base.css (kulay, radius, shadow, font), animation at effects; naka-load sa huli sa index.html
+js/core/effects.js | [v4] spotlight sa card, ripple sa button, sliding indicator ng sidebar (window.BMWW walang bagong export)
 
 B. FUNCTIONS (File | Input->Output | Ginagawa | Tinatawag ng)
 loadSidebar()          | app.js | ->Promise | [v2] kinukuha ang template 'sidebar' sa registry (walang fetch) | initApp
@@ -173,6 +182,43 @@ endLote() / startLote(operator) | lot-tracking.js | ->Promise | [v2.5] tapusin /
 handleBarcode() / handleOperator() | lot-tracking.js | - | [v2.5] Enter sa Barcode (parehong barcode = END) / Operator (2-30 chars) | keydown
 onNewLote() / isEnterKey(event) / init() | lot-tracking.js | - | [v2.5] NEW LOTE button; Enter key lang; init ng page | click, keydown, router
 
+[v3] events-store.js (window.BMWW.eventsStore):
+isValidDateText(value)  | events-store.js | string->bool | tama ba ang YYYY-MM-DD (totoong petsa) | normalizeEvent, dashboard-events
+isValidTimeText(value)  | events-store.js | string->bool | HH:MM o walang oras | normalizeEvent, dashboard-events
+normalizeEvent(raw)     | events-store.js | object->object|null | linis at validate ng isang event (title/note sanitize, id, petsa, oras) | normalizeList
+normalizeList(list)     | events-store.js | array->array | valid lang, walang dobleng id, hanggang MAX_EVENTS | readLocalEvents, readEventsFile, saveEvents
+sortEvents(list)        | events-store.js | array->array | ayos ayon sa petsa, oras, title | store, dashboard-events
+createId()              | events-store.js | ->string | bagong id ng event | dashboard-events (readForm)
+stripPending(list)      | events-store.js | array->array | tanggal ang pending mark bago i-save sa file | writeEventsFile, saveEvents
+readLocalEvents()       | events-store.js | ->array | basa ng localStorage 'bmww.events' (try/catch) | loadEvents, dashboard-events (init)
+writeLocalEvents(list)  | events-store.js | array | sulat sa localStorage (try/catch) | loadEvents, saveEvents
+readEventsFile(handle)  | events-store.js | handle->Promise<array|null> | basa ng settings/events.json; null kung wala pa; error kung sira | loadEvents
+writeEventsFile(h,list) | events-store.js | handle,array->Promise | sulat ng settings/events.json {version,savedAt,events} | loadEvents, saveEvents
+findRootHandle(ask)     | events-store.js | bool->Promise<{handle,state}> | hawak ng BMWW folder at permission; state: ok/noFolder/noPermission/unsupported | loadEvents
+mergeWithPending(f,l)   | events-store.js | array,array->array | file ang pangunahin; isinasama ang pending na nai-save habang walang file | loadEvents
+loadEvents(ask)         | events-store.js | bool->Promise<{events,fileState}> | file muna kung mabubuksan, kung hindi ay lokal; hindi nagtatapon ng error | dashboard-events (init, handleGrant)
+saveEvents(list)        | events-store.js | array->Promise<{events,fileState}> | sulat sa file (kung ok) at localStorage; pending kapag hindi naisulat sa file | dashboard-events (persist)
+[v3] dashboard-events.js (window.BMWW.dashboardEvents):
+pad / toDateKey / fromDateKey / formatLongDate | dashboard-events.js | helper ng petsa (oras ng PC, hindi UTC)
+getElements()           | dashboard-events.js | ->object|null | lahat ng elemento ayon sa CONFIG.SELECTOR.events | init
+countByDate(list)       | dashboard-events.js | array->Map | bilang ng event kada petsa | renderCalendar
+setMessage / setFormStatus | dashboard-events.js | string | mensahe ng resulta / error ng form (textContent) | handlers
+stopClock / updateClock / startClock | dashboard-events.js | - | live na oras at petsa; humihinto kapag wala na ang pahina; nire-render ang kalendaryo kapag nagpalit ang araw | init
+renderWeekdays / renderCalendar | dashboard-events.js | - | pangalan ng araw at 42 na araw ng buwan (marka: today, selected, has-event, outside) | init, renderAll
+changeMonth(step) / selectDate(key) / handleToday() | dashboard-events.js | - | lipat ng buwan / pili ng petsa / balik sa ngayon | click handlers
+createActionButton / createEventItem / renderDayList | dashboard-events.js | - | listahan ng events ng napiling petsa (textContent lang) | renderAll
+renderStorageNote() / renderAll() | dashboard-events.js | - | tala kung saan naka-save at button na Payagan ang folder / buong render | init, handlers
+openForm(item) / closeForm() / readForm() | dashboard-events.js | - | form ng Add/Edit, validation | click, submit
+persist(list) / handleSubmit / handleListClick / handleGrant / bindEvents / init | dashboard-events.js | - | save, Edit/Delete, permission ng folder, listeners, simula (tinatawag ng dashboard.js) | dashboard.js
+
+[v4] effects.js:
+isReducedMotion()       | effects.js | ->bool | tinitingnan ang CONFIG.REDUCED_MOTION_QUERY | handlePointerMove, handlePointerDown
+handlePointerMove(e)    | effects.js | event | itinatakda ang --mx / --my ng card para sa spotlight (requestAnimationFrame) | pointermove sa document
+handlePointerDown(e)    | effects.js | event | gumagawa ng .ripple sa pinindot na .btn; tinatanggal pagkatapos ng animation | pointerdown sa document
+updateIndicator()       | effects.js | - | inilalagay ang .sidebar-indicator sa .is-active na link (translateY at height) | scheduleIndicator
+scheduleIndicator()     | effects.js | - | pinagsasama ang sunud-sunod na update sa isang frame | MutationObserver ng sidebar, resize
+initEffects()           | effects.js | - | nilalagay ang mga listener at observer | effects.js (sarili)
+
 C. VARIABLES / CONSTANTS
 CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
@@ -190,6 +236,16 @@ INPUT (settings.js, const) | [v2.4] shortcut sa CONFIG.ROW_INPUT_CLASS (class ng
 CONFIG.LOT (config.js, v2.5): PAGE, SOURCE_KEYS, SOURCE_LABEL, REFRESH_MS (3000), START_TOLERANCE_MS (1000), MAX_DEPTH (5), MAX_ROWS (30), BARCODE_MAX, OPERATOR_MIN, OPERATOR_MAX, IGNORED_PREFIX, NAME_PATTERN, TYPE, PATH_COLUMN, EMPTY_CELL, SELECTOR, TEXT; PAGE_LIST ay may 'lot-tracking'
 lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nasa loob ng IIFE) | [v2.5] kasalukuyang lote, barcode na hinihintay ang operator, mga source handle, timer, guard
 
+[v3] CONFIG.EVENTS (config.js): STORAGE_KEY 'bmww.events', FILE_NAME 'events.json', FILE_VERSION, ID_PREFIX, LOCALE 'en-PH', WEEK_START (0=Linggo), CELL_COUNT 42, CLOCK_MS 1000, TITLE_MAX 60, NOTE_MAX 300, ID_MAX, MAX_EVENTS 500, DATE_PATTERN, TIME_PATTERN, ATTR, ACTION, CLASS, FILE_STATE{ok,noFolder,noPermission,unsupported,error}
+[v3] CONFIG.SELECTOR.events (lahat ng id ng seksyon), CONFIG.SELECTOR.eventDay / eventAction, CONFIG.TEXT.events (lahat ng mensahe)
+[v3] elements, state (let), clockTimerId (let) sa dashboard-events.js, nasa loob ng IIFE | mga elemento ng seksyon; state {eventList, fileState, todayKey, selectedDate, viewYear, viewMonth, editingId, isBusy}; timer ng orasan
+[v3] currentFileState, currentRootHandle (let) sa events-store.js, nasa loob ng IIFE | huling state ng file at hawak ng BMWW folder
+[v3] Event: {id, title, date 'YYYY-MM-DD', time 'HH:MM' o '', note}; pending (true) ay sa localStorage lang
+
+[v4] EFFECTS (effects.js, const frozen, nasa loob ng IIFE) | CARD, SPOT_X/SPOT_Y, BUTTON, RIPPLE_CLASS, SIDEBAR_LIST, LINK, ACTIVE_CLASS, INDICATOR_CLASS, READY_CLASS. [Paalala: nasa effects.js at hindi sa config.js para hindi galawin ang config.js; puwedeng ilipat sa susunod.]
+[v4] frameId, indicatorFrameId (let) sa effects.js | id ng requestAnimationFrame
+[v4] CSS VARIABLES sa css/theme.css: --glow, --spot (liwanag ng background at spotlight), --ease; pinalitan ang --color-*, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --font-main. Dark mode: itim, charcoal at puti.
+
 D. EVENTS
 click       | #menu-button, #overlay, .sidebar-link | app.js | buksan/isara ang menu
 hashchange  | window | app.js | loadPage
@@ -205,12 +261,27 @@ focus       | #lot-barcode | lot-tracking.js | [v2.5] select ng laman para mapal
 click       | #lot-new | lot-tracking.js | [v2.5] onNewLote
 setInterval | window | lot-tracking.js | [v2.5] refreshResults kada 3 segundo habang ONGOING
 
+click       | #cal-prev, #cal-next, #cal-today, #ev-add, #ev-cancel, #ev-grant | dashboard-events.js | lipat ng buwan, ngayon, bagong event, cancel, payagan ang folder
+click       | #cal-grid (delegation sa [data-date]) | dashboard-events.js | handleGridClick -> selectDate
+click       | #ev-list (delegation sa [data-action]) | dashboard-events.js | handleListClick (Edit / Delete may confirm)
+submit      | #ev-form | dashboard-events.js | handleSubmit
+setInterval | window | dashboard-events.js | updateClock kada 1 segundo; humihinto kapag wala na ang #dash-clock-time sa pahina
+
+pointermove | document | effects.js | spotlight ng card
+pointerdown | document | effects.js | ripple ng button
+resize      | window | effects.js | scheduleIndicator
+MutationObserver | #sidebar (childList, subtree, class) | effects.js | scheduleIndicator kapag nagbago ang active link
+
 E. STORAGE / API
 localStorage "bmww.settings" | settings.js, dashboard.js | {machineMode, machineName, [BINURA v2.4: machineNameLocked], [v2.4] folderPaths{server,root,source1,source2,source3}, rootFolderName, sourceFolderName (para sa Dashboard), folderNames{server,root,source1,source2,source3}, savedAt} | cache
 IndexedDB "bmww-db" / store "handles" (keys rootFolder, serverFolder, sourceFolder, sourceFolder2, sourceFolder3) | storage.js | folder handles | iwas pili ulit
 File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing tala (C:\desktop\BMWW\settings)
 Walang backend/API sa v1 (api/ ay walang laman).
 [v2.5] LOT Tracking: binabasa ang machineName mula sa localStorage "bmww.settings" at ang handle ng source1..3 mula sa IndexedDB (key sa CONFIG.HANDLE_KEY). Walang sinusulat; basa lang sa mga folder.
+
+[v3] localStorage "bmww.events" | events-store.js | array ng event (may pending mark) | cache at pang-offline
+[v3] File: <BMWW>\settings\events.json | events-store.js | {version, savedAt, events[]} | pangunahing tala; ang file ang nananaig kapag nabasa; ang pending na event ay isinasama pabalik sa file kapag nabuksan ulit
+[v3] Gumagamit ng parehong BMWW folder handle (IndexedDB key rootFolder) at SETTINGS_SUBFOLDER ng Settings. Walang network/API.
 
 F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --level-red, --level-yellow-text, --master-warning, --chart-1..8] (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
@@ -224,6 +295,10 @@ router.js -> registry.js (template) -> ensureScript -> js/pages/*.js (nagre-regi
 master.js -> config, storage, csv-reader, master-analysis, chart-draw | master-analysis.js -> csv-reader | csv-reader.js, chart-draw.js -> config (v2.6; ayos sa index.html: storage, csv-reader, master-analysis, chart-draw, router)
 settings.js -> config, security, storage | dashboard.js -> config, storage (lahat sa window.BMWW)
 
+[v3] events-store.js -> config, security, storage | dashboard-events.js -> config, security, events-store | dashboard.js -> dashboardEvents.init | ayos sa index.html: ... storage.js, events-store.js ... (dashboard-events.js ay nilo-load ng router mula sa template)
+
+[v4] index.html -> css/theme.css (huling CSS) at js/core/effects.js (pagkatapos ng router.js, bago ang templates at app.js) | effects.js -> config (REDUCED_MOTION_QUERY, SELECTOR.sidebar)
+
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
@@ -236,6 +311,9 @@ PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (ty
 PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), folder handle ng Data source 1-3 | OUTPUT: Start/End Date at Time, badge, talaan ng bagong file/folder (walang sine-save)
   HTML ID: lot-badge, lot-machine, lot-barcode, lot-operator, lot-start-date, lot-start-time, lot-end-date, lot-end-time, lot-new, lot-status, lot-result-note, lot-result-body (nasa CONFIG.LOT.SELECTOR)
   DEPENDS: sanitizeInput, readLocalSettings, isFolderAccessSupported, loadHandle, hasPermission
+
+PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings\events.json, oras ng PC, form (title, petsa, oras, note) | OUTPUT: orasan, kalendaryo, listahan ng events, sine-save sa localStorage at events.json
+  HTML ID: dash-clock-time, dash-clock-date, cal-prev, cal-next, cal-today, cal-title, cal-weekdays, cal-grid, ev-selected-label, ev-list, ev-add, ev-form, ev-form-title, ev-title, ev-date, ev-time, ev-note, ev-save, ev-cancel, ev-form-status, ev-message, ev-status, ev-grant | DEPENDS: eventsStore.loadEvents, saveEvents, sortEvents, createId, isValidDateText, isValidTimeText, security.sanitizeInput
 
 === KNOWN ISSUES / TODO ===
 2026-11-20 | [v2.8] Hindi pa nasubukan sa tunay na browser at tunay na CSV; jsdom test lang (3 gawa-gawang file: uncheck/re-check, kulay, Run ulit).
@@ -274,3 +352,13 @@ PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), fo
 2026-11-20 | LOT Tracking: ang hanap kada 3 segundo ay maaaring mabigat sa folder na napakaraming file; palitan ang CONFIG.LOT.REFRESH_MS o MAX_DEPTH.
 2026-11-20 | LOT Tracking: ang lote ay nasa memorya lang (nawawala kapag nag-refresh ang browser); wala pang monitoring file, Remarks, SERVER/SEND PC, at LEAD PC view.
 2026-11-20 | LOT Tracking: ginagamit ang Data source 1-3 ng Settings (ang Excel ay may File Path 1 at 2 lang).
+2026-11-20 | Events: oras ng PC ang gamit; walang online time sync, kaya itama ang oras ng PC paminsan-minsan.
+2026-11-20 | Events: kapag sabay mag-save ang dalawang PC sa iisang events.json, ang huling nag-save ang mananalo (walang real-time sync).
+2026-11-20 | Events: ang pagbura habang walang permission sa folder ay hindi naitatala sa file; babalik ang event mula sa file pagkatapos pumayag ang folder.
+2026-11-20 | Events: kailangang pindutin ang Payagan ang folder sa bawat bagong pagbukas ng browser kung humihingi ulit ng permission ang Chrome/Edge.
+2026-11-20 | Events: wala pang paulit-ulit na event (kada linggo/buwan) at wala pang reminder/abiso.
+2026-11-20 | Events: hindi pa nasusubukan sa totoong Chrome/Edge ng gumawa (jsdom at fake folder handle lang); unang test ay sa device mo.
+2026-11-20 | Design: itim-at-puti ang theme; ang green/yellow/red sa Master at ang kulay ng linya ng chart ay hindi pinalitan dahil may ibig sabihin.
+2026-11-20 | Design: hindi pa nakikita sa totoong Chrome/Edge ng gumawa (jsdom lang); ang unang visual test ay sa device mo.
+2026-11-20 | Design: color-mix() (topbar blur sa mobile) ay nangangailangan ng bagong Chrome/Edge (111 pataas); may fallback na solid na kulay.
+2026-11-20 | Design: ang constants ng effects.js ay nasa effects.js, hindi sa config.js (Rule 7); puwedeng ilipat kapag pinayagan ang pag-edit ng config.js.

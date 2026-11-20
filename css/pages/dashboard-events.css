@@ -1,0 +1,43 @@
+/*
+ * FILE    : css/pages/dashboard-events.css
+ * PURPOSE : Style ng Date at oras, kalendaryo at Events ng Dashboard (naka-scope sa .page-dashboard)
+ * DEPENDS : css/base.css, css/components.css
+ * VERSION : v3 | 2026-11-20 | bagong file
+ */
+.page-dashboard .dash-events { display: grid; gap: var(--space-4); grid-template-columns: 1fr; margin-top: var(--space-4); }
+.page-dashboard .clock-time { font-size: 2rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.page-dashboard .clock-date { color: var(--color-muted); }
+.page-dashboard .calendar-head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.page-dashboard .calendar-title { flex: 1; min-width: 0; font-size: 1.0625rem; font-weight: 700; text-align: center; }
+.page-dashboard .calendar-nav { min-width: var(--touch-size); padding: 0 var(--space-3); font-size: 1.25rem; line-height: 1; }
+.page-dashboard .calendar-weekdays,
+.page-dashboard .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); }
+.page-dashboard .calendar-weekday { padding: var(--space-1) 0; font-size: var(--font-size-label); font-weight: 600; text-align: center; color: var(--color-muted); }
+.page-dashboard .calendar-day { position: relative; min-height: var(--touch-size); padding: 0; font: inherit; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; transition: background var(--transition), border-color var(--transition); }
+.page-dashboard .calendar-day:hover { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.page-dashboard .calendar-day.is-outside { color: var(--color-muted); background: var(--color-bg); }
+.page-dashboard .calendar-day.is-today { border-color: var(--color-primary); border-width: 2px; font-weight: 700; }
+.page-dashboard .calendar-day.is-selected { color: var(--color-on-primary); background: var(--color-primary); border-color: var(--color-primary); }
+.page-dashboard .calendar-day.has-event::after { content: ""; position: absolute; bottom: 0.3rem; left: 50%; width: 0.4rem; height: 0.4rem; margin-left: -0.2rem; background: var(--color-cta); border-radius: 50%; }
+.page-dashboard .calendar-day.is-selected.has-event::after { background: var(--color-on-primary); }
+.page-dashboard .event-list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+.page-dashboard .event-item { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); align-items: start; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-dashboard .event-time { min-width: 4.5rem; font-size: var(--font-size-label); font-weight: 600; color: var(--color-primary); }
+.page-dashboard .event-title { font-weight: 600; overflow-wrap: anywhere; }
+.page-dashboard .event-body .card-note { overflow-wrap: anywhere; }
+.page-dashboard .event-actions { grid-column: 1 / -1; display: flex; gap: var(--space-2); }
+.page-dashboard .event-action { flex: 1; }
+.page-dashboard .event-empty { padding: var(--space-3) 0; list-style: none; }
+.page-dashboard .event-form { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.page-dashboard .event-form-title { margin: 0; font-size: 1rem; font-weight: 700; }
+.page-dashboard .event-form-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
+.page-dashboard .event-form-actions .btn { flex: 1; }
+@media (min-width: 1024px) {
+  .page-dashboard .dash-events { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); grid-template-areas: "clock clock" "calendar day"; }
+  .page-dashboard .dash-clock { grid-area: clock; }
+  .page-dashboard .dash-calendar { grid-area: calendar; }
+  .page-dashboard .dash-day { grid-area: day; }
+  .page-dashboard .event-item { grid-template-columns: auto 1fr auto; }
+  .page-dashboard .event-actions { grid-column: auto; }
+  .page-dashboard .event-action { flex: none; }
+}

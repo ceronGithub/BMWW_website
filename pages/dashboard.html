@@ -1,11 +1,13 @@
 <!--
   FILE    : pages/dashboard.html
   PURPOSE : Dashboard page
-  DEPENDS : css/pages/dashboard.css, js/pages/dashboard.js
+  DEPENDS : css/pages/dashboard.css, css/pages/dashboard-events.css, js/pages/dashboard.js, js/pages/dashboard-events.js
   VERSION : v1 | 2026-11-19 | unang bersyon
+  VERSION : v3 | 2026-11-20 | dagdag na Date at oras, kalendaryo at Events (css/js ng dashboard-events)
 -->
 <!-- PAGE: dashboard -->
 <link rel="stylesheet" href="css/pages/dashboard.css">
+<link rel="stylesheet" href="css/pages/dashboard-events.css">
 <section class="page page-dashboard" data-page="dashboard">
   <h1 class="page-title">Dashboard</h1>
   <div class="card-grid">
@@ -14,5 +16,45 @@
     <article class="card"><h2 class="card-title">Data source folder</h2><p id="dash-source" class="card-value"></p></article>
     <article class="card"><h2 class="card-title">Last saved</h2><p id="dash-saved" class="card-value"></p></article>
   </div>
+  <div class="dash-events">
+    <article class="card dash-clock">
+      <h2 class="card-title">Date at oras</h2>
+      <p id="dash-clock-time" class="clock-time"></p>
+      <p id="dash-clock-date" class="clock-date"></p>
+    </article>
+    <article class="card dash-calendar">
+      <div class="calendar-head">
+        <button id="cal-prev" class="btn btn-secondary calendar-nav" type="button" aria-label="Nakaraang buwan">&#8249;</button>
+        <h2 id="cal-title" class="calendar-title" aria-live="polite"></h2>
+        <button id="cal-next" class="btn btn-secondary calendar-nav" type="button" aria-label="Susunod na buwan">&#8250;</button>
+        <button id="cal-today" class="btn btn-secondary" type="button">Ngayon</button>
+      </div>
+      <div id="cal-weekdays" class="calendar-weekdays" aria-hidden="true"></div>
+      <div id="cal-grid" class="calendar-grid"></div>
+    </article>
+    <article class="card dash-day">
+      <div class="card-head">
+        <h2 id="ev-selected-label" class="card-title"></h2>
+        <button id="ev-add" class="btn btn-primary" type="button">+ Add event</button>
+      </div>
+      <ul id="ev-list" class="event-list"></ul>
+      <form id="ev-form" class="event-form" novalidate hidden>
+        <h3 id="ev-form-title" class="event-form-title"></h3>
+        <div class="form-group"><label class="form-label" for="ev-title">Title</label><input id="ev-title" class="form-input" type="text" autocomplete="off" required></div>
+        <div class="form-group"><label class="form-label" for="ev-date">Petsa</label><input id="ev-date" class="form-input" type="date" required></div>
+        <div class="form-group"><label class="form-label" for="ev-time">Oras (opsyonal)</label><input id="ev-time" class="form-input" type="time"></div>
+        <div class="form-group"><label class="form-label" for="ev-note">Note (opsyonal)</label><input id="ev-note" class="form-input" type="text" autocomplete="off"></div>
+        <div class="event-form-actions">
+          <button id="ev-save" class="btn btn-primary" type="submit">I-save</button>
+          <button id="ev-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        </div>
+        <p id="ev-form-status" class="status" role="status"></p>
+      </form>
+      <p id="ev-message" class="status" role="status"></p>
+      <p id="ev-status" class="card-note"></p>
+      <button id="ev-grant" class="btn btn-secondary" type="button" hidden>Payagan ang folder</button>
+    </article>
+  </div>
 </section>
 <script type="module" src="js/pages/dashboard.js"></script>
+<script type="module" src="js/pages/dashboard-events.js"></script>

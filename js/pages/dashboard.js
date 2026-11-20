@@ -4,6 +4,7 @@
  * DEPENDS : config.js, storage.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
+ * VERSION : v3 | 2026-11-20 | tinatawag ang dashboardEvents.init (Date at Events)
  */
 (function () {
   'use strict';
@@ -26,6 +27,7 @@
     setText('root', settings.rootFolderName || text.notSet);
     setText('source', settings.sourceFolderName || text.notSet);
     setText('saved', settings.savedAt ? new Date(settings.savedAt).toLocaleString() : text.notSet);
+    if (root.dashboardEvents) root.dashboardEvents.init();
   }
 
   root.registry.registerPage('dashboard', Object.freeze({ init }));
