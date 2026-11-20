@@ -1,4 +1,6 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v2.7 | 2026-11-20 | Master: chart mas maliit (zoom out), kulay green / yellow / red kada reading (actual vs master)
+v2.6 | 2026-11-20 | Master page: Latest Master (today, readonly) at Range Master analysis; gumagamit ng Data source 1 ng Settings; error trapping
 v2.4 | 2026-11-20 | Settings: full path ng bawat folder (type/paste, may validation); tinanggal ang lock ng machine name
 v2.5 | 2026-11-20 | LOT Tracking page (link sa sidebar, Barcode -> Operator -> bantay ng bagong file/folder sa Data source ng Settings)
 v2 | 2026-11-20 | ayos ng design (CSS lang): green CTA, focus/active states, dark mode, layout
@@ -19,6 +21,10 @@ components/sidebar.html | links ng Dashboard at Settings
 pages/dashboard.html, settings.html, 404.html | mga page (404 walang sariling css/js) [v2: pinagkukunan ng markup; kailangang i-sync sa js/templates]
 css/base.css            | variables, reset | layout.css: sidebar/responsive | components.css: card, button, form
 css/pages/dashboard.css, settings.css | style ng page (naka-scope)
+js/core/csv-reader.js     | [v2.6] pagbasa ng CSV mula sa folder handle, parse ng petsa at numero
+js/core/master-analysis.js| [v2.6] kalkulasyon ng Latest Master (R square) at Range Master (repeatability)
+js/core/chart-draw.js     | [v2.6] SVG chart (scatter, line, bar), walang library
+pages/master.html, js/pages/master.js, css/pages/master.css, js/templates/master.template.js | [v2.6] Master page
 js/core/config.js       | constants, selectors, text
 js/core/app.js          | entry point | router.js: nagloload ng page | security.js: right click, sanitize | storage.js: folder access
 js/pages/dashboard.js, settings.js | init ng bawat page (nagre-register sa registry)
@@ -45,6 +51,57 @@ registerTemplate(n,h)  | registry.js | string,string | [v2] save ng HTML templat
 getTemplate(name)      | registry.js | string->string|null | [v2] kuha ng template | loadPage, loadSidebar
 registerPage(n,api)    | registry.js | string,object | [v2] save ng page module {init} | js/pages/*.js
 getPage(name)          | registry.js | string->object|null | [v2] kuha ng page module | loadPage
+[v2.6] csv-reader.js (window.BMWW.csv):
+createError(code)      | csv-reader.js | string->Error | Error na may .code para sa friendly na mensahe | master-analysis, master.js
+parseCsv(text)         | csv-reader.js | string->array | CSV text papuntang rows (quotes, CRLF, BOM) | readCsvRows
+listCsvFiles(handle)   | csv-reader.js | ->Promise<{fileList,skippedCount}> | lahat ng .csv sa mismong folder (walang subfolder) | analyzeLatest, analyzeRange
+readCsvRows(file)      | csv-reader.js | File->Promise<array> | basa at parse; error 'fileTooLarge' kung lampas CSV_MAX_BYTES | analyzeLatest, analyzeRange
+getCell(rows, r, c)    | csv-reader.js | ->string | ligtas na kuha ng cell (0-based) | master-analysis
+countHeaders(rows)     | csv-reader.js | ->number | bilang ng hindi blangkong header sa row 2 (hanggang 300 column) | master-analysis
+toNumber(value)        | csv-reader.js | ->number|null | numero o null | master-analysis, master.js
+fixYear(year)          | csv-reader.js | number->number | 2-digit na taon ay 20xx | parseAnyDate
+parseAnyDate(value)    | csv-reader.js | ->Date|null | M/D/Y, D/M/Y (kung una>12), Y-M-D, may oras o wala | master-analysis
+padTwo(n)              | csv-reader.js | number->string | dalawang digit | formatDateTime, formatDateInput
+formatDateTime(d, ampm)| csv-reader.js | ->string | mm/dd/yyyy hh:mm (o may AM/PM) | master-analysis, master.js
+formatDateInput(d)     | csv-reader.js | ->string | yyyy-mm-dd para sa input type=date | master.js
+parseDateInput(text)   | csv-reader.js | ->Date|null | mula sa input type=date | master.js
+[v2.6] master-analysis.js (window.BMWW.masterAnalysis):
+yieldToBrowser()       | master-analysis.js | ->Promise | hayaan ang browser mag-update ng screen | analyzeLatest, analyzeRange
+startOfDay(d), isSameDay(a, b) | master-analysis.js | Date | 00:00 ng araw; pareho ba ang araw | analyzeLatest, analyzeRange
+averageOf(list)        | master-analysis.js | ->number|null | average ng numero (fallback ng Actual/Master AVG) | analyzeLatest
+readPoints(rows, r)    | master-analysis.js | ->{actualList,masterList} | 15 actual (F:T) at 15 master (DA:DO) sa isang row | analyzeLatest, analyzeRange
+readBarcodes(rows)     | master-analysis.js | ->array | 15 barcode (row 4, F:T) | analyzeLatest, analyzeRange
+computeRegression(x, y)| master-analysis.js | ->{slope,intercept,rSquared,pairCount}|null | tulad ng RSQ ng Excel; null kung kulang/pare-pareho | analyzeLatest
+classifyLatest(r2)     | master-analysis.js | ->string | PASS >=0.99, FAIL <0.97, WARNING sa pagitan | analyzeLatest
+classifyDeviation(actual, master) | master-analysis.js | ->'level-green'|'level-yellow'|'level-red'|'' | [v2.7] |actual-master| <= 1.5 green, <= 2.5 yellow, higit pa red (CONFIG.MASTER.DEVIATION) | master.js (levelOf)
+classifyRange(avgDiff) | master-analysis.js | ->string | PASS <=1, WARNING <=3, FAIL >3 | computeRepeatability
+computeRepeatability(columns, master, barcodes) | master-analysis.js | ->object | avg diff, score (100-avg diff), max diff, worst barcode, averages, kada barcode | analyzeRange
+analyzeLatest(handle, date, onProgress) | master-analysis.js | ->Promise<object> | pinakabagong file (lastModified) na may 15 headers at record sa araw na iyon; MAX_FILES lang ang sinusuri | master.js (onRunLatest)
+analyzeRange(handle, start, end, onProgress) | master-analysis.js | ->Promise<object> | lahat ng master file na ang lastModified ay nasa range; master = pinakabagong record | master.js (onRunRange)
+[v2.6] chart-draw.js (window.BMWW.chart):
+svgElement(name, attrs, text) | chart-draw.js | ->SVGElement | gawa ng SVG element (walang innerHTML) | lahat ng draw function
+buildTicks(min, max)   | chart-draw.js | ->{tickList,minimum,maximum} | maayos na tick ng axis | drawScatter, drawLines, drawBars
+formatTick(value)      | chart-draw.js | number->string | maikling numero | drawAxes, drawScatter
+createSvg(container, title) | chart-draw.js | ->SVG | bagong SVG na may pamagat | drawScatter, drawLines, drawBars
+drawAxes(svg, xScale, yScale, xTicks, yTicks, xTitle, yTitle) | chart-draw.js | - | grid, axis, label | draw functions
+getPaddedRange(values) | chart-draw.js | ->{low,high} | [v2.7] saklaw ng data na may espasyo (CHART.PAD_RATIO), zoom out | drawScatter
+drawScatter(container, options) | chart-draw.js | - | Actual vs Master, may trendline, equation at R square | master.js (renderLatest)
+drawLines(container, options)   | chart-draw.js | - | line kada petsa + MASTER (makapal) | master.js (renderRange)
+appendLegend(container, seriesList) | chart-draw.js | - | legend (master lang kapag higit 12 series) | drawLines
+drawBars(container, options)    | chart-draw.js | - | bar ng Actual AVG at Master AVG | master.js (renderLatest)
+[v2.6] master.js (page):
+levelOf(actual, master) | master.js | ->string | [v2.7] class ng kulay ng reading | renderLatest, renderRange
+makeLevelLegend()      | master.js | ->ul | [v2.7] legend ng green / yellow / red mula sa CONFIG.MASTER.DEVIATION | renderLatest, renderRange
+query(key), makeElement(tag, class, text), setStatus(statusKey, msg, kind), getErrorMessage(error), setBusy(bool) | master.js | helper ng page; getErrorMessage ay nagmamapa ng error.code o error.name (NotFoundError, NotAllowedError, SecurityError) sa friendly na mensahe
+getReadyHandle()       | master.js | ->Promise<Handle> | handle ng Data source 1 at permission (galing sa click) | onRunLatest, onRunRange
+renderSource()         | master.js | - | ipinapakita ang full path (o pangalan) ng Data source 1 | init
+clearSection(statusKey, resultKey) | master.js | - | linis ng mensahe at resulta | onRunLatest, onRunRange
+makeStatusBadge(status), makeStatList(entries), makeTable(headers, rows), formatNumber(v, digits) | master.js | gawa ng elemento ng resulta (textContent lang)
+renderLatest(result), renderRange(result) | master.js | - | ipinapakita ang status, stats, table, chart | onRunLatest, onRunRange
+onRunLatest()          | master.js | ->Promise | click ng Run Latest Master (today) | click
+onRunRange()           | master.js | ->Promise | click ng Run Range Master; sinusuri ang petsa bago magbasa | click
+init() (master)        | master.js | ->Promise | [v2.6] default na petsa, source, listener | router
+[v2.6] Ang master.js ay nasa window.BMWW.csv, .masterAnalysis, .chart.
 [v2] Ang security.js ay nasa window.BMWW.security at ang storage.js ay nasa window.BMWW.storage (pareho ang pangalan ng function).
 isEditable(target)     | security.js | Element->bool | input/textarea ba | blockContextMenu
 blockContextMenu(e)    | security.js | event | harang ng right click | contextmenu listener
@@ -112,6 +169,10 @@ CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, sou
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
   MACHINE_MODE, LEAD_PC_NAME, MACHINE_NAME_MAX, [v2.4] FULL_PATH_MAX, FULL_PATH_PATTERN, PATH_SEPARATOR, FOLDER_PATHS_FIELD, ROW_INPUT_CLASS, SELECTOR (lahat ng id/selector), TEXT (lahat ng mensahe)
 window.BMWW (config.js) | [v2] tanging global: namespace ng app (CONFIG, registry, router, security, storage)
+[v2.6] CONFIG.MASTER (SOURCE_KEY, CSV_EXTENSION, CSV_MAX_BYTES, HEADER_COUNT=15, HEADER_SCAN_COLUMNS, HEADER_ROW, BARCODE_ROW, DATA_START_ROW, DATE_COLUMN, ACTUAL_START_COLUMN, POINT_COUNT, MASTER_START_COLUMN, ACTUAL_AVG_COLUMN, MASTER_AVG_COLUMN, LATEST{PASS_MIN, FAIL_BELOW, MAX_FILES}, RANGE{PASS_MAX, WARNING_MAX, DEFAULT_DAYS, NO_PAIR_DIFFERENCE, MAX_LINES}, STATUS, STATUS_CLASS, ERROR_BY_NAME) | 0-based ang index (row 4 ng Excel = 3; column DA = 104)
+[v2.7] CONFIG.MASTER.DEVIATION (GREEN_MAX 1.5, YELLOW_MAX 2.5, ROUND_DIGITS, LEVEL{green,yellow,red}); CONFIG.CHART.PAD_RATIO (0.15); TEXT.master.levelLegendTitle / levelGreen / levelYellow / levelRed
+[v2.6] CONFIG.CHART (WIDTH, HEIGHT, PADDING, TICK_COUNT, PALETTE_SIZE, LEGEND_MAX); SELECTOR.master; TEXT.master (kasama ang TEXT.master.error)
+sourceHandle (let), isBusy (let) sa master.js, nasa loob ng IIFE | folder handle ng Data source 1; bantay para hindi dalawang beses tumakbo
 loadedStyleList, loadedScriptList (router.js, const array, nasa loob ng IIFE) | tala ng CSS/JS na na-load na
 settings (let), handleMap, rowMap (const object) sa settings.js, nasa loob ng IIFE | kasalukuyang settings, folder handles ayon sa path key, at elemento ng bawat row
 SEL, TEXT (settings.js, const) | shortcut sa CONFIG
@@ -127,6 +188,7 @@ contextmenu | document | security.js | harang maliban sa input/textarea
 keydown     | document | security.js | harang ng shortcuts
 change      | input[name=machine-mode] | settings.js | renderMachine
 click       | button ng bawat path (gawa ng JS), #save-settings | settings.js | pili/save
+click       | #latest-run, #range-run | master.js | onRunLatest, onRunRange
 input       | full path input ng bawat path (gawa ng JS) | settings.js | onFullPathInput
 [BINURA v2.2] #pick-root, #pick-source -> pinalitan ng mga button sa path list
 keydown     | #lot-barcode, #lot-operator | lot-tracking.js | [v2.5] Enter: handleBarcode / handleOperator
@@ -141,7 +203,7 @@ File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing
 Walang backend/API sa v1 (api/ ay walang laman).
 [v2.5] LOT Tracking: binabasa ang machineName mula sa localStorage "bmww.settings" at ang handle ng source1..3 mula sa IndexedDB (key sa CONFIG.HANDLE_KEY). Walang sinusulat; basa lang sa mga folder.
 
-F. CSS VARIABLES (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
+F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --level-red, --level-yellow-text, --master-warning, --chart-1..8] (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
   --space-1/2/3/4/6/8, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --sidebar-width, --content-max, --touch-size, --font-size-label, --font-main
   Dark mode: prefers-color-scheme block sa base.css, variables lang ang pinapalitan.
@@ -150,12 +212,15 @@ G. DEPENDENCY MAP (v2: classic scripts, ayos ng <script defer> sa index.html ang
 index.html -> config.js -> registry.js -> security.js -> storage.js -> router.js -> js/templates/*.js -> app.js
 app.js -> security.js, router.js, registry.js (sidebar)
 router.js -> registry.js (template) -> ensureScript -> js/pages/*.js (nagre-register sa registry)
+master.js -> config, storage, csv-reader, master-analysis, chart-draw | master-analysis.js -> csv-reader | csv-reader.js, chart-draw.js -> config (v2.6; ayos sa index.html: storage, csv-reader, master-analysis, chart-draw, router)
 settings.js -> config, security, storage | dashboard.js -> config, storage (lahat sa window.BMWW)
 
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
-PAGE: calibration, master | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
+PAGE: calibration | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
+PAGE: master [v2.6] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
+  HTML ID: master-source, latest-start, latest-end, latest-run, latest-status, latest-result, range-start, range-end, range-run, range-status, range-result | DEPENDS: storage.loadHandle, hasPermission, readLocalSettings, csv.*, masterAnalysis.*, chart.*
 PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage
   HTML ID: machine-note, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
@@ -164,6 +229,14 @@ PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), fo
   DEPENDS: sanitizeInput, readLocalSettings, isFolderAccessSupported, loadHandle, hasPermission
 
 === KNOWN ISSUES / TODO ===
+2026-11-20 | [v2.7] Ang kulay ay para sa bawat reading (point sa scatter, dot sa line chart, cell sa table). Ang 1.6 hanggang 2.5 ay yellow; ang pagitan ng 1.5 at 1.6 (hal. 1.55) ay yellow rin. Nasa CONFIG.MASTER.DEVIATION ang limitasyon.
+2026-11-20 | [v2.7] Hindi pa nakita sa tunay na screen ang laki ng chart (jsdom lang); sabihin kung kulang pa ang zoom out.
+2026-11-20 | [v2.6] Hindi pa nasubukan sa tunay na CSV at browser; jsdom test lang gamit ang gawa-gawang CSV. Ang column ay galing sa Excel macro (F:T actual, DA:DO master, U at DQ average, row 4 barcode, row 2 header = 15).
+2026-11-20 | [v2.6] Date filter ay last modified ng file (hindi created date ng Excel); hindi nababasa ng browser ang created date.
+2026-11-20 | [v2.6] Latest Master: sinusuri mula pinakabago hanggang MAX_FILES (60) na file; ang unang master file na may record ngayong araw ang gagamitin (ang Excel ay isang file lang, ang pinakabago).
+2026-11-20 | [v2.6] Binabasa lang ang CSV sa mismong Data source 1 folder (walang subfolder). Comma ang delimiter.
+2026-11-20 | [v2.6] Range Master: table ay buod kada barcode (hindi buong matrix ng Excel); ang chart ay huling 150 na record lang.
+2026-11-20 | [v2.6] Latest Calibration at Range Calibration (Calibration page) ay hindi pa ginagawa.
 2026-11-20 | [v2.4] Hindi makukuha ng browser ang full path; tina-type/pine-paste ng user. Sinusuri lang kung tugma ang dulo ng path sa pangalan ng folder; hindi nito nalalaman kung tama ang buong path.
 2026-11-20 | [v2.4] Dashboard ay nagpapakita pa rin ng pangalan ng folder (hindi pa ginagalaw); susunod ang full path doon kung gusto.
 2026-11-20 | [v2.4] Hindi pa nasubukan sa tunay na browser; jsdom smoke test lang ang nagawa.

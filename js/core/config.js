@@ -6,6 +6,8 @@
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
+ * VERSION : v2.7 | 2026-11-20 | MASTER.DEVIATION (green/yellow/red), CHART.PAD_RATIO, TEXT.master legend
+ * VERSION : v2.6 | 2026-11-20 | MASTER (column, threshold), CHART, SELECTOR.master, TEXT.master
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
  * VERSION : v2.2 | 2026-11-20 | PATH_LIST (server, saving, 3 data source), ROOT_KEY, BADGE, LEGACY_NAME_FIELD, bagong selector at text
  */
@@ -41,6 +43,34 @@
     REDUCED_MOTION_QUERY: '(prefers-reduced-motion: reduce)',
     SCROLL_BEHAVIOR: { normal: 'smooth', reduced: 'auto' },
     BADGE: { ok: 'badge-success', info: 'badge-info', empty: 'badge-neutral' },
+    // Master: lahat ng index ay 0-based (row 4 ng Excel = 3; column F = 5; column DA = 104).
+    MASTER: {
+      SOURCE_KEY: 'source1',
+      CSV_EXTENSION: '.csv',
+      CSV_MAX_BYTES: 52428800,
+      HEADER_COUNT: 15,
+      HEADER_SCAN_COLUMNS: 300,
+      HEADER_ROW: 1,
+      BARCODE_ROW: 3,
+      DATA_START_ROW: 4,
+      DATE_COLUMN: 1,
+      ACTUAL_START_COLUMN: 5,
+      POINT_COUNT: 15,
+      MASTER_START_COLUMN: 104,
+      ACTUAL_AVG_COLUMN: 20,
+      MASTER_AVG_COLUMN: 120,
+      LATEST: { PASS_MIN: 0.99, FAIL_BELOW: 0.97, MAX_FILES: 60 },
+      RANGE: { PASS_MAX: 1, WARNING_MAX: 3, DEFAULT_DAYS: 7, NO_PAIR_DIFFERENCE: 999, MAX_LINES: 150 },
+      // Kulay ng bawat reading ayon sa |actual - master|: green <= GREEN_MAX, yellow <= YELLOW_MAX, red kapag higit pa.
+      DEVIATION: { GREEN_MAX: 1.5, YELLOW_MAX: 2.5, ROUND_DIGITS: 6, LEVEL: { green: 'level-green', yellow: 'level-yellow', red: 'level-red' } },
+      STATUS: { pass: 'PASS', warning: 'WARNING', fail: 'FAIL' },
+      STATUS_CLASS: { PASS: 'is-pass', WARNING: 'is-warning', FAIL: 'is-fail' },
+      ERROR_BY_NAME: { NotFoundError: 'folderMissing', NotAllowedError: 'noPermission', SecurityError: 'noPermission' }
+    },
+    CHART: {
+      WIDTH: 640, HEIGHT: 360, PADDING: { top: 40, right: 24, bottom: 64, left: 64 },
+      TICK_COUNT: 5, PALETTE_SIZE: 8, LEGEND_MAX: 12, PAD_RATIO: 0.15
+    },
     ROOT_FOLDER_NAME: 'BMWW',
     SETTINGS_SUBFOLDER: 'settings',
     SETTINGS_FILE: 'settings.json',
@@ -101,9 +131,43 @@
         modeRadio: 'input[name="machine-mode"]', nameInput: '#machine-name', note: '#machine-note',
         pathList: '#path-list',
         saveButton: '#save-settings', status: '#settings-status'
+      },
+      master: {
+        source: '#master-source', latestStart: '#latest-start', latestEnd: '#latest-end', latestButton: '#latest-run',
+        latestStatus: '#latest-status', latestResult: '#latest-result',
+        rangeStart: '#range-start', rangeEnd: '#range-end', rangeButton: '#range-run',
+        rangeStatus: '#range-status', rangeResult: '#range-result'
       }
     },
     TEXT: {
+      master: {
+        working: 'Binabasa ang mga file...', progress: 'Binabasa: ',
+        sourceNotSet: 'Hindi pa naka-set ang Data source 1. Pumunta sa Settings.',
+        recordDate: 'Date', fileName: 'File', rSquared: 'R Square', actualAverage: 'Actual AVG', masterAverage: 'Master AVG',
+        repeatability: 'Repeatability', averageDifference: 'Avg diff', worstBarcode: 'Worst barcode', maxDifference: 'Max diff',
+        difference: 'Difference', records: 'Records', csvFiles: 'CSV files', range: 'Range', masterFiles: 'Master files',
+        barcode: 'Barcode', actual: 'Actual', master: 'Master', actualAverageShort: 'Actual avg',
+        scatterTitle: 'Actual Reading vs Master Reading', scatterX: 'Master Reading', scatterY: 'Actual Reading',
+        barTitle: 'Actual AVG vs Master AVG', lineTitle: 'MASTER REPEATABILITY', masterSeries: 'MASTER',
+        levelLegendTitle: 'Actual vs Master: ',
+        levelGreen: 'Green: ±{low} pababa', levelYellow: 'Yellow: higit ±{low} hanggang ±{high}', levelRed: 'Red: higit ±{high}',
+        unreadable: ' file ang hindi nabasa at nilaktawan.', linesLimited: 'Ipinapakita ang huling {n} na record sa chart; kumpleto ang kalkulasyon.',
+        error: {
+          unsupported: 'Gamitin ang Chrome o Edge sa laptop para mabasa ang folder.',
+          noSource: 'Piliin muna ang Data source 1 sa Settings.',
+          noPermission: 'Hindi pinayagan ang access sa Data source. Subukan ulit at pindutin ang Allow.',
+          folderMissing: 'Hindi mahanap ang Data source folder. Piliin ulit ito sa Settings.',
+          emptyFolder: 'Walang CSV file sa Data source folder.',
+          noMasterFile: 'Walang master file na may 15 headers sa mga file na nabasa.',
+          noRecordToday: 'Walang master record ngayong araw.',
+          noFileInRange: 'Walang file sa napiling petsa.',
+          noRecordInRange: 'Walang record sa napiling petsa.',
+          badDates: 'Maglagay ng valid na Start date at End date.',
+          startAfterEnd: 'Hindi puwedeng mas huli ang Start date kaysa sa End date.',
+          noRegression: 'Hindi makalkula ang R Square (kulang o pare-pareho ang data).',
+          readFail: 'May problema sa pagbabasa ng mga file. Subukan ulit.'
+        }
+      },
       loading: 'Nilo-load ang page...', pageError: 'Hindi mabuksan ang page. Subukan ulit.', sidebarError: 'Hindi mabuksan ang menu.',
       notSet: 'Hindi pa naka-set', needReselect: ' (piliin ulit para ma-access)',
       modeUser: 'Uri: User input', modeLead: 'Uri: Lead PC',

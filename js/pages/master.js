@@ -1,16 +1,270 @@
 /*
  * FILE    : js/pages/master.js
- * PURPOSE : Init ng Master page (placeholder, wala pang laman)
- * DEPENDS : js/core/registry.js
+ * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
+ * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
  * VERSION : v2.3 | 2026-11-20 | bagong file
+ * VERSION : v2.6 | 2026-11-20 | Latest Master at Range Master; error trapping
+ * VERSION : v2.7 | 2026-11-20 | kulay green / yellow / red kada reading (point, dot, cell); legend; mas maliit na chart
  */
 (function () {
   'use strict';
   const root = window.BMWW;
+  const CONFIG = root.CONFIG;
+  const MASTER = CONFIG.MASTER;
+  const SEL = CONFIG.SELECTOR.master;
+  const TEXT = CONFIG.TEXT.master;
+  const { storage, csv, masterAnalysis, chart } = root;
 
-  // Init ng page, tinatawag ng router. Wala pang gagawin hangga't wala pang laman ang page.
-  function init() {
-    return undefined;
+  let sourceHandle = null;
+  let isBusy = false;
+
+  // Hinahanap ang elemento ayon sa key ng selector.
+  function query(key) {
+    return document.querySelector(SEL[key]);
+  }
+
+  // Gumagawa ng element na may class at text (textContent lang).
+  function makeElement(tagName, className, text) {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
+  // Mensahe sa ilalim ng button: 'error', 'success' o 'info'.
+  function setStatus(statusKey, message, kind) {
+    const element = query(statusKey);
+    element.textContent = message;
+    element.classList.toggle('is-error', kind === 'error');
+    element.classList.toggle('is-success', kind === 'success');
+    element.classList.toggle('is-info', kind === 'info');
+  }
+
+  // Ginagawang friendly na mensahe ang error (walang teknikal na detalye).
+  function getErrorMessage(error) {
+    const messageMap = TEXT.error;
+    if (error && messageMap[error.code]) return messageMap[error.code];
+    if (error && MASTER.ERROR_BY_NAME[error.name]) return messageMap[MASTER.ERROR_BY_NAME[error.name]];
+    return messageMap.readFail;
+  }
+
+  // Disable ng mga button habang tumatakbo.
+  function setBusy(nextBusy) {
+    isBusy = nextBusy;
+    query('latestButton').disabled = nextBusy;
+    query('rangeButton').disabled = nextBusy;
+  }
+
+  // Inihahanda ang folder handle ng Data source 1 at hinihingi ang permission (dapat galing sa click).
+  async function getReadyHandle() {
+    if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+    if (!sourceHandle) sourceHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[MASTER.SOURCE_KEY]);
+    if (!sourceHandle) throw csv.createError('noSource');
+    if (!(await storage.hasPermission(sourceHandle, true))) throw csv.createError('noPermission');
+    return sourceHandle;
+  }
+
+  // Ipinapakita ang path ng Data source 1 mula sa Settings (full path kung meron, kung hindi pangalan ng folder).
+  function renderSource() {
+    const settings = storage.readLocalSettings();
+    const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+    const names = settings.folderNames || {};
+    const text = paths[MASTER.SOURCE_KEY] || names[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
+    query('source').textContent = text;
+  }
+
+  // Nililinis ang resulta at mensahe ng isang seksyon.
+  function clearSection(statusKey, resultKey) {
+    setStatus(statusKey, '', '');
+    query(resultKey).replaceChildren();
+  }
+
+  // Status badge (PASS / WARNING / FAIL).
+  function makeStatusBadge(status) {
+    return makeElement('span', 'status-badge ' + MASTER.STATUS_CLASS[status], status);
+  }
+
+  // Listahan ng label at value.
+  function makeStatList(entryList) {
+    const list = makeElement('div', 'stat-list');
+    entryList.forEach((entry) => {
+      const item = makeElement('div', 'stat-item');
+      item.append(makeElement('span', 'stat-label', entry[0]), makeElement('span', 'stat-value', entry[1]));
+      list.append(item);
+    });
+    return list;
+  }
+
+  // Table na may horizontal scroll sa maliit na screen.
+  function makeTable(headerList, rowList) {
+    const wrap = makeElement('div', 'table-wrap');
+    const table = makeElement('table', 'result-table');
+    const headRow = document.createElement('tr');
+    headerList.forEach((header) => headRow.append(makeElement('th', '', header)));
+    const head = document.createElement('thead');
+    head.append(headRow);
+    const body = document.createElement('tbody');
+    rowList.forEach((cellList) => {
+      const row = document.createElement('tr');
+      cellList.forEach((cell) => {
+        const isLevelCell = typeof cell === 'object';
+        row.append(makeElement('td', isLevelCell ? cell.level : '', isLevelCell ? cell.text : cell));
+      });
+      body.append(row);
+    });
+    table.append(head, body);
+    wrap.append(table);
+    return wrap;
+  }
+
+  // Kulay ng reading ayon sa actual vs master.
+  function levelOf(actualValue, masterValue) {
+    return masterAnalysis.classifyDeviation(actualValue, masterValue);
+  }
+
+  // Legend ng kulay (green / yellow / red) mula sa CONFIG.MASTER.DEVIATION.
+  function makeLevelLegend() {
+    const rule = MASTER.DEVIATION;
+    const textMap = {
+      green: TEXT.levelGreen.replace('{low}', String(rule.GREEN_MAX)),
+      yellow: TEXT.levelYellow.replace('{low}', String(rule.GREEN_MAX)).replace('{high}', String(rule.YELLOW_MAX)),
+      red: TEXT.levelRed.replace('{high}', String(rule.YELLOW_MAX))
+    };
+    const list = makeElement('ul', 'level-legend');
+    list.append(makeElement('li', 'level-legend-title', TEXT.levelLegendTitle));
+    Object.keys(textMap).forEach((key) => list.append(makeElement('li', 'level-legend-item ' + rule.LEVEL[key], textMap[key])));
+    return list;
+  }
+
+  // Numero sa 3 decimal; '-' kung wala.
+  function formatNumber(value, digits) {
+    return value === null || value === undefined ? '-' : value.toFixed(digits === undefined ? 3 : digits);
+  }
+
+  // Nagre-render ng resulta ng Latest Master.
+  function renderLatest(result) {
+    const area = query('latestResult');
+    const head = makeElement('div', 'result-head');
+    head.append(makeStatusBadge(result.status));
+    area.replaceChildren(head, makeStatList([
+      [TEXT.rSquared, result.regression.rSquared.toFixed(4)],
+      [TEXT.recordDate, csv.formatDateTime(result.recordDate, true)],
+      [TEXT.actualAverage, formatNumber(result.actualAverage, 6)],
+      [TEXT.masterAverage, formatNumber(result.masterAverage, 6)],
+      [TEXT.fileName, result.fileName]
+    ]));
+    area.append(makeTable([TEXT.barcode, TEXT.actual, TEXT.master], result.barcodeList.map((barcode, index) => [barcode, { text: formatNumber(result.actualList[index], 3), level: levelOf(result.actualList[index], result.masterList[index]) }, formatNumber(result.masterList[index], 3)])));
+    const chartGrid = makeElement('div', 'chart-grid');
+    const scatterBox = makeElement('div', 'chart-box');
+    const barBox = makeElement('div', 'chart-box');
+    chartGrid.append(scatterBox, barBox);
+    area.append(makeLevelLegend(), chartGrid);
+    const pointList = [];
+    result.masterList.forEach((masterValue, index) => { if (masterValue !== null && result.actualList[index] !== null) pointList.push({ x: masterValue, y: result.actualList[index], level: levelOf(result.actualList[index], masterValue) }); });
+    chart.drawScatter(scatterBox, { title: TEXT.scatterTitle, xTitle: TEXT.scatterX, yTitle: TEXT.scatterY, pointList, trend: result.regression });
+    chart.drawBars(barBox, { title: TEXT.barTitle, itemList: [{ label: TEXT.actualAverage, value: result.actualAverage || 0 }, { label: TEXT.masterAverage, value: result.masterAverage || 0 }] });
+    if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
+  }
+
+  // Nagre-render ng resulta ng Range Master.
+  function renderRange(result) {
+    const area = query('rangeResult');
+    const stats = result.stats;
+    const head = makeElement('div', 'result-head');
+    head.append(makeStatusBadge(stats.status));
+    area.replaceChildren(head, makeStatList([
+      [TEXT.repeatability, formatNumber(stats.score, 2) + '%'],
+      [TEXT.averageDifference, formatNumber(stats.averageDifference)],
+      [TEXT.worstBarcode, stats.worstBarcode || '-'],
+      [TEXT.maxDifference, formatNumber(stats.maxDifference)],
+      [TEXT.actualAverage, formatNumber(stats.actualAverage)],
+      [TEXT.masterAverage, formatNumber(stats.masterAverage)],
+      [TEXT.difference, formatNumber(stats.difference)],
+      [TEXT.records, String(result.recordCount)],
+      [TEXT.csvFiles, result.fileCount + ' (' + TEXT.masterFiles.toLowerCase() + ': ' + result.masterFileCount + ')'],
+      [TEXT.range, csv.formatDateTime(result.startDate, false).slice(0, 10) + ' - ' + csv.formatDateTime(result.endDate, false).slice(0, 10)]
+    ]));
+    area.append(makeTable([TEXT.barcode, TEXT.master, TEXT.actualAverageShort, TEXT.averageDifference, TEXT.maxDifference],
+      stats.perBarcodeList.map((entry) => [entry.barcode, formatNumber(entry.master), { text: formatNumber(entry.actualAverage), level: levelOf(entry.actualAverage, entry.master) }, formatNumber(entry.averageDifference), { text: formatNumber(entry.maxDifference), level: entry.maxDifference === null ? '' : levelOf(entry.maxDifference, 0) }])));
+    const lineBox = makeElement('div', 'chart-box chart-box-wide');
+    area.append(makeLevelLegend(), lineBox);
+    const shownList = result.columnList.slice(-MASTER.RANGE.MAX_LINES);
+    const seriesList = shownList.map((column) => ({ name: column.key, values: column.values, isMaster: false, levelList: column.values.map((value, index) => levelOf(value, result.masterList[index])) }));
+    seriesList.push({ name: TEXT.masterSeries, values: result.masterList, isMaster: true });
+    chart.drawLines(lineBox, { title: TEXT.lineTitle, categoryList: result.barcodeList, seriesList });
+    if (shownList.length < result.columnList.length) area.append(makeElement('p', 'result-note', TEXT.linesLimited.replace('{n}', String(shownList.length))));
+    if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
+  }
+
+  // Click ng Run Latest Master.
+  async function onRunLatest() {
+    if (isBusy) return;
+    setBusy(true);
+    clearSection('latestStatus', 'latestResult');
+    try {
+      const today = new Date();
+      query('latestStart').value = csv.formatDateInput(today);
+      query('latestEnd').value = csv.formatDateInput(today);
+      setStatus('latestStatus', TEXT.working, 'info');
+      const handle = await getReadyHandle();
+      const result = await masterAnalysis.analyzeLatest(handle, today, (current, total, name) => setStatus('latestStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'));
+      renderLatest(result);
+      setStatus('latestStatus', '', '');
+    } catch (error) {
+      query('latestResult').replaceChildren();
+      setStatus('latestStatus', getErrorMessage(error), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Click ng Run Range Master (may validation ng petsa bago magbasa).
+  async function onRunRange() {
+    if (isBusy) return;
+    clearSection('rangeStatus', 'rangeResult');
+    const startDate = csv.parseDateInput(query('rangeStart').value);
+    const endDate = csv.parseDateInput(query('rangeEnd').value);
+    if (!startDate || !endDate) { setStatus('rangeStatus', TEXT.error.badDates, 'error'); return; }
+    if (startDate > endDate) { setStatus('rangeStatus', TEXT.error.startAfterEnd, 'error'); return; }
+    setBusy(true);
+    try {
+      setStatus('rangeStatus', TEXT.working, 'info');
+      const handle = await getReadyHandle();
+      const result = await masterAnalysis.analyzeRange(handle, startDate, endDate, (current, total, name) => setStatus('rangeStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'));
+      renderRange(result);
+      setStatus('rangeStatus', '', '');
+    } catch (error) {
+      query('rangeResult').replaceChildren();
+      setStatus('rangeStatus', getErrorMessage(error), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Init ng page, tinatawag ng router.
+  async function init() {
+    isBusy = false;
+    sourceHandle = null;
+    const today = new Date();
+    const rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - MASTER.RANGE.DEFAULT_DAYS);
+    query('latestStart').value = csv.formatDateInput(today);
+    query('latestEnd').value = csv.formatDateInput(today);
+    query('rangeStart').value = csv.formatDateInput(rangeStart);
+    query('rangeEnd').value = csv.formatDateInput(today);
+    renderSource();
+    query('latestButton').addEventListener('click', onRunLatest);
+    query('rangeButton').addEventListener('click', onRunRange);
+    if (!storage.isFolderAccessSupported()) {
+      setBusy(true);
+      setStatus('latestStatus', TEXT.error.unsupported, 'error');
+      return;
+    }
+    try {
+      sourceHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[MASTER.SOURCE_KEY]);
+    } catch (error) {
+      sourceHandle = null;
+    }
+    if (!sourceHandle) setStatus('latestStatus', TEXT.error.noSource, 'error');
   }
 
   root.registry.registerPage('master', Object.freeze({ init }));
