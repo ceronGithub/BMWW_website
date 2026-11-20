@@ -12,6 +12,9 @@
  * VERSION : v2.6 | 2026-11-20 | MASTER (column, threshold), CHART, SELECTOR.master, TEXT.master
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
  * VERSION : v2.2 | 2026-11-20 | PATH_LIST (server, saving, 3 data source), ROOT_KEY, BADGE, LEGACY_NAME_FIELD, bagong selector at text
+ * VERSION : v5 | 2026-11-20 | SERVER_KEY, MACHINE_FILE, MACHINE_FILE_FIELD at text para sa save ng settings kada machine sa Saving path at Server path
+ * VERSION : v5.1 | 2026-11-21 | QUEUE (constants ng <Server path>\queue: subfolder, mode, state, source, presence, oras at limit)
+ * VERSION : v5.2 | 2026-11-21 | MONITOR (constants ng monitor ng Data source 1, 2, 3 sa not-LEAD PC)
  */
 (function () {
   'use strict';
@@ -31,8 +34,8 @@
     DB_STORE: 'handles',
     // Listahan ng mga path sa Settings. required: kailangan bago mag-save. gated: nakasara hanggang may Saving path (ROOT_KEY).
     PATH_LIST: [
-      { key: 'server', gated: true, label: 'Server path', note: 'Folder sa server o shared drive. Mas maayos kung naka-map ito bilang drive letter (hal. Z:).' },
-      { key: 'root', required: true, label: 'Saving path (BMWW)', note: 'Dito sine-save ang settings.json. Dapat BMWW ang pangalan ng folder.' },
+      { key: 'server', gated: true, label: 'Server path', note: 'Folder sa server o shared drive. Mas maayos kung naka-map ito bilang drive letter (hal. Z:). Dito rin sine-save ang settings ng machine (subfolder settings).' },
+      { key: 'root', required: true, label: 'Saving path (BMWW)', note: 'Dito sine-save ang settings ng machine (settings\\<machine name>.json). Dapat BMWW ang pangalan ng folder.' },
       { key: 'source1', gated: true, label: 'Data source 1', note: 'Unang folder na pagkukunan ng data.' },
       { key: 'source2', gated: true, label: 'Data source 2', note: 'Pangalawang folder na pagkukunan ng data.' },
       { key: 'source3', gated: true, label: 'Data source 3', note: 'Pangatlong folder na pagkukunan ng data.' }
@@ -76,6 +79,47 @@
     ROOT_FOLDER_NAME: 'BMWW',
     SETTINGS_SUBFOLDER: 'settings',
     SETTINGS_FILE: 'settings.json',
+    // Settings kada machine: <path>\settings\<machine name>.json (Saving path at Server path).
+    SERVER_KEY: 'server',
+    MACHINE_FILE: {
+      EXTENSION: '.json',
+      LEGACY_NAME: 'settings.json',
+      RESERVED_FILES: ['settings.json', 'events.json'],
+      INVALID_CHARS: /[<>:"/\\|?*\u0000-\u001F]/g,
+      TRAILING_CHARS: /[. ]+$/,
+      RESERVED_PATTERN: /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i,
+      PREFIX: '_',
+      FALLBACK_NAME: 'machine'
+    },
+    MACHINE_FILE_FIELD: 'machineFile',
+    // Queue ng mga machine: <Server path>\queue\<machine name>.json (sinusulat ng not-LEAD PC, binabasa ng lahat).
+    // Monitor ng Data source ng sariling machine (not-LEAD PC). Ang source1 ay Calibration/Master (ayon sa header count ng pinakabagong CSV); ang source2 at source3 ay Online/Offline.
+    MONITOR: {
+      POLL_MS: 5000,
+      SETTLE_MS: 30000,
+      MAX_ENTRIES: 5000,
+      SOURCE_KEYS: ['source1', 'source2', 'source3'],
+      SOURCE_MODE: { source1: 'auto', source2: 'online', source3: 'offline' },
+      ONGOING_TIMEOUT_MS: { source1: 300000, source2: 1800000, source3: 1800000 },
+      IGNORED_PREFIXES: ['~$'],
+      IGNORED_EXTENSIONS: ['.tmp', '.temp', '.part', '.crdownload'],
+      STATE: { stopped: 'stopped', running: 'running', notApplicable: 'notApplicable', noSource: 'noSource', noServer: 'noServer', noPermission: 'noPermission', unsupported: 'unsupported', error: 'error' }
+    },
+    QUEUE: {
+      SUBFOLDER: 'queue',
+      FILE_VERSION: 1,
+      HEARTBEAT_MS: 30000,
+      STALE_MS: 120000,
+      TEXT_MAX: 60,
+      FILE_NAME_MAX: 120,
+      FILE_MAX_BYTES: 65536,
+      MAX_FILES: 200,
+      MODE: { idle: 'idle', calibration: 'calibration', master: 'master', online: 'online', offline: 'offline' },
+      STATE: { idle: 'idle', ongoing: 'ongoing', done: 'done' },
+      SOURCE: { none: '', source1: 'source1', source2: 'source2', source3: 'source3' },
+      PRESENCE: { active: 'active', stale: 'stale', noStatus: 'noStatus' },
+      CONNECTION: { ok: 'ok', noFolder: 'noFolder', noPermission: 'noPermission', unsupported: 'unsupported', error: 'error' }
+    },
     SETTINGS_PATH_LABEL: 'C:\\desktop\\BMWW\\settings',
     MACHINE_MODE: { USER_INPUT: 'user-input', LEAD_PC: 'lead-pc' },
     LEAD_PC_NAME: 'LEAD PC',
@@ -228,6 +272,10 @@
       noPermission: 'Hindi pinayagan ang access sa folder.', folderPicked: 'Napili ang folder. I-save ang settings.',
       folderError: 'Hindi mapili ang folder.', saveError: 'Hindi na-save ang settings. Subukan ulit.',
       saved: 'Na-save sa ', loadError: 'Hindi mabasa ang naunang settings.',
+      savedBoth: 'Na-save sa Saving path at Server path: ',
+      savedRootOnly: 'Na-save sa Saving path: ',
+      serverNotSet: ' | Hindi pa naka-set ang Server path, kaya wala pang kopya sa server.',
+      serverFailed: ' | HINDI na-save sa Server path. Tingnan kung bukas ang server at i-Allow ang permission, tapos i-save ulit.',
       unsupported: 'Gamitin ang Chrome o Edge sa laptop para makapili ng folder.',
       badgeSet: 'Naka-set', badgeEmpty: 'Hindi pa naka-set', badgeReselect: 'Piliin ulit',
       pickButton: 'Piliin', changeButton: 'Palitan',

@@ -1,9 +1,10 @@
 /*
  * FILE    : js/core/app.js
  * PURPOSE : Entry point: sidebar, menu, routing
- * DEPENDS : config.js, registry.js, security.js, router.js
+ * DEPENDS : config.js, registry.js, security.js, router.js, monitor.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | sidebar mula sa registry (walang fetch, walang import)
+ * VERSION : v5.2 | 2026-11-21 | sinisimulan ang monitor (monitor.start) pagkatapos buksan ang unang page
  */
 (function () {
   'use strict';
@@ -50,6 +51,7 @@
     bindMenu();
     window.addEventListener('hashchange', handleNavigate);
     await handleNavigate();
+    root.monitor.start(false);
   }
 
   initApp();

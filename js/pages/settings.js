@@ -7,6 +7,7 @@
  * VERSION : v2.2 | 2026-11-20 | maraming path (CONFIG.PATH_LIST), status badge, lock badge
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path ng bawat folder (type/paste, may validation)
  * VERSION : v2.3 | 2026-11-20 | ibang path ay sarado hanggang may Saving path; Required marker; highlight kapag kulang
+ * VERSION : v5 | 2026-11-20 | Save: settings kada machine (<machine>.json) sa Saving path at Server path; basa ng settings ayon sa machine file
  */
 (function () {
   'use strict';
@@ -227,7 +228,7 @@
       }
       const rootHandle = handleMap[CONFIG.ROOT_KEY];
       if (rootHandle && (await storage.hasPermission(rootHandle, false))) {
-        const fromFile = await storage.readSettingsFile(rootHandle);
+        const fromFile = await storage.readMachineSettings(rootHandle, settings[CONFIG.MACHINE_FILE_FIELD] || '');
         if (fromFile) {
           settings = fromFile;
           storage.writeLocalSettings(settings);
@@ -267,7 +268,30 @@
     return base + CONFIG.PATH_SEPARATOR + CONFIG.SETTINGS_SUBFOLDER;
   }
 
-  // Sine-save ang settings sa BMWW\settings\settings.json.
+  // Ibinibigay ang lokasyon ng settings file ng machine para sa mensahe.
+  function getFileLocation(fullPath, fileName) {
+    return getSettingsLocation(fullPath) + CONFIG.PATH_SEPARATOR + fileName;
+  }
+
+  // Parehong pangalan ba ang dalawang file? (Hindi sensitibo sa laki ng letra, tulad ng Windows.)
+  function isSameFileName(first, second) {
+    return String(first).toLowerCase() === String(second).toLowerCase();
+  }
+
+  // Isinusulat ang settings sa Server path. Ibinibigay ang 'saved', 'skipped' (walang Server path) o 'failed'.
+  async function writeToServer(serverHandle, isAllowed, fileName, data, previousFile) {
+    if (!serverHandle) return 'skipped';
+    try {
+      if (!isAllowed) return 'failed';
+      await storage.writeMachineSettings(serverHandle, fileName, data);
+      if (previousFile && !isSameFileName(previousFile, fileName)) await storage.removeMachineSettings(serverHandle, previousFile);
+      return 'saved';
+    } catch (error) {
+      return 'failed';
+    }
+  }
+
+  // Sine-save ang settings sa Saving path at Server path: <path>\settings\<machine name>.json.
   async function onSave() {
     const rootHandle = handleMap[CONFIG.ROOT_KEY];
     if (!rootHandle) { setStatus(TEXT.rootMissing, true); focusRootRow(); return; }
@@ -281,10 +305,22 @@
       const pathError = checkAllFullPaths(fullPathMap);
       if (pathError) { setStatus(pathError, true); return; }
       if (!(await storage.hasPermission(rootHandle, true))) { setStatus(TEXT.noPermission, true); return; }
+      const serverHandle = handleMap[CONFIG.SERVER_KEY];
+      let isServerAllowed = false;
+      if (serverHandle) {
+        try {
+          isServerAllowed = await storage.hasPermission(serverHandle, true);
+        } catch (error) {
+          isServerAllowed = false;
+        }
+      }
       const next = { ...settings };
       delete next.machineNameLocked;
       next.machineMode = mode;
       next.machineName = name;
+      const fileName = storage.toMachineFileName(name);
+      const previousFile = settings[CONFIG.MACHINE_FILE_FIELD] || '';
+      next[CONFIG.MACHINE_FILE_FIELD] = fileName;
       const folderNames = {};
       CONFIG.PATH_LIST.forEach((pathItem) => {
         const folderName = handleMap[pathItem.key] ? handleMap[pathItem.key].name : getSavedName(pathItem.key);
@@ -295,12 +331,21 @@
       next.folderNames = folderNames;
       next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
-      await storage.writeSettingsFile(rootHandle, next);
+      await storage.writeMachineSettings(rootHandle, fileName, next);
+      if (previousFile && !isSameFileName(previousFile, fileName)) await storage.removeMachineSettings(rootHandle, previousFile);
       settings = next;
       storage.writeLocalSettings(settings);
+      const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, previousFile);
       renderMachine();
       renderPaths();
-      setStatus(TEXT.saved + getSettingsLocation(fullPathMap[CONFIG.ROOT_KEY]), false);
+      const rootLocation = getFileLocation(fullPathMap[CONFIG.ROOT_KEY], fileName);
+      if (serverResult === 'saved') {
+        setStatus(TEXT.savedBoth + rootLocation + ' | ' + getFileLocation(fullPathMap[CONFIG.SERVER_KEY], fileName), false);
+      } else if (serverResult === 'skipped') {
+        setStatus(TEXT.savedRootOnly + rootLocation + TEXT.serverNotSet, false);
+      } else {
+        setStatus(TEXT.savedRootOnly + rootLocation + TEXT.serverFailed, true);
+      }
     } catch (error) {
       setStatus(TEXT.saveError, true);
     }

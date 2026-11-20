@@ -4,6 +4,7 @@
  * DEPENDS : js/core/config.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module)
+ * VERSION : v5 | 2026-11-20 | settings kada machine: toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
  */
 (function () {
   'use strict';
@@ -98,5 +99,72 @@
     }
   }
 
-  root.storage = Object.freeze({ isFolderAccessSupported, saveHandle, loadHandle, pickFolder, hasPermission, readLocalSettings, writeLocalSettings, writeSettingsFile, readSettingsFile });
+  // Ginagawang ligtas na pangalan ng file ang machine name (hal. "MWW 1" -> "MWW 1.json").
+  function toMachineFileName(machineName) {
+    const rule = CONFIG.MACHINE_FILE;
+    let baseName = String(machineName).replace(rule.INVALID_CHARS, '_').replace(rule.TRAILING_CHARS, '').trim();
+    if (!baseName) baseName = rule.FALLBACK_NAME;
+    let fileName = baseName + rule.EXTENSION;
+    if (rule.RESERVED_PATTERN.test(baseName) || rule.RESERVED_FILES.includes(fileName.toLowerCase())) fileName = rule.PREFIX + fileName;
+    return fileName;
+  }
+
+  // Sinusulat ang settings ng machine sa <folder>\settings\<fileName> (ginagawa ang subfolder kung wala pa).
+  async function writeMachineSettings(parentHandle, fileName, settings) {
+    const folder = await parentHandle.getDirectoryHandle(CONFIG.SETTINGS_SUBFOLDER, { create: true });
+    const file = await folder.getFileHandle(fileName, { create: true });
+    const writable = await file.createWritable();
+    await writable.write(JSON.stringify(settings, null, 2));
+    await writable.close();
+  }
+
+  // Binubura ang lumang settings file ng machine (hal. nang mapalitan ang pangalan). Hindi binubura ang settings.json at events.json.
+  async function removeMachineSettings(parentHandle, fileName) {
+    if (!fileName || CONFIG.MACHINE_FILE.RESERVED_FILES.includes(fileName.toLowerCase())) return false;
+    try {
+      const folder = await parentHandle.getDirectoryHandle(CONFIG.SETTINGS_SUBFOLDER);
+      await folder.removeEntry(fileName);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Binabasa at ginagawang object ang isang settings file (null kung wala o sira).
+  async function readJsonFile(folder, fileName) {
+    try {
+      const file = await folder.getFileHandle(fileName);
+      return JSON.parse(await (await file.getFile()).text());
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Binabasa ang settings ng machine: ang preferredFileName muna, tapos ang pinakabagong <machine>.json, tapos ang lumang settings.json (laktaw ang events.json).
+  async function readMachineSettings(rootHandle, preferredFileName) {
+    try {
+      const rule = CONFIG.MACHINE_FILE;
+      const folder = await rootHandle.getDirectoryHandle(CONFIG.SETTINGS_SUBFOLDER);
+      if (preferredFileName) {
+        const preferred = await readJsonFile(folder, preferredFileName);
+        if (preferred) return preferred;
+      }
+      let newest = null;
+      for await (const entry of folder.values()) {
+        const lowerName = entry.name.toLowerCase();
+        if (entry.kind !== 'file' || !lowerName.endsWith(rule.EXTENSION) || rule.RESERVED_FILES.includes(lowerName)) continue;
+        const modifiedMs = (await entry.getFile()).lastModified;
+        if (!newest || modifiedMs > newest.modifiedMs) newest = { name: entry.name, modifiedMs };
+      }
+      if (newest) {
+        const found = await readJsonFile(folder, newest.name);
+        if (found && typeof found.machineName === 'string') return found;
+      }
+      return await readJsonFile(folder, rule.LEGACY_NAME);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  root.storage = Object.freeze({ isFolderAccessSupported, saveHandle, loadHandle, pickFolder, hasPermission, readLocalSettings, writeLocalSettings, writeSettingsFile, readSettingsFile, toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings });
 })();

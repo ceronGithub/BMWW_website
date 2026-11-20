@@ -1,16 +1,18 @@
-INSTRUCTIONS v4 (Overall design: itim-at-puti, modern, simple, elegant, may animation at effects)
-1. I-unzip ang BMWW_website_v4.zip sa BAGONG folder. Huwag galawin ang original mong folder. Kailangang kumpleto ang folder (may css/theme.css at js/core/effects.js).
+INSTRUCTIONS v5.2 (Task 1C: monitor ng Data source 1, 2, 3 at status sa queue; wala pang makikitang bago sa screen)
+1. I-unzip ang BMWW_website_v5.2.zip sa BAGONG folder. Huwag galawin ang original mong folder. Kailangang kumpleto ang folder (may js/core/monitor.js at js/core/queue.js).
 2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click), tapos pindutin ang Ctrl+F5.
-3. TEST STEPS:
-   - DAPAT makita: itim-at-puting design; ang sidebar ay may itim na indicator sa active na link.
-   - DAPAT makita: pindutin ang ibang link sa sidebar -> DUMUDULAS ang itim na indicator papunta sa link.
-   - DAPAT makita: sa bawat page, isa-isang lumalabas (fade at pataas) ang title at mga card.
-   - DAPAT makita: i-hover ang card -> bahagyang umaangat, lumalakas ang shadow, at may malambot na liwanag na sumusunod sa cursor.
-   - DAPAT makita: pindutin ang anumang button -> may ripple at bahagyang lumiliit; ang primary button ay itim na.
-   - DAPAT makita: Dashboard: orasan, kalendaryo at Events gumagana pa rin; ang napiling petsa ay itim.
-   - DAPAT makita: mobile (paliitin ang browser sa mas mababa sa 768px): hamburger menu, slide-in na sidebar na may blur na overlay.
-   - DAPAT makita: Master chart ay buo pa rin ang kulay (green/yellow/red at linya ng chart).
-   - Dark mode: palitan ang theme ng Windows/browser sa Dark -> itim, charcoal at puti.
-   - Reduced motion: kapag naka-on ang "Show animations" off sa Windows, walang galaw ang page.
-   - DAPAT HINDI makita: error sa console; kumikislap o nawawalang text; nawawalang kulay sa Master chart.
-   - Hindi pa ito nakikita ng gumawa sa totoong Chrome/Edge (walang browser sa kanya); ang unang visual test ay sa device mo.
+3. Sa Settings: itakda ang Machine name (hindi LEAD PC; hal. MWW 1), Saving path, Server path at Data source 1, 2, 3, tapos pindutin ang Save. Iwanang bukas ang BMWW page.
+4. TEST STEPS (hintaying ~10 segundo bawat hakbang; ang status file ay nasa <Server path>\queue\<machine name>.json):
+   - DAPAT makita: may queue file na ng machine mo na may mode "idle" at state "idle".
+   - Data source 2: maglagay (kopyahin) ng bagong file na may pangalang tulad ng 4A05520A.csv. DAPAT: mode "online", state "done", source "source2", wafer "4A055", blk "A", layer "20".
+   - Data source 3: palitan ang laman o i-save ang isang umiiral na file (para magbago ang date modified), huwag magdagdag ng bagong file. DAPAT: mode "offline", state "ongoing".
+   - Data source 3: maglagay ng bagong file na may pangalang tulad ng 5B11033C.csv. DAPAT: mode "offline", state "done", wafer "5B110", blk "C", layer "33".
+   - Data source 1: i-save ang pinakabagong master CSV (15 headers sa row 2). DAPAT: mode "master", state "ongoing". Kapag Calibration file ang binago, DAPAT mode "calibration".
+   - Maghintay ng 5 minutong walang pagbabago sa Data source 1: DAPAT nawala ang ongoing ng source1.
+   - Palitan ang Machine name sa Settings at Save: DAPAT mawala ang lumang queue file at lumabas ang bago.
+   - Para makita ang nakikita ng monitor, buksan ang Developer Tools sa menu ng browser (Menu > More tools > Developer tools; naka-block ang F12 at Ctrl+Shift+I ng app) at i-type sa Console: BMWW.monitor.getState()
+     DAPAT: state "running"; bawat source ay may entryCount na tugma sa dami ng file/folder sa loob (hanggang 5 antas).
+   - Sa LEAD PC (Machine name = LEAD PC): DAPAT walang queue file na isinulat nito; getState().state ay "notApplicable".
+   - DAPAT HINDI makita: error sa console; may nabago o nabura sa mga Data source (basa lang ang monitor); mag-ongoing kaagad pagkatapos lang ng bagong file.
+   - Mahalaga: ibalik sa akin kung alin sa mga ito ang hindi tumugma sa totoong instrument (lalo na ang pagkakaiba ng source 2 at 3 bilang Online/Offline, at kung ano ang nagbabago sa folder habang ongoing), para maitama ang mga assumption sa README (KNOWN ISSUES).
+   - Hindi pa ito nasubukan sa totoong Chrome/Edge, totoong instrument at server ng gumawa (jsdom at fake folder handle lang, 30 test); ang unang test ay sa device mo.

@@ -1,4 +1,7 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v5.2 | 2026-11-21 | Task 1C: monitor ng Data source 1, 2, 3 sa not-LEAD PC (Calibration/Master, Online/Offline; ONGOING at DONE) at sulat ng status sa <Server path>\queue. Bagong js/core/monitor.js; sinisimulan ng app.js. Wala pang UI (1D)
+v5.1 | 2026-11-21 | Task 1B: queue sa Server path (<Server path>\queue\<machine name>.json): sulat ng status ng sariling machine, basa ng lahat, listahan ng machine mula sa server settings. Bagong js/core/queue.js; wala pang UI at wala pang tumatawag (1C monitor, 1D Dashboard)
+v5 | 2026-11-20 | Task 1A: Settings ay sine-save kada machine (<machine name>.json) sa <Saving path>\settings at <Server path>\settings. Config.js, storage.js, settings.js lang ang binago
 v4 | 2026-11-20 | Overall design: itim-at-puti, modern, simple, elegant; animation (page/card entrance, hover, ripple, spotlight, sliding sidebar indicator). Bagong css/theme.css at js/core/effects.js; index.html lang ang binago
 v3 | 2026-11-20 | Dashboard: Date at oras (live), buwanang kalendaryo, Events (Add/Edit/Delete) na offline; naka-save sa localStorage at <BMWW>\settings\events.json
 v2.9 | 2026-11-20 | Master (Range): mas maliit na font ng file panel; legend sa ilalim ng chart para sa napiling file lang (kasama ang MASTER)
@@ -40,6 +43,8 @@ css/pages/lot-tracking.css | [v2.5] style ng LOT Tracking (naka-scope sa .page-l
 js/pages/lot-tracking.js | [v2.5] logic ng LOT Tracking | js/templates/lot-tracking.template.js | [v2.5] kopya ng pages/lot-tracking.html bilang string
 
 js/core/events-store.js | [v3] basa/sulat ng events (localStorage at settings/events.json)
+js/core/queue.js        | [v5.1] queue ng machine sa Server path (status, listahan ng machine, presence) | window.BMWW.queue
+js/core/monitor.js      | [v5.2] monitor ng Data source 1, 2, 3 ng sariling machine; nagsusulat ng status sa queue | window.BMWW.monitor
 js/pages/dashboard-events.js | [v3] orasan, kalendaryo, listahan at form ng events ng Dashboard (nagre-register sa window.BMWW.dashboardEvents)
 css/pages/dashboard-events.css | [v3] style ng seksyon (naka-scope sa .page-dashboard)
 
@@ -134,8 +139,13 @@ pickFolder()           | storage.js | ->Promise<Handle> | folder picker | settin
 hasPermission(h, ask)  | storage.js | ->Promise<bool> | check/hingi ng permission | settings.js
 readLocalSettings()    | storage.js | ->object | basa ng localStorage cache | settings.js, dashboard.js
 writeLocalSettings(s)  | storage.js | object | save sa localStorage | settings.js
-writeSettingsFile(r,s) | storage.js | ->Promise | gawa ng BMWW\settings at settings.json | settings.js (onSave)
-readSettingsFile(r)    | storage.js | ->Promise | basa ng settings.json o null | settings.js (loadState)
+writeSettingsFile(r,s) | storage.js | ->Promise | gawa ng BMWW\settings at settings.json | settings.js (onSave) [LUMA v5: hindi na tinatawag ng settings.js; nasa export pa rin]
+readSettingsFile(r)    | storage.js | ->Promise | basa ng settings.json o null | settings.js (loadState) [LUMA v5: hindi na tinatawag ng settings.js; nasa export pa rin]
+[v5] toMachineFileName(name) | storage.js | string->string | ligtas na pangalan ng file: pinapalitan ang <>:"/\|?* ng _, tinatanggal ang dulong tuldok/espasyo, dagdag na _ sa CON/PRN/AUX/NUL/COM1-9/LPT1-9 at sa settings.json / events.json; walang laman -> 'machine'; dagdag na .json | settings.js (onSave)
+[v5] writeMachineSettings(folderHandle, fileName, s) | storage.js | ->Promise | gawa ng subfolder settings (kung wala) at sulat ng <fileName> sa loob; ginagamit sa Saving path at Server path | settings.js (onSave, writeToServer)
+[v5] removeMachineSettings(folderHandle, fileName) | storage.js | ->Promise<bool> | bura ng lumang <machine>.json; hindi kailanman binubura ang settings.json at events.json; false kapag wala o pumalya | settings.js (onSave, writeToServer)
+[v5] readJsonFile(folder, fileName) | storage.js | ->Promise<object|null> | basa at JSON.parse ng isang file; null kung wala o sira | readMachineSettings
+[v5] readMachineSettings(rootHandle, preferredFileName) | storage.js | ->Promise<object|null> | una ang preferredFileName; kung wala, ang pinakabagong <machine>.json (may machineName; laktaw ang settings.json at events.json); huli ang lumang settings.json | settings.js (loadState)
 setText(key, value)    | dashboard.js | - | lagay ng text | init
 init() (dashboard)     | dashboard.js | - | ipakita ang settings | router
 query(key)             | settings.js | ->Element | hanap ng elemento | lahat ng function ng settings.js
@@ -157,7 +167,11 @@ getLastSegment(path)   | settings.js | string->string | [v2.4] pangalan ng folde
 validateFullPath(key, path) | settings.js | ->string | [v2.4] error message o '' (pattern at tugma sa pangalan ng folder; walang laman ay ayos) | checkAllFullPaths
 onFullPathInput(key)   | settings.js | string | [v2.4] tanggal ng error at update ng ipinapakitang path | input listener ng full path
 checkAllFullPaths(map) | settings.js | object->string | [v2.4] suri ng lahat ng full path, highlight ng unang mali | onSave
-getSettingsLocation(p) | settings.js | string->string | [v2.4] lokasyon ng settings.json para sa mensahe (full path kung alam) | onSave
+getSettingsLocation(p) | settings.js | string->string | [v2.4] lokasyon ng settings.json para sa mensahe (full path kung alam) | onSave [v5: ginagamit din para sa Server path]
+[v5] getFileLocation(fullPath, fileName) | settings.js | string,string->string | <path>\settings\<fileName> para sa mensahe | onSave
+[v5] isSameFileName(a, b) | settings.js | string,string->bool | pareho ba ang pangalan (hindi sensitibo sa laki ng letra, tulad ng Windows); iwas mabura ang kakasulat lang na file kapag laki ng letra lang ang binago | onSave, writeToServer
+[v5] writeToServer(serverHandle, isAllowed, fileName, data, previousFile) | settings.js | ->Promise<'saved'|'skipped'|'failed'> | sulat sa <Server path>\settings; 'skipped' kung walang Server path, 'failed' kung walang permission o may error; binubura ang lumang file kapag nagpalit ng pangalan; walang itinatapon na error | onSave
+[v5] onSave (binago) | settings.js | - | sulat muna sa Saving path (kailangan), tapos sa Server path (kung meron). Kapag pumalya ang server, nananatiling naka-save ang Saving path at error message ang lumalabas | click #save-button
 renderPaths()          | settings.js | - | full path (o pangalan ng folder), badge, note, button at lock state ng bawat path [v2.3, v2.4] | init, onPickFolder, onSave
 loadState()            | settings.js | ->Promise | basa ng naunang settings | init
 onPickFolder(key)      | settings.js | path key | pili at save ng handle; ang 'root' (saving path) ay dapat BMWW | click ng bawat path button
@@ -219,6 +233,43 @@ updateIndicator()       | effects.js | - | inilalagay ang .sidebar-indicator sa 
 scheduleIndicator()     | effects.js | - | pinagsasama ang sunud-sunod na update sa isang frame | MutationObserver ng sidebar, resize
 initEffects()           | effects.js | - | nilalagay ang mga listener at observer | effects.js (sarili)
 
+[v5.1] queue.js (window.BMWW.queue):
+pickFrom(group, value, fallback) | queue.js | ->value | nasa listahan ba ang value (mode, state, source, machineMode) kung hindi ay fallback | normalizeStatus
+toIsoOrEmpty(value)    | queue.js | ->string | ISO na petsa o '' kung hindi valid | normalizeStatus
+normalizeStatus(raw)   | queue.js | object->object|null | linis at validate ng status (machineName sanitize, mode/state/source ayon sa listahan, limit ng haba, petsa ISO); idle ay laging state idle; null kung walang machine name. Lahat ng galing sa file ay dumadaan dito | buildStatus, writeQueueStatus, readQueueList
+buildStatus(identity, fields, nowMs) | queue.js | ->object|null | status ng sariling machine; updatedAt = nowMs (heartbeat) | monitor (1C)
+readEntryJson(entry)   | queue.js | ->Promise<{data,modifiedMs}|null> | basa ng JSON; null kung sira o lampas FILE_MAX_BYTES | readQueueList, readMachineList
+listJsonEntries(folder)| queue.js | ->Promise<entry[]> | mga .json sa folder, hanggang MAX_FILES, laktaw ang settings.json at events.json | readQueueList, readMachineList
+isNotFound(error)      | queue.js | ->bool | NotFoundError lang (walang folder) ang itinuturing na walang laman; ibang error ay itatapon | readQueueList, readMachineList
+writeQueueStatus(serverHandle, status) | queue.js | ->Promise<object> | sulat sa <Server path>\queue\<machine name>.json (gawa ng subfolder); nagtatapon ng error kung invalid ang status | monitor (1C)
+removeQueueStatus(serverHandle, machineName) | queue.js | ->Promise<bool> | bura ng queue file ng machine; false kung wala o pumalya | Dashboard (1D, kung kailangan)
+readQueueList(serverHandle) | queue.js | ->Promise<[{status,fileName,modifiedMs}]> | lahat ng valid na status; sira/hindi json/lampas sa laki ay nilalaktawan; walang queue folder = []; pumalyang server = error | loadSnapshot
+readMachineList(serverHandle) | queue.js | ->Promise<[{machineName,machineMode,fileName}]> | mga naka-register na machine mula sa <Server path>\settings; hindi kasama ang LEAD PC (machineMode lead-pc) | loadSnapshot
+getPresence(queueItem, nowMs) | queue.js | ->'active'|'stale'|'noStatus' | noStatus kung walang queue file; stale kung lampas STALE_MS mula sa oras ng file sa server (o updatedAt kung wala) | combineMachines, summarize
+combineMachines(machineList, queueList, nowMs) | queue.js | ->[{machineName,registered,status,modifiedMs,presence}] | pinagsasama ayon sa machine name (hindi sensitibo sa laki ng letra); naka-register na walang queue = noStatus; nasa queue lang = registered false; natural sort (MWW 2 bago MWW 10) | loadSnapshot
+summarize(machineItemList) | queue.js | ->{total,active,stale,noStatus,ongoing,done} | bilang; ongoing at done ay mula sa active lang | loadSnapshot, Dashboard (1D)
+findServerHandle(shouldRequest) | queue.js | ->Promise<{handle,state}> | hawak ng Server path at permission; state: ok/noFolder/noPermission/unsupported; shouldRequest true lang kapag galing sa click | loadSnapshot, monitor (1C)
+loadSnapshot(shouldRequest, nowMs) | queue.js | ->Promise<{state,handle,machineItemList,summary}> | buong larawan ng mga machine; hindi nagtatapon ng error (state 'error' kapag pumalya ang server, hindi '0 machine') | Dashboard (1D)
+
+[v5.2] monitor.js (window.BMWW.monitor). Basa lang ang ginagawa sa Data source; walang isinusulat doon:
+createSourceState()    | monitor.js | ->object | walang laman na state ng isang source {snapshot, recentNew, state, mode, startedMs, finishedMs, lastActivityMs, fileName, wafer, blk, layer, truncated, error} | start, pollOnce
+isIgnoredName(name)    | monitor.js | string->bool | pansamantalang file (prefix ~$, extension .tmp .temp .part .crdownload; CONFIG.MONITOR) | scanSource
+parseName(name)        | monitor.js | string->{wafer,blk,layer} | kapareho ng parseName ng lot-tracking.js (CONFIG.LOT.NAME_PATTERN); walang laman kung hindi tumama | evaluateSource
+scanSource(handle)     | monitor.js | ->Promise<{entryMap,truncated}> | binabasa ang folder at subfolder (hanggang LOT.MAX_DEPTH, MAX_ENTRIES); entry: {kind, modifiedMs, size} | pollOnce
+diffSnapshots(prev, cur) | monitor.js | Map,Map->{newFiles,newFolders,changed,removed} | ikinukumpara ang dalawang scan (changed = nagbago ang oras o laki ng file) | pollOnce
+latestPath(list, map) / baseName(path) | monitor.js | helper | pinakabagong path sa listahan / pangalan ng file | evaluateSource
+settleDiff(recentNew, diff, nowMs) | monitor.js | - | ang bagong file na kasusulat pa lang (lumalaki) ay hindi ituturing na bagong ongoing sa loob ng SETTLE_MS; inaalala ang mga bagong file | pollOnce
+evaluateSource(key, prev, diff, map, nowMs, detectedMode) | monitor.js | ->state | source2/3: bagong file = DONE, ibang pagbabago = ONGOING; source1: anumang pagbabago = ONGOING (walang DONE); ang ONGOING na walang pagbabago lampas ONGOING_TIMEOUT_MS = idle | pollOnce
+chooseOverall(stateMap) | monitor.js | ->object | pinipili ang ipapakita ng machine: pinakabagong ONGOING, kung wala ay pinakabagong DONE, kung wala ay idle | writeStatus
+detectCalibMode(handle) | monitor.js | ->Promise<'master'|'calibration'> | binabasa (read-only) ang pinakabagong CSV ng Data source 1; 15 headers sa row 2 = master, kung hindi calibration | pollOnce
+loadContext(shouldRequest) | monitor.js | ->Promise<{state,...}> | machine name/mode (localStorage), handle ng server at mga source na may permission; state: running/notApplicable (LEAD PC o walang name)/noSource/noServer/noPermission/unsupported | start
+pollOnce(nowMs)        | monitor.js | ->Promise | isang ikot: scan ng bawat source, update ng state, sulat ng status | start, tick
+writeStatus(nowMs)     | monitor.js | ->Promise | sulat sa queue kapag nagbago ang status o lampas HEARTBEAT_MS; binubura ang queue file ng lumang machine name; kapag pumalya, lastError='write' at subukan ulit sa susunod na ikot | pollOnce
+tick()                 | monitor.js | ->Promise | ikot ng timer (kada POLL_MS); hindi nag-o-overlap; kapag nagbago ang settings sa localStorage, start(false) ulit | setInterval
+start(shouldRequest)   | monitor.js | ->Promise<state> | simula ng monitor; hindi nagtatapon ng error; shouldRequest true lang kapag galing sa click (para sa permission) | app.js (initApp), Dashboard (1D, button na Payagan)
+stop()                 | monitor.js | - | itinitigil ang timer | start
+getState()             | monitor.js | ->{state,machineName,lastWriteMs,lastError,sources} | buod ng kalagayan (walang snapshot); sources[key] = {state,mode,fileName,wafer,blk,layer,entryCount,truncated,error} | Dashboard (1D), pag-debug
+
 C. VARIABLES / CONSTANTS
 CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
@@ -246,6 +297,12 @@ lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nas
 [v4] frameId, indicatorFrameId (let) sa effects.js | id ng requestAnimationFrame
 [v4] CSS VARIABLES sa css/theme.css: --glow, --spot (liwanag ng background at spotlight), --ease; pinalitan ang --color-*, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --font-main. Dark mode: itim, charcoal at puti.
 
+[v5] CONFIG.SERVER_KEY 'server' (key ng Server path sa handleMap) | CONFIG.MACHINE_FILE {EXTENSION '.json', LEGACY_NAME 'settings.json', RESERVED_FILES ['settings.json','events.json'], INVALID_CHARS, TRAILING_CHARS, RESERVED_PATTERN, PREFIX '_', FALLBACK_NAME 'machine'} | CONFIG.MACHINE_FILE_FIELD 'machineFile' (field sa settings na may pangalan ng file ng machine) | js/core/config.js | storage.js, settings.js
+[v5] CONFIG.TEXT: savedBoth, savedRootOnly, serverNotSet, serverFailed | js/core/config.js | mensahe ng save | settings.js (onSave). [LUMA v5] CONFIG.TEXT.saved: hindi na ginagamit sa onSave
+[v5.1] CONFIG.QUEUE (config.js): SUBFOLDER 'queue', FILE_VERSION 1, HEARTBEAT_MS 30000 (gaano kadalas magsulat ang monitor), STALE_MS 120000 (lampas dito = stale), TEXT_MAX 60, FILE_NAME_MAX 120, FILE_MAX_BYTES 65536, MAX_FILES 200, MODE{idle,calibration,master,online,offline}, STATE{idle,ongoing,done}, SOURCE{'',source1,source2,source3}, PRESENCE{active,stale,noStatus}, CONNECTION{ok,noFolder,noPermission,unsupported,error}
+[v5.2] CONFIG.MONITOR (config.js): POLL_MS 5000, SETTLE_MS 30000, MAX_ENTRIES 5000, SOURCE_KEYS, SOURCE_MODE {source1 'auto' (master/calibration), source2 'online', source3 'offline'}, ONGOING_TIMEOUT_MS {source1 300000, source2 1800000, source3 1800000}, IGNORED_PREFIXES ['~$'], IGNORED_EXTENSIONS ['.tmp','.temp','.part','.crdownload'], STATE {stopped, running, notApplicable, noSource, noServer, noPermission, unsupported, error}
+[v5.2] Variables sa monitor.js (let, nasa loob ng IIFE): context (machine at mga handle), timerId, isPolling, monitorState, lastWriteMs, lastWrittenKey (huling isinulat na status, para malaman kung nagbago), lastWrittenName (para mabura ang lumang queue file), lastError, settingsKey (para malaman kung nagbago ang settings), sourceMap (state ng bawat source)
+
 D. EVENTS
 click       | #menu-button, #overlay, .sidebar-link | app.js | buksan/isara ang menu
 hashchange  | window | app.js | loadPage
@@ -267,6 +324,7 @@ click       | #ev-list (delegation sa [data-action]) | dashboard-events.js | han
 submit      | #ev-form | dashboard-events.js | handleSubmit
 setInterval | window | dashboard-events.js | updateClock kada 1 segundo; humihinto kapag wala na ang #dash-clock-time sa pahina
 
+setInterval | window | monitor.js | tick kada POLL_MS (5 segundo); nagsisimula sa app.js (monitor.start)
 pointermove | document | effects.js | spotlight ng card
 pointerdown | document | effects.js | ripple ng button
 resize      | window | effects.js | scheduleIndicator
@@ -275,7 +333,13 @@ MutationObserver | #sidebar (childList, subtree, class) | effects.js | scheduleI
 E. STORAGE / API
 localStorage "bmww.settings" | settings.js, dashboard.js | {machineMode, machineName, [BINURA v2.4: machineNameLocked], [v2.4] folderPaths{server,root,source1,source2,source3}, rootFolderName, sourceFolderName (para sa Dashboard), folderNames{server,root,source1,source2,source3}, savedAt} | cache
 IndexedDB "bmww-db" / store "handles" (keys rootFolder, serverFolder, sourceFolder, sourceFolder2, sourceFolder3) | storage.js | folder handles | iwas pili ulit
-File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing tala (C:\desktop\BMWW\settings)
+File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing tala (C:\desktop\BMWW\settings) [LUMA v5: hindi na sinusulat; binabasa pa rin bilang huling opsyon ng readMachineSettings]
+[v5] File: <Saving path>\settings\<machine name>.json | storage.js (writeMachineSettings) | parehong object ng settings + field machineFile | tala ng machine sa sariling PC; nababasa sa loadState
+[v5] File: <Server path>\settings\<machine name>.json | storage.js (writeMachineSettings) | parehong object | kopya sa server; dito babasahin ng LEAD PC ang listahan ng machine (susunod na task). Isang file kada machine kaya walang nagpapatungan maliban kung pareho ang machine name.
+[v5] settings.machineFile (localStorage 'bmww.settings' at sa file) | settings.js | pangalan ng file ng machine | para mabura ang lumang file kapag nagpalit ng machine name
+[v5.1] File: <Server path>\queue\<machine name>.json | queue.js (writeQueueStatus) | {version, machineName, machineMode, mode, state, source, fileName, wafer, blk, layer, barcode, startedAt, finishedAt, updatedAt} | status ng machine; isang file kada machine (sulat ng sarili niya lang); basa ng LEAD PC at ng ibang machine
+[v5.2] Ang monitor.js ang nagsusulat ng queue file (sa pamamagitan ng queue.writeQueueStatus). Binabasa lang (hindi sinusulatan) ang Data source 1, 2, 3.
+[v5.1] Dalawang pinagmumulan ng listahan: <Server path>\settings (sino ang naka-register) at <Server path>\queue (ano ang ginagawa). Ang machine na walang queue file ay noStatus, hindi nawawala.
 Walang backend/API sa v1 (api/ ay walang laman).
 [v2.5] LOT Tracking: binabasa ang machineName mula sa localStorage "bmww.settings" at ang handle ng source1..3 mula sa IndexedDB (key sa CONFIG.HANDLE_KEY). Walang sinusulat; basa lang sa mga folder.
 
@@ -298,6 +362,8 @@ settings.js -> config, security, storage | dashboard.js -> config, storage (laha
 [v3] events-store.js -> config, security, storage | dashboard-events.js -> config, security, events-store | dashboard.js -> dashboardEvents.init | ayos sa index.html: ... storage.js, events-store.js ... (dashboard-events.js ay nilo-load ng router mula sa template)
 
 [v4] index.html -> css/theme.css (huling CSS) at js/core/effects.js (pagkatapos ng router.js, bago ang templates at app.js) | effects.js -> config (REDUCED_MOTION_QUERY, SELECTOR.sidebar)
+[v5.1] queue.js -> config, security, storage (toMachineFileName, loadHandle, hasPermission, isFolderAccessSupported) | ayos sa index.html: ... events-store.js, queue.js ... | walang tumatawag pa (1C monitor, 1D Dashboard)
+[v5.2] monitor.js -> config, security, storage, queue, csv | app.js -> monitor.start(false) | ayos sa index.html: ... queue.js, csv-reader.js, master-analysis.js, chart-draw.js, monitor.js, router.js ... app.js
 
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
@@ -305,7 +371,7 @@ PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder
 PAGE: calibration | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
 PAGE: master [v2.6] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
   HTML ID: master-source, latest-start, latest-end, latest-run, latest-status, latest-result, range-start, range-end, range-run, range-status, range-result | DEPENDS: storage.loadHandle, hasPermission, readLocalSettings, csv.*, masterAnalysis.*, chart.*
-PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage
+PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage [v5 dagdag] OUTPUT: <Saving path>\settings\<machine name>.json at <Server path>\settings\<machine name>.json | DEPENDS dagdag: storage.toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
   HTML ID: machine-note, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
 PAGE: lot-tracking [v2.5] | INPUT: Barcode, Operator, machineName (Settings), folder handle ng Data source 1-3 | OUTPUT: Start/End Date at Time, badge, talaan ng bagong file/folder (walang sine-save)
@@ -362,3 +428,24 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
 2026-11-20 | Design: hindi pa nakikita sa totoong Chrome/Edge ng gumawa (jsdom lang); ang unang visual test ay sa device mo.
 2026-11-20 | Design: color-mix() (topbar blur sa mobile) ay nangangailangan ng bagong Chrome/Edge (111 pataas); may fallback na solid na kulay.
 2026-11-20 | Design: ang constants ng effects.js ay nasa effects.js, hindi sa config.js (Rule 7); puwedeng ilipat kapag pinayagan ang pag-edit ng config.js.
+2026-11-20 | [v5] Dalawang PC na pareho ang machine name ay magpapatungan ng file sa server (isang file kada pangalan). Kailangang magkaiba ang machine name.
+2026-11-20 | [v5] Kapag nagpalit ng machine name, binubura ang lumang <pangalan>.json sa Saving path at Server path. Hindi binubura ang lumang settings.json at events.json.
+2026-11-20 | [v5] Kapag pumalya ang Server path (sarado ang server o walang permission), naka-save pa rin sa Saving path; error ang ipinapakita at kailangang i-save ulit.
+2026-11-20 | [v5] Ang LEAD PC view, queue folder at monitor ng Data source 1, 2, 3 ay hindi pa ginagawa (Task 1B, 1C, 1D).
+2026-11-20 | [v5] Hindi pa nasubukan sa totoong Chrome/Edge at totoong server ng gumawa; jsdom at fake folder handle lang (26 test). Ang unang test ay sa device mo.
+2026-11-20 | [v5] Ang settings ng lumang bersyon (settings.json) ay nababasa pa; sa unang Save ay gagawa na ng <machine name>.json.
+2026-11-21 | [v5.1] Ang queue ay data lang; wala pang monitor na nagsusulat at wala pang Dashboard na nagpapakita (1C at 1D).
+2026-11-21 | [v5.1] Ang stale/active ay batay sa oras ng file sa server kumpara sa orasan ng nagbabasang PC. Kapag may malaking pagkakaiba ang orasan ng PC at server, maaaring mali ang stale. Itama ang oras ng mga PC.
+2026-11-21 | [v5.1] Kapag pumalya ang server, state 'error' ang ibinibigay (hindi '0 machine'), para hindi mapagkamalang walang machine.
+2026-11-21 | [v5.1] Ang queue file ng machine na binura ang settings (o nagpalit ng pangalan) ay mananatili hanggang burahin; lalabas itong registered: false. Maaaring burahin gamit ang removeQueueStatus (UI sa 1D).
+2026-11-21 | [v5.1] Hindi pa nasubukan sa totoong Chrome/Edge at totoong server; jsdom at fake folder handle lang (42 test sa queue, 26 sa settings). Ang unang test ay sa device mo.
+2026-11-21 | [v5.2] ASSUMPTION: Data source 2 = Online, Data source 3 = Offline (CONFIG.MONITOR.SOURCE_MODE; palitan doon kung baligtad). Data source 1 = Calibration/Master ayon sa header count ng pinakabagong CSV (15 = Master, tulad ng Master page).
+2026-11-21 | [v5.2] ASSUMPTION: ONGOING = may nagbago sa folder (oras o laki ng file, bagong folder, may nabura); DONE = may bagong file (source 2 at 3 lang). Ang source 1 ay walang DONE, babalik sa idle pagkatapos ng 5 minutong walang pagbabago.
+2026-11-21 | [v5.2] Hindi mababasa ng browser ang 'date modified' ng mismong folder; ang oras at laki ng mga file sa loob (hanggang 5 antas) ang tinitingnan. Kapag ang instrument ay nagbabago lang ng date modified ng folder nang walang nabago sa loob, hindi ito makikita.
+2026-11-21 | [v5.2] ASSUMPTION: ang timeout ng ONGOING (5 min sa source 1, 30 min sa source 2 at 3) ay tantiya ko lang; hindi mo pa nakumpirma. Kapag ang pagsukat ay mas matagal na walang pagbabago sa folder, magiging idle ito nang maaga.
+2026-11-21 | [v5.2] Ang bagong file na kasusulat pa lang ay binabalewala ang pagbabago sa loob ng 30 segundo (SETTLE_MS) para hindi bumalik sa ONGOING.
+2026-11-21 | [v5.2] Blangko pa ang Barcode sa queue: ang Barcode ng LOT Tracking ay nasa memory ng lot-tracking.js lang. Kailangan ng permission para galawin ang lot-tracking.js at ilabas ito.
+2026-11-21 | [v5.2] Kailangang nakabukas ang BMWW page sa not-LEAD PC para gumana ang monitor; kapag nakasara, walang update (magiging stale sa LEAD PC). Ang mga pagbabago habang nakasara ay hindi na makikita pagbukas ulit (baseline ang unang scan).
+2026-11-21 | [v5.2] Pagkatapos magsara ng browser, maaaring humingi ulit ng permission ang Chrome/Edge; walang kusang prompt. Pindutin ang Save sa Settings para ma-allow ulit (ang button na Payagan ay sa 1D).
+2026-11-21 | [v5.2] Ang DONE ay nananatili hanggang may susunod na pagbabago (o hanggang mag-restart ang page). Ang scan ng malalaking folder kada 5 segundo sa network drive ay maaaring mabigat; hanggang 5000 entry lang ang binabasa kada source.
+2026-11-21 | [v5.2] Hindi pa nasubukan sa totoong Chrome/Edge, totoong instrument at totoong server; jsdom at fake folder handle lang (30 test sa monitor). Ang unang test ay sa device mo.
