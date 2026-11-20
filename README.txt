@@ -1,4 +1,8 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v2.13 | 2026-11-21 | Export to Excel: ang sheet na Readings ay may line chart (Excel chart, hindi larawan) sa kanan ng table. Binago: xlsx-writer.js, master-export.js, master-export-config.js
+v2.12 | 2026-11-21 | Master Repeatability: dalawang mode (All data points flat / Latest per shift: Morning 7:30 AM-6:30 PM, Night 7:30 PM-6:30 AM kada petsa). Bagong master-shift.js at master-shift-config.js; binago: master.js, master.html, template, master.css, master-export.js
+v2.11 | 2026-11-21 | Export: isang subfolder (master-repeatability), sa loob nito ay folder na petsa ng export. Binago: master-export.js
+v2.10 | 2026-11-20 | Master: Range Master ay Master Repeatability; chart sa ibaba na may scroll, legend = petsa; Export to Excel (.xlsx) sa <Saving path>\master-repeatability\<petsa ng export>
 v3.4 | 2026-11-21 | tools/file-watcher: Data source 1 ay binabantayan na rin (ModifiedWatchPaths sa watcher-config.txt) at kasama ang na-modify na file, hindi lang bago (DebounceSeconds). Binago: watch-new-files.ps1, watcher-config.txt, README-WATCHER.txt, js/pages/watcher-install.js (text lang)
 v3.3 | 2026-11-21 | Settings: dagdag na button at panel na "Paano i-uninstall" sa card ng File Watcher (hakbang sa File Explorer, pagsusuri gamit ang shell:startup, at manual na paraan kung naka-block ang .bat). Laging bukas, hindi kailangan ng Saving path. Binago lang: js/pages/watcher-install.js at css/pages/watcher-install.css
 v3.2 | 2026-11-21 | Settings: card na Install File Watcher (babala, tick na "Naiintindihan ko", tapos path ng folder at hakbang sa File Explorer). Hindi nag-i-install ang website; ang user mismo ang magpapatakbo ng install-watcher.bat. Bagong js/pages/watcher-install.js at css/pages/watcher-install.css
@@ -48,6 +52,11 @@ js/templates/sidebar|dashboard|settings|404.template.js | [v2] kopya ng HTML ng 
 pages/lot-tracking.html | [v2.5] LOT Tracking page (markup; kopya ay js/templates/lot-tracking.template.js)
 css/pages/lot-tracking.css | [v2.5] style ng LOT Tracking (naka-scope sa .page-lot-tracking)
 js/pages/lot-tracking.js | [v2.5] logic ng LOT Tracking | js/templates/lot-tracking.template.js | [v2.5] kopya ng pages/lot-tracking.html bilang string
+js/core/master-export-config.js | [v2.10] constants ng export (subfolder, kulay, text, selector) sa window.BMWW.exportConfig (hiwalay para hindi galawin ang config.js)
+js/core/master-shift-config.js | [v2.12] constants ng mode at oras ng shift (window.BMWW.shiftConfig)
+js/core/master-shift.js | [v2.12] pinipili ang record ayon sa mode (window.BMWW.masterShift)
+js/core/xlsx-writer.js  | [v2.10] gumagawa ng .xlsx nang walang library (ZIP store + XML) sa window.BMWW.xlsx
+js/core/master-export.js| [v2.10] bumubuo ng Excel mula sa resulta ng Master Repeatability at sine-save sa subfolder ng Saving path (window.BMWW.masterExport)
 
 js/core/events-store.js | [v3] basa/sulat ng events (localStorage at settings/events.json)
 js/core/queue.js        | [v5.1] queue ng machine sa Server path (status, listahan ng machine, presence) | window.BMWW.queue
@@ -123,8 +132,8 @@ clearSection(statusKey, resultKey) | master.js | - | linis ng mensahe at resulta
 makeStatusBadge(status), makeStatList(entries), makeTable(headers, rows), formatNumber(v, digits) | master.js | gawa ng elemento ng resulta (textContent lang)
 renderLatest(result), renderRange(result) | master.js | - | ipinapakita ang status, stats, table, chart; [v2.8] renderRange: chart + file panel sa gilid | onRunLatest, onRunRange
 groupByFile(columnList) | master.js | array->{groupList,groupMap} | [v2.8] pinagsasama ang linya kada file: {name, colorIndex, recordCount}, ayon sa unang labas | renderRange
-drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet) | master.js | - | [v2.8] iginuguhit ang line chart; napiling file lang (at MASTER) ang kasama; walang legend sa ilalim | renderRange (redraw)
-makeSelectedLegend(groupMap, selectedNameSet) | master.js | ->ul | [v2.9] legend: MASTER + napiling file lang, kulay ng linya | drawRangeLines
+drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet) | master.js | - | [v2.8] iginuguhit ang line chart; napiling file lang (at MASTER) ang kasama; [v2.10] ang legend ay makeDateLegend sa legendHost (sa ilalim ng chart) | renderRange (redraw)
+[BINURA v2.10] makeSelectedLegend(groupMap, selectedNameSet) | master.js | ->ul | [v2.9] legend ng file name; pinalitan ng makeDateLegend (petsa) | drawRangeLines
 makeFilePanel(groupList, selectedNameSet, onChange) | master.js | ->aside | [v2.8] checkbox ng bawat file (lahat naka-check) + 'Napili: n / total'; change event ay nag-a-update ng selectedNameSet at tumatawag ng onChange | renderRange
 [v2.8] CONFIG.TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected | js/core/config.js | text ng file panel
 [v2.8] Events: change | .file-checkbox | master.js | tatawag ng redraw ng line chart | (isang listener kada checkbox; nawawala kasama ng resulta kapag nag-Run ulit)
@@ -202,6 +211,14 @@ startTimer() / stopTimer() | lot-tracking.js | - | [v2.5] auto refresh kada CONF
 endLote() / startLote(operator) | lot-tracking.js | ->Promise | [v2.5] tapusin / simulan ang lote (Start/End = ngayon) | handleBarcode, handleOperator
 handleBarcode() / handleOperator() | lot-tracking.js | - | [v2.5] Enter sa Barcode (parehong barcode = END) / Operator (2-30 chars) | keydown
 onNewLote() / isEnterKey(event) / init() | lot-tracking.js | - | [v2.5] NEW LOTE button; Enter key lang; init ng page | click, keydown, router
+[v2.10] xlsx-writer.js: computeCrc(bytes) | CRC32 | buildZip; columnLetter(i) | 0->A | buildCell; escapeXml(text) | tanggal control chars, escape | buildCell, buildPackageEntries; buildCell(cell,r,c) | cell o {v,s} -> XML | buildSheetXml; buildSheetView(freeze) | freeze panes | buildSheetXml; buildSheetXml(sheet) | worksheet XML | buildPackageEntries; buildStylesXml(colorMap) | styles (STYLE index) | buildPackageEntries; buildPackageEntries(sheetList,colorMap) | bahagi ng .xlsx | buildWorkbook; buildZip(entryList) | ->Blob | buildWorkbook; buildWorkbook(sheetList,colorMap) | ->Blob | master-export.js
+[v2.10] master-export.js: padTwo(v); numberCell(value,style); getLevelStyle(actual,master) | green/yellow/red style (parehong rule ng screen) ; formatDay(date) ; buildSummarySheet(result,exportedAt,sourceText) | sheet 'Repeatability' (buod + per barcode) ; buildReadingsSheet(result) | sheet 'Readings' (lahat ng record, MASTER row, freeze) ; buildFileName(result,exportedAt) | master-repeatability_start_to_end_yyyymmdd-hhmmss.xlsx ; buildBlob(result,exportedAt,sourceText) ; exportRepeatability(result,rootHandle,sourceText) | ->Promise<{folderName,fileName}> | gumagawa ng subfolder kung wala, sumusulat ng file | onExport (master.js)
+[v2.10] master.js: getExportButton(); updateExportButton() | bukas lang kapag may resulta at hindi busy | setBusy, onRunRange, init ; getExportErrorMessage(error) | friendly na mensahe | onExport ; makeDateLegend(seriesList) | legend ng petsa (may scroll) | renderRange ; onExport() | click ng Export to Excel: kuha ng handle ng Saving path, permission, exportRepeatability
+[v2.13] xlsx-writer.js: absoluteRef(col,row) | $B$3 | buildSeriesXml ; quoteSheetName(name) | 'name' | buildChartXml ; buildStringCache(list) / buildNumberCache(list) | cache ng chart | buildSeriesXml ; buildSeriesXml(series,index,sheetRef,chart) | XML ng isang linya | buildChartXml ; buildChartXml(sheetName,chart) | line chart XML (categories = barcode, y-axis yMin/yMax) | buildPackageEntries ; buildDrawingXml(anchor) | posisyon ng chart sa sheet | buildPackageEntries ; buildRelsXml(type,target) | rels | buildPackageEntries. Ang sheet ay may optional na .chart; ginagawa ang xl/drawings, xl/charts at rels.
+[v2.13] master-export.js: getChartColumnList(result) | huling CONFIG.MASTER.RANGE.MAX_LINES (150) na record | buildSummarySheet, buildReadingsChart ; buildReadingsChart(result, leadCount) | ->chart spec | buildReadingsSheet (linya = record, petsa ang pangalan; MASTER makapal na itim; y-axis min/max mula sa data + CHART.PAD_RATIO)
+[v2.12] master-shift.js: getShiftOf(date) | Date->{name,dayKey}|null | Morning 07:30-18:30; Night 19:30-06:30 (00:00-06:30 ay night ng nakaraang petsa); labas sa dalawa = null | pickLatestPerShift ; pickLatestPerShift(columnList) | ->array | pinakahuling record ng Morning at ng Night kada petsa (max 2 kada petsa), may .shift at .shiftDay | applyMode ; applyMode(result, mode) | ->result | 'all' = lahat ng data point; 'shift' = pickLatestPerShift at kalkulasyon ulit ng stats (computeRepeatability); error 'noRecordInShift' | onRunRange (master.js)
+[v2.12] master.js: getSelectedMode() | ->'all'|'shift' | radio name=range-mode | onRunRange ; getErrorMessage ay tumitingin din sa shiftConfig.TEXT.error. master-export.js: mode sa sheet Repeatability, column 'Shift' sa Readings (shift mode lang), suffix _all/_shift sa pangalan ng file
+[v2.10] renderRange: chart ay nasa ibaba ng table, sa loob ng .chart-scroll (x at y scroll), katabi ang file panel; ang legend ay date legend (makeDateLegend, galing sa napiling file) na pumalit sa makeSelectedLegend [BINURA v2.10] (hideLegend ng chart-draw ang gamit).
 
 [v3] events-store.js (window.BMWW.eventsStore):
 isValidDateText(value)  | events-store.js | string->bool | tama ba ang YYYY-MM-DD (totoong petsa) | normalizeEvent, dashboard-events
@@ -293,6 +310,11 @@ INPUT (settings.js, const) | [v2.4] shortcut sa CONFIG.ROW_INPUT_CLASS (class ng
 [BINURA v2.4] SELECTOR.settings.lockBadge, TEXT.machineWarn / machineLocked / confirmLock / badgeLocked / badgeOpen; pinalitan ng TEXT.machineNote
 CONFIG.LOT (config.js, v2.5): PAGE, SOURCE_KEYS, SOURCE_LABEL, REFRESH_MS (3000), START_TOLERANCE_MS (1000), MAX_DEPTH (5), MAX_ROWS (30), BARCODE_MAX, OPERATOR_MIN, OPERATOR_MAX, IGNORED_PREFIX, NAME_PATTERN, TYPE, PATH_COLUMN, EMPTY_CELL, SELECTOR, TEXT; PAGE_LIST ay may 'lot-tracking'
 lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nasa loob ng IIFE) | [v2.5] kasalukuyang lote, barcode na hinihintay ang operator, mga source handle, timer, guard
+[v2.10] exportConfig (master-export-config.js, frozen): SUBFOLDER 'master-repeatability', FILE_PREFIX, FILE_EXTENSION, PATH_SEPARATOR, SELECTOR{exportButton '#range-export', defaultLegend '.chart-legend'}, COLOR{header,green,yellow,red}, SHEET, COLUMN_WIDTH, ERROR_BY_NAME, LABEL, TEXT{exporting, saved, chartAria, dateLegendAria, dateLegendTitle, error{...}}
+[v2.13] exportConfig.CHART: PALETTE (8 kulay), MASTER_COLOR, LINE_WIDTH, MASTER_LINE_WIDTH, MARKER_SIZE, MASTER_MARKER_SIZE, GAP_COLUMNS, COLUMN_SPAN, ROW_SPAN, X_TITLE, Y_TITLE; LABEL.chartRecords
+[v2.12] shiftConfig (master-shift-config.js, frozen): MODE{all,shift}, DEFAULT_MODE, SHIFT{morning{startMinute 450,endMinute 1110}, night{startMinute 1170,endMinute 390}}, FILE_SUFFIX, SELECTOR.checkedMode, TEXT{modeLabel, modeName, shiftColumn, error.noRecordInShift}
+[v2.10] lastRangeResult (let, master.js, nasa IIFE) | huling resulta ng Master Repeatability para sa Export
+[v2.10] STYLE (xlsx-writer.js) | normal, header, bold, number, green, yellow, red
 
 [v3] CONFIG.EVENTS (config.js): STORAGE_KEY 'bmww.events', FILE_NAME 'events.json', FILE_VERSION, ID_PREFIX, LOCALE 'en-PH', WEEK_START (0=Linggo), CELL_COUNT 42, CLOCK_MS 1000, TITLE_MAX 60, NOTE_MAX 300, ID_MAX, MAX_EVENTS 500, DATE_PATTERN, TIME_PATTERN, ATTR, ACTION, CLASS, FILE_STATE{ok,noFolder,noPermission,unsupported,error}
 [v3] CONFIG.SELECTOR.events (lahat ng id ng seksyon), CONFIG.SELECTOR.eventDay / eventAction, CONFIG.TEXT.events (lahat ng mensahe)
@@ -324,6 +346,8 @@ keydown     | #lot-barcode, #lot-operator | lot-tracking.js | [v2.5] Enter: hand
 focus       | #lot-barcode | lot-tracking.js | [v2.5] select ng laman para mapalitan ng bagong scan
 click       | #lot-new | lot-tracking.js | [v2.5] onNewLote
 setInterval | window | lot-tracking.js | [v2.5] refreshResults kada 3 segundo habang ONGOING
+change      | input[name=range-mode] | [v2.12] binabasa lang sa pag-click ng Master Repeatability (walang listener)
+click       | #range-export | master.js | [v2.10] onExport
 
 click       | #cal-prev, #cal-next, #cal-today, #ev-add, #ev-cancel, #ev-grant | dashboard-events.js | lipat ng buwan, ngayon, bagong event, cancel, payagan ang folder
 click       | #cal-grid (delegation sa [data-date]) | dashboard-events.js | handleGridClick -> selectDate
@@ -349,6 +373,7 @@ File: <BMWW>\settings\settings.json | storage.js | parehong object | pangunahing
 [v5.1] Dalawang pinagmumulan ng listahan: <Server path>\settings (sino ang naka-register) at <Server path>\queue (ano ang ginagawa). Ang machine na walang queue file ay noStatus, hindi nawawala.
 Walang backend/API sa v1 (api/ ay walang laman).
 [v2.5] LOT Tracking: binabasa ang machineName mula sa localStorage "bmww.settings" at ang handle ng source1..3 mula sa IndexedDB (key sa CONFIG.HANDLE_KEY). Walang sinusulat; basa lang sa mga folder.
+[v2.10] File: <BMWW>\master-repeatability\<yyyy-mm-dd ng export>\master-repeatability_<start>_to_<end>_<yyyymmdd-hhmmss>.xlsx | master-export.js | Sheet 'Repeatability' at 'Readings' | Export ng Master Repeatability (IndexedDB key rootFolder ang handle ng Saving path)
 
 [v3] localStorage "bmww.events" | events-store.js | array ng event (may pending mark) | cache at pang-offline
 [v3] File: <BMWW>\settings\events.json | events-store.js | {version, savedAt, events[]} | pangunahing tala; ang file ang nananaig kapag nabasa; ang pending na event ay isinasama pabalik sa file kapag nabuksan ulit
@@ -358,6 +383,8 @@ F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --le
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
   --space-1/2/3/4/6/8, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --sidebar-width, --content-max, --touch-size, --font-size-label, --font-main
   Dark mode: prefers-color-scheme block sa base.css, variables lang ang pinapalitan.
+
+[v2.10] master.js -> master-export.js -> xlsx-writer.js, master-export-config.js (ang apat ay naka-link sa pages/master.html at template; walang binago sa index.html)
 
 G. DEPENDENCY MAP (v2: classic scripts, ayos ng <script defer> sa index.html ang mahalaga)
 index.html -> config.js -> registry.js -> security.js -> storage.js -> router.js -> js/templates/*.js -> app.js
@@ -376,8 +403,8 @@ PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
 PAGE: calibration | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
-PAGE: master [v2.6] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
-  HTML ID: master-source, latest-start, latest-end, latest-run, latest-status, latest-result, range-start, range-end, range-run, range-status, range-result | DEPENDS: storage.loadHandle, hasPermission, readLocalSettings, csv.*, masterAnalysis.*, chart.*
+PAGE: master [v2.6, v2.10: #range-export; Range Master = Master Repeatability] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
+  HTML ID: [v2.10] range-export, [v2.12] range-mode (radio: all / shift), master-source, latest-start, latest-end, latest-run, latest-status, latest-result, range-start, range-end, range-run, range-status, range-result | DEPENDS: storage.loadHandle, hasPermission, readLocalSettings, csv.*, masterAnalysis.*, chart.*, masterExport.* [v2.10: OUTPUT din: .xlsx sa <Saving path>\master-repeatability]
 PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage [v5 dagdag] OUTPUT: <Saving path>\settings\<machine name>.json at <Server path>\settings\<machine name>.json | DEPENDS dagdag: storage.toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
   HTML ID: machine-note, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
@@ -389,9 +416,18 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
   HTML ID: dash-clock-time, dash-clock-date, cal-prev, cal-next, cal-today, cal-title, cal-weekdays, cal-grid, ev-selected-label, ev-list, ev-add, ev-form, ev-form-title, ev-title, ev-date, ev-time, ev-note, ev-save, ev-cancel, ev-form-status, ev-message, ev-status, ev-grant | DEPENDS: eventsStore.loadEvents, saveEvents, sortEvents, createId, isValidDateText, isValidTimeText, security.sanitizeInput
 
 === KNOWN ISSUES / TODO ===
+2026-11-21 | [v2.13] Chart sa Excel: nasa sheet na Readings, sa kanan ng table (lampas ng huling barcode column). Huling 150 na record lang ang linya (kapareho ng screen); kumpleto ang table. Ang kulay ng linya ay umiikot kada record (8 kulay), hindi kada file.
+2026-11-21 | [v2.13] Chart sa Excel: nasubukan sa LibreOffice at openpyxl lang (nabasa ang chart); hindi pa nasubukan sa tunay na Microsoft Excel. Sabihin kung hindi lumabas ang chart o may babala sa pagbukas.
+2026-11-21 | [v2.12] Shift: ang record na labas sa Morning (7:30 AM-6:30 PM) at Night (7:30 PM-6:30 AM), hal. 6:31-7:29 AM at 6:31-7:29 PM, ay hindi isinasama sa Latest per shift. Ang record na 12:00 AM-6:30 AM ay kabilang sa Night ng nakaraang petsa.
+2026-11-21 | [v2.12] Latest per shift: ang buod, table, chart at Excel ay gumagamit lang ng napiling record. Ang MASTER ay ang pinakabagong master record ng buong range. Hindi nag-uupdate ang resulta kapag pinalitan ang radio; pindutin ulit ang Master Repeatability.
+2026-11-21 | [v2.12] Hindi pa nasubukan sa tunay na browser at CSV; jsdom at unit test lang (7:29, 7:30, 18:30, 18:31, 19:29, 19:30, 6:30, 6:31).
 2026-11-20 | [v2.8] Hindi pa nasubukan sa tunay na browser at tunay na CSV; jsdom test lang (3 gawa-gawang file: uncheck/re-check, kulay, Run ulit).
 2026-11-20 | [v2.8] Kada FILE ang checkbox (maraming linya/record ang isang file; sabay silang nawawala). Kung gusto mo kada record (petsa) ang checkbox, sabihin.
 2026-11-20 | [v2.8] Mahigit 8 file: umuulit ang kulay (8 ang PALETTE_SIZE). Kapag may na-uncheck, nagre-rescale ang y-axis ayon sa natitirang linya. Ang MASTER ay laging nakikita (walang checkbox).
+2026-11-20 | [v2.10] Hindi pa nasubukan sa tunay na browser; jsdom at LibreOffice/openpyxl test lang (valid ang .xlsx). Unang test ay sa device ng user (Chrome/Edge).
+2026-11-20 | [v2.10] Export: kailangang naka-set ang Saving path (BMWW) sa Settings at payagan ang access. [v2.11] Isang subfolder lang ('master-repeatability'); sa loob nito ay folder na petsa ng export (yyyy-mm-dd). Bagong file kada export (may oras sa pangalan, walang overwrite).
+2026-11-20 | [v2.10] Legend ng petsa (sa ilalim ng chart, may scroll) ay petsa ng mga napiling file; kulay kada FILE (8 lang ang umiikot), kaya ang mga petsa ng iisang file ay iisa ang kulay. Chart ay huling 150 na record lang; ang Excel (sheet Readings) ay kumpleto.
+2026-11-20 | [v2.10] Para hindi galawin ang config.js, chart-draw.js, index.html: constants ay nasa master-export-config.js at ang legend ay nasa master.js. Puwedeng ilipat kapag pinayagan.
 2026-11-20 | [v2.7] Ang kulay ay para sa bawat reading (point sa scatter, dot sa line chart, cell sa table). Ang 1.6 hanggang 2.5 ay yellow; ang pagitan ng 1.5 at 1.6 (hal. 1.55) ay yellow rin. Nasa CONFIG.MASTER.DEVIATION ang limitasyon.
 2026-11-20 | [v2.7] Hindi pa nakita sa tunay na screen ang laki ng chart (jsdom lang); sabihin kung kulang pa ang zoom out.
 2026-11-20 | [v2.6] Hindi pa nasubukan sa tunay na CSV at browser; jsdom test lang gamit ang gawa-gawang CSV. Ang column ay galing sa Excel macro (F:T actual, DA:DO master, U at DQ average, row 4 barcode, row 2 header = 15).

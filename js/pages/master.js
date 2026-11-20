@@ -7,6 +7,8 @@
  * VERSION : v2.7 | 2026-11-20 | kulay green / yellow / red kada reading (point, dot, cell); legend; mas maliit na chart
  * VERSION : v2.9 | 2026-11-20 | Range Master: legend sa ilalim ng chart para sa napiling file lang (kasama ang MASTER)
  * VERSION : v2.8 | 2026-11-20 | Range Master: listahan ng file sa gilid ng chart (lahat naka-check); kapag na-uncheck, nawawala ang linya ng file sa chart
+ * VERSION : v2.12 | 2026-11-21 | Mode ng Master Repeatability: All data points (flat) o Latest per shift (Morning / Night kada petsa)
+ * VERSION : v2.10 | 2026-11-20 | Master Repeatability: chart sa scroll box (x/y), legend = petsa ng napiling file; Export to Excel sa Saving path
  */
 (function () {
   'use strict';
@@ -16,10 +18,19 @@
   const CHART = CONFIG.CHART;
   const SEL = CONFIG.SELECTOR.master;
   const TEXT = CONFIG.TEXT.master;
-  const { storage, csv, masterAnalysis, chart } = root;
+  const { storage, csv, masterAnalysis, chart, masterExport } = root;
+  const EXPORT = root.exportConfig;
+  const SHIFT = root.shiftConfig;
 
   let sourceHandle = null;
   let isBusy = false;
+  let lastRangeResult = null;
+
+  // Napiling mode ng Master Repeatability ('all' o 'shift').
+  function getSelectedMode() {
+    const checked = document.querySelector(SHIFT.SELECTOR.checkedMode);
+    return checked ? checked.value : SHIFT.DEFAULT_MODE;
+  }
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -46,9 +57,20 @@
   // Ginagawang friendly na mensahe ang error (walang teknikal na detalye).
   function getErrorMessage(error) {
     const messageMap = TEXT.error;
+    if (error && SHIFT.TEXT.error[error.code]) return SHIFT.TEXT.error[error.code];
     if (error && messageMap[error.code]) return messageMap[error.code];
     if (error && MASTER.ERROR_BY_NAME[error.name]) return messageMap[MASTER.ERROR_BY_NAME[error.name]];
     return messageMap.readFail;
+  }
+
+  // Button ng Export to Excel (hindi ito nasa CONFIG.SELECTOR.master).
+  function getExportButton() {
+    return document.querySelector(EXPORT.SELECTOR.exportButton);
+  }
+
+  // Bukas lang ang Export kapag may resulta ng Master Repeatability at walang tumatakbo.
+  function updateExportButton() {
+    getExportButton().disabled = isBusy || !lastRangeResult;
   }
 
   // Disable ng mga button habang tumatakbo.
@@ -56,6 +78,15 @@
     isBusy = nextBusy;
     query('latestButton').disabled = nextBusy;
     query('rangeButton').disabled = nextBusy;
+    updateExportButton();
+  }
+
+  // Friendly na mensahe ng error sa pag-export (walang teknikal na detalye).
+  function getExportErrorMessage(error) {
+    const messageMap = EXPORT.TEXT.error;
+    if (error && messageMap[error.code]) return messageMap[error.code];
+    if (error && EXPORT.ERROR_BY_NAME[error.name]) return messageMap[EXPORT.ERROR_BY_NAME[error.name]];
+    return messageMap.exportFail;
   }
 
   // Inihahanda ang folder handle ng Data source 1 at hinihingi ang permission (dapat galing sa click).
@@ -139,6 +170,20 @@
     return list;
   }
 
+  // Legend ng chart: petsa ng bawat napiling record (kulay ay kapareho ng linya, kada file); may scroll pataas/pababa.
+  function makeDateLegend(seriesList) {
+    const list = makeElement('ul', 'date-legend');
+    list.tabIndex = 0;
+    list.setAttribute('aria-label', EXPORT.TEXT.dateLegendAria);
+    list.append(makeElement('li', 'date-legend-title', EXPORT.TEXT.dateLegendTitle + (seriesList.length - 1)));
+    seriesList.forEach((series, index) => {
+      const colorIndex = (series.colorIndex !== undefined ? series.colorIndex : index) % CONFIG.CHART.PALETTE_SIZE;
+      const colorClass = series.isMaster ? 'chart-master' : 'chart-series-' + colorIndex;
+      list.append(makeElement('li', 'date-legend-item ' + colorClass, series.name));
+    });
+    return list;
+  }
+
   // Numero sa 3 decimal; '-' kung wala.
   function formatNumber(value, digits) {
     return value === null || value === undefined ? '-' : value.toFixed(digits === undefined ? 3 : digits);
@@ -184,18 +229,8 @@
     return { groupList, groupMap };
   }
 
-  // Legend sa ilalim ng chart: MASTER at ang mga napiling file lang (kulay ay kapareho ng linya).
-  function makeSelectedLegend(groupMap, selectedNameSet) {
-    const list = makeElement('ul', 'chart-legend');
-    list.append(makeElement('li', 'chart-legend-item chart-master', TEXT.masterSeries));
-    Array.from(groupMap.values()).forEach((group) => {
-      if (selectedNameSet.has(group.name)) list.append(makeElement('li', 'chart-legend-item chart-series-' + group.colorIndex, group.name));
-    });
-    return list;
-  }
-
   // Iginuguhit ang line chart ng Range Master; ang mga linya lang ng napiling file (at ang MASTER) ang kasama.
-  function drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet) {
+  function drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet) {
     const seriesList = shownList
       .filter((column) => selectedNameSet.has(column.fileName))
       .map((column) => ({
@@ -204,7 +239,7 @@
       }));
     seriesList.push({ name: TEXT.masterSeries, values: result.masterList, isMaster: true });
     chart.drawLines(lineBox, { title: TEXT.lineTitle, categoryList: result.barcodeList, seriesList, hideLegend: true });
-    lineBox.append(makeSelectedLegend(groupMap, selectedNameSet));
+    legendHost.replaceChildren(makeDateLegend(seriesList));
   }
 
   // Panel sa gilid ng chart: checkbox ng bawat file (lahat naka-check). Tinatawag ang onChange kapag may binago.
@@ -263,17 +298,26 @@
       [TEXT.difference, formatNumber(stats.difference)],
       [TEXT.records, String(result.recordCount)],
       [TEXT.csvFiles, result.fileCount + ' (' + TEXT.masterFiles.toLowerCase() + ': ' + result.masterFileCount + ')'],
-      [TEXT.range, csv.formatDateTime(result.startDate, false).slice(0, 10) + ' - ' + csv.formatDateTime(result.endDate, false).slice(0, 10)]
+      [TEXT.range, csv.formatDateTime(result.startDate, false).slice(0, 10) + ' - ' + csv.formatDateTime(result.endDate, false).slice(0, 10)],
+      [SHIFT.TEXT.modeLabel, SHIFT.TEXT.modeName[result.mode]]
     ]));
     area.append(makeTable([TEXT.barcode, TEXT.master, TEXT.actualAverageShort, TEXT.averageDifference, TEXT.maxDifference],
       stats.perBarcodeList.map((entry) => [entry.barcode, formatNumber(entry.master), { text: formatNumber(entry.actualAverage), level: levelOf(entry.actualAverage, entry.master) }, formatNumber(entry.averageDifference), { text: formatNumber(entry.maxDifference), level: entry.maxDifference === null ? '' : levelOf(entry.maxDifference, 0) }])));
-    const lineBox = makeElement('div', 'chart-box chart-box-wide');
+    const chartBlock = makeElement('div', 'chart-block');
+    const scrollBox = makeElement('div', 'chart-scroll');
+    scrollBox.tabIndex = 0;
+    scrollBox.setAttribute('role', 'region');
+    scrollBox.setAttribute('aria-label', EXPORT.TEXT.chartAria);
+    const lineBox = makeElement('div', 'chart-box');
+    const legendHost = makeElement('div', 'date-legend-host');
+    scrollBox.append(lineBox);
+    chartBlock.append(scrollBox, legendHost);
     const shownList = result.columnList.slice(-MASTER.RANGE.MAX_LINES);
     const { groupList, groupMap } = groupByFile(shownList);
     const selectedNameSet = new Set(groupList.map((group) => group.name));
-    const redraw = () => drawRangeLines(lineBox, result, shownList, groupMap, selectedNameSet);
+    const redraw = () => drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet);
     const layout = makeElement('div', 'range-chart-layout');
-    layout.append(lineBox, makeFilePanel(groupList, selectedNameSet, redraw));
+    layout.append(chartBlock, makeFilePanel(groupList, selectedNameSet, redraw));
     area.append(makeLevelLegend(), layout);
     redraw();
     if (shownList.length < result.columnList.length) area.append(makeElement('p', 'result-note', TEXT.linesLimited.replace('{n}', String(shownList.length))));
@@ -306,6 +350,8 @@
   async function onRunRange() {
     if (isBusy) return;
     clearSection('rangeStatus', 'rangeResult');
+    lastRangeResult = null;
+    updateExportButton();
     const startDate = csv.parseDateInput(query('rangeStart').value);
     const endDate = csv.parseDateInput(query('rangeEnd').value);
     if (!startDate || !endDate) { setStatus('rangeStatus', TEXT.error.badDates, 'error'); return; }
@@ -314,8 +360,10 @@
     try {
       setStatus('rangeStatus', TEXT.working, 'info');
       const handle = await getReadyHandle();
-      const result = await masterAnalysis.analyzeRange(handle, startDate, endDate, (current, total, name) => setStatus('rangeStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'));
+      const analyzed = await masterAnalysis.analyzeRange(handle, startDate, endDate, (current, total, name) => setStatus('rangeStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'));
+      const result = root.masterShift.applyMode(analyzed, getSelectedMode());
       renderRange(result);
+      lastRangeResult = result;
       setStatus('rangeStatus', '', '');
     } catch (error) {
       query('rangeResult').replaceChildren();
@@ -325,10 +373,36 @@
     }
   }
 
+  // Click ng Export to Excel: sine-save sa <Saving path>/<subfolder>/ (ginagawa ang subfolder kung wala pa).
+  async function onExport() {
+    if (isBusy) return;
+    if (!lastRangeResult) { setStatus('rangeStatus', EXPORT.TEXT.error.noResult, 'error'); return; }
+    setBusy(true);
+    try {
+      setStatus('rangeStatus', EXPORT.TEXT.exporting, 'info');
+      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle) throw csv.createError('noRoot');
+      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+      const settings = storage.readLocalSettings();
+      const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+      const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
+      const saved = await masterExport.exportRepeatability(lastRangeResult, rootHandle, sourceText);
+      const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
+      const separator = EXPORT.PATH_SEPARATOR;
+      setStatus('rangeStatus', EXPORT.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
+    } catch (error) {
+      setStatus('rangeStatus', getExportErrorMessage(error), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Init ng page, tinatawag ng router.
   async function init() {
     isBusy = false;
     sourceHandle = null;
+    lastRangeResult = null;
     const today = new Date();
     const rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - MASTER.RANGE.DEFAULT_DAYS);
     query('latestStart').value = csv.formatDateInput(today);
@@ -338,6 +412,8 @@
     renderSource();
     query('latestButton').addEventListener('click', onRunLatest);
     query('rangeButton').addEventListener('click', onRunRange);
+    getExportButton().addEventListener('click', onExport);
+    updateExportButton();
     if (!storage.isFolderAccessSupported()) {
       setBusy(true);
       setStatus('latestStatus', TEXT.error.unsupported, 'error');
