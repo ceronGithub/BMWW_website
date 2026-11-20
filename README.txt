@@ -1,4 +1,7 @@
 BM ANALYZER WEB v1 | 2026-11-19
+v3.4 | 2026-11-21 | tools/file-watcher: Data source 1 ay binabantayan na rin (ModifiedWatchPaths sa watcher-config.txt) at kasama ang na-modify na file, hindi lang bago (DebounceSeconds). Binago: watch-new-files.ps1, watcher-config.txt, README-WATCHER.txt, js/pages/watcher-install.js (text lang)
+v3.3 | 2026-11-21 | Settings: dagdag na button at panel na "Paano i-uninstall" sa card ng File Watcher (hakbang sa File Explorer, pagsusuri gamit ang shell:startup, at manual na paraan kung naka-block ang .bat). Laging bukas, hindi kailangan ng Saving path. Binago lang: js/pages/watcher-install.js at css/pages/watcher-install.css
+v3.2 | 2026-11-21 | Settings: card na Install File Watcher (babala, tick na "Naiintindihan ko", tapos path ng folder at hakbang sa File Explorer). Hindi nag-i-install ang website; ang user mismo ang magpapatakbo ng install-watcher.bat. Bagong js/pages/watcher-install.js at css/pages/watcher-install.css
 v3.1 | 2026-11-21 | tools/file-watcher: script sa Windows na kusang nagbubukas ng website kapag may bagong file sa CLO1A/CLO1A1 (hindi parte ng website)
 v3.0 | 2026-11-21 | Search Files: Preview kada file sa Result (text, CSV, larawan, PDF)
 v2.9 | 2026-11-21 | Search Files: tanong kung papalitan ang kapangalan (overwrite), send log sa <Saving path>\logs\send-log.txt, alaala ng huling manual destination
@@ -483,3 +486,12 @@ KNOWN ISSUES [v2.8]:
 
 [v3.1] TOOLS/FILE-WATCHER (hiwalay sa website; PowerShell sa Windows): watch-new-files.ps1, watcher-config.txt, install-watcher.bat/.ps1, uninstall-watcher.bat/.ps1, run-watcher-visible.bat, README-WATCHER.txt. Basahin ang README-WATCHER.txt.
   KNOWN ISSUE: hindi pa nasubukan sa Windows. Kailangan pa ring pindutin ang Allow sa folder pagkabukas ng website.
+
+[v3.2] SETTINGS > INSTALL FILE WATCHER: bukas lang ang card kapag may Saving path (BMWW) na. Pindutin ang Install File Watcher > lalabas ang babala > i-tick ang Naiintindihan ko > lalabas ang path ng tools\file-watcher (hango sa kinabuksan ng index.html) at ang hakbang. Walang pinapatakbo ang website. Binago: settings.js (2 tawag), settings.template.js at pages/settings.html (card, css, script).
+  KNOWN ISSUE: kapag hindi file:// ang pagbukas ng website (http/server), hindi mahuhulaan ang path; relative na path lang ang ipapakita. Hindi pa nasubukan sa totoong Chrome/Edge (jsdom lang, 20 test).
+
+[v3.3] PAANO I-UNINSTALL (Settings > File Watcher > Paano i-uninstall): ipinapakita ang path ng tools\file-watcher, i-double-click ang uninstall-watcher.bat, dapat lumabas ang "Natanggal ang shortcut sa Startup." at "TAPOS."; pagsusuri: Win + R > shell:startup (dapat wala na ang "BMWW File Watcher"). Manual: burahin ang shortcut sa shell:startup; titigil ang tumatakbo pagka-restart o sign out. Hindi binubura ang mga folder o file mo.
+  KNOWN ISSUE: hindi pa nasubukan sa totoong Chrome/Edge at Windows (jsdom lang, 26 test). Ang uninstall-watcher.bat ay hindi pa napapatakbo sa Windows.
+
+[v3.4] FILE WATCHER + DATA SOURCE 1: sa watcher-config.txt, ilagay ang full path ng Data source 1 sa ModifiedWatchPaths (blangko = hindi ginagamit), tapos patakbuhin ulit ang install-watcher.bat. Ang folder na ito ay binabantayan na parang CLO1A, pero kasama ang file na na-modify (na-save ulit): isang beses lang kada DebounceSeconds (5). Ang bagong file ay nagpapatahimik din sa kasunod na Changed. Bubukas pa rin ang website sa Page ng config (#file-search); cooldown at SkipIfOpen ay pareho.
+  KNOWN ISSUE: nasubukan ang logic ng watcher sa PowerShell 7 sa Linux (bago, na-modify, debounce, temp/lock file, folder na hindi sakop). Hindi pa nasubukan sa Windows PowerShell 5.1 at totoong Data source 1, at sa network drive minsan hindi agad naipapadala ng Windows ang pagbabago ng file.

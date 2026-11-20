@@ -5,11 +5,13 @@
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.2 | 2026-11-20 | kasabay ng pages/settings.html (bagong layout)
  * VERSION : v2.4 | 2026-11-20 | kasabay ng pages/settings.html (walang lock badge)
+ * VERSION : v3.2 | 2026-11-21 | kasabay ng pages/settings.html (card ng Install File Watcher, css at script)
  */
 (function () {
   'use strict';
   window.BMWW.registry.registerTemplate('settings', `<!-- PAGE: settings -->
 <link rel="stylesheet" href="css/pages/settings.css">
+<link rel="stylesheet" href="css/pages/watcher-install.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -43,11 +45,14 @@
     <ul id="path-list" class="path-list"></ul>
   </div>
 
+  <div id="watcher-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-status" class="status" role="status"></p>
     <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
   </div>
 </section>
+<script src="js/pages/watcher-install.js"></script>
 <script src="js/pages/settings.js"></script>
 `);
 })();

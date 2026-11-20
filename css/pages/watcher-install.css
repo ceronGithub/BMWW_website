@@ -1,0 +1,32 @@
+/*
+ * FILE    : css/pages/watcher-install.css
+ * PURPOSE : Style ng "Install File Watcher" card sa Settings (babala, hakbang, path)
+ * DEPENDS : css/components.css, css/pages/settings.css
+ * VERSION : v1 | 2026-11-21 | bagong file
+ * VERSION : v1.1 | 2026-11-21 | actions (dalawang button), manual na paraan ng uninstall
+ */
+.page-settings .watcher-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-1); }
+.page-settings .watcher-manual { display: grid; gap: var(--space-1); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.page-settings .watcher-manual-title { margin: 0; font-size: 0.9375rem; font-weight: 700; }
+.page-settings .watcher-panel { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
+.page-settings .watcher-panel[hidden], .page-settings .watcher-steps[hidden] { display: none; }
+.page-settings .watcher-warning { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; padding: var(--space-4); background: var(--color-bg); border: 2px solid var(--color-danger); border-radius: var(--radius); }
+.page-settings .watcher-warn-sign { display: inline-flex; align-items: flex-end; justify-content: center; width: 2.25rem; height: 2rem; padding-bottom: 0.1rem; font-weight: 800; line-height: 1.2; color: #ffffff; background: var(--color-danger); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.page-settings .watcher-warning-title { margin: 0 0 var(--space-2); font-size: 1rem; font-weight: 700; color: var(--color-danger); }
+.page-settings .watcher-warning-title:focus { outline: none; }
+.page-settings .watcher-warning-list { display: grid; gap: var(--space-2); margin: 0; padding-left: 1.25rem; }
+.page-settings .watcher-ack { display: flex; align-items: center; gap: var(--space-2); font-weight: 600; cursor: pointer; }
+.page-settings .watcher-ack input { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+.page-settings .watcher-steps { display: grid; gap: var(--space-3); padding: var(--space-4); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); }
+.page-settings .watcher-steps-title { margin: 0; font-size: 1rem; font-weight: 700; }
+.page-settings .watcher-steps-list { display: grid; gap: var(--space-3); margin: 0; padding-left: 1.5rem; }
+.page-settings .watcher-path-row { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
+.page-settings .watcher-path-input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9rem; }
+.page-settings .watcher-copy-status { min-height: 1.25rem; margin-top: var(--space-1); }
+.page-settings .watcher-file { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 700; overflow-wrap: anywhere; }
+.page-settings .watcher-close { justify-self: start; }
+@media (min-width: 768px) {
+  .page-settings .watcher-path-row { flex-direction: row; align-items: center; }
+  .page-settings .watcher-path-input { flex: 1; min-width: 0; }
+  .page-settings .watcher-path-row .btn { flex-shrink: 0; }
+}

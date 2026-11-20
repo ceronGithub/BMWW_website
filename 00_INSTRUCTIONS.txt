@@ -1,18 +1,23 @@
-INSTRUCTIONS v5.2 (Task 1C: monitor ng Data source 1, 2, 3 at status sa queue; wala pang makikitang bago sa screen)
-1. I-unzip ang BMWW_website_v5.2.zip sa BAGONG folder. Huwag galawin ang original mong folder. Kailangang kumpleto ang folder (may js/core/monitor.js at js/core/queue.js).
-2. Buksan ang BMWW_website/index.html sa Chrome o Edge (double-click), tapos pindutin ang Ctrl+F5.
-3. Sa Settings: itakda ang Machine name (hindi LEAD PC; hal. MWW 1), Saving path, Server path at Data source 1, 2, 3, tapos pindutin ang Save. Iwanang bukas ang BMWW page.
-4. TEST STEPS (hintaying ~10 segundo bawat hakbang; ang status file ay nasa <Server path>\queue\<machine name>.json):
-   - DAPAT makita: may queue file na ng machine mo na may mode "idle" at state "idle".
-   - Data source 2: maglagay (kopyahin) ng bagong file na may pangalang tulad ng 4A05520A.csv. DAPAT: mode "online", state "done", source "source2", wafer "4A055", blk "A", layer "20".
-   - Data source 3: palitan ang laman o i-save ang isang umiiral na file (para magbago ang date modified), huwag magdagdag ng bagong file. DAPAT: mode "offline", state "ongoing".
-   - Data source 3: maglagay ng bagong file na may pangalang tulad ng 5B11033C.csv. DAPAT: mode "offline", state "done", wafer "5B110", blk "C", layer "33".
-   - Data source 1: i-save ang pinakabagong master CSV (15 headers sa row 2). DAPAT: mode "master", state "ongoing". Kapag Calibration file ang binago, DAPAT mode "calibration".
-   - Maghintay ng 5 minutong walang pagbabago sa Data source 1: DAPAT nawala ang ongoing ng source1.
-   - Palitan ang Machine name sa Settings at Save: DAPAT mawala ang lumang queue file at lumabas ang bago.
-   - Para makita ang nakikita ng monitor, buksan ang Developer Tools sa menu ng browser (Menu > More tools > Developer tools; naka-block ang F12 at Ctrl+Shift+I ng app) at i-type sa Console: BMWW.monitor.getState()
-     DAPAT: state "running"; bawat source ay may entryCount na tugma sa dami ng file/folder sa loob (hanggang 5 antas).
-   - Sa LEAD PC (Machine name = LEAD PC): DAPAT walang queue file na isinulat nito; getState().state ay "notApplicable".
-   - DAPAT HINDI makita: error sa console; may nabago o nabura sa mga Data source (basa lang ang monitor); mag-ongoing kaagad pagkatapos lang ng bagong file.
-   - Mahalaga: ibalik sa akin kung alin sa mga ito ang hindi tumugma sa totoong instrument (lalo na ang pagkakaiba ng source 2 at 3 bilang Online/Offline, at kung ano ang nagbabago sa folder habang ongoing), para maitama ang mga assumption sa README (KNOWN ISSUES).
-   - Hindi pa ito nasubukan sa totoong Chrome/Edge, totoong instrument at server ng gumawa (jsdom at fake folder handle lang, 30 test); ang unang test ay sa device mo.
+INSTRUCTIONS v3.4 (File Watcher: kasama na ang Data source 1 na may na-modify na file; may Install at Paano i-uninstall sa Settings)
+1. Mag-Save As muna ng kopya ng buong website folder (backup). I-unzip ang BMWW_website_v3.2.zip sa BAGONG folder, o ipalit ang 3 binagong file at ilagay ang 2 bagong file (tingnan ang listahan sa README, v3.2).
+2. Buksan ang index.html sa Chrome o Edge (double-click), tapos Ctrl+F5. Pumunta sa Settings.
+3. TEST STEPS:
+   - Wala pang Saving path: DAPAT may card na "File Watcher (optional)", sarado ang button na Install File Watcher, at may note na piliin muna ang Saving path.
+   - Piliin ang Saving path (BMWW): DAPAT bumukas ang button.
+   - Pindutin ang Install File Watcher: DAPAT lumabas ang babala (pulang kahon, warning sign) at ang tick na "Naiintindihan ko". DAPAT HINDI pa makita ang mga hakbang.
+   - I-tick: DAPAT lumabas ang mga hakbang at ang path. Ang path ay dapat ang folder ng website + \tools\file-watcher.
+   - Pindutin ang Copy path, buksan ang File Explorer (Win + E), i-paste sa address bar: DAPAT bumukas ang folder na may install-watcher.bat.
+   - Pindutin ang Isara at buksan ulit: DAPAT naka-untick at nakatago ulit ang mga hakbang.
+   - Pumunta sa ibang page at bumalik sa Settings: DAPAT iisa lang ang card.
+   - DAPAT HINDI mangyari: may program na tumakbo nang kusa; error sa console; nagbago ang Save settings, mga path at machine name.
+   - Paano i-uninstall: DAPAT laging bukas ang button (kahit wala pang Saving path). Pindutin: DAPAT lumabas ang hakbang (walang babala, walang tick), ang path, at ang manual na paraan. Kapag binuksan ang Install, DAPAT sumara ang Uninstall (isang panel lang ang bukas).
+   - Totoong uninstall (kung naka-install ang watcher): i-double-click ang uninstall-watcher.bat. DAPAT lumabas ang "Natanggal ang shortcut sa Startup." at "TAPOS.". Win + R > shell:startup: DAPAT wala na ang "BMWW File Watcher". Pagkatapos mag-restart, DAPAT HINDI na bumubukas ang website kapag may bagong file sa CLO1A.
+   - DATA SOURCE 1 SA WATCHER: buksan ang tools\\file-watcher\\watcher-config.txt (Notepad), ilagay sa ModifiedWatchPaths ang full path ng Data source 1 (kopyahin sa Settings), i-save, tapos i-double-click ang install-watcher.bat ulit. Pang-test: run-watcher-visible.bat.
+     * Gumawa ng bagong file sa Data source 1: DAPAT lumabas ang "Bagong item" at bumukas ang website (Search Files).
+     * I-save ulit ang isang umiiral na file doon (hal. ang master CSV): DAPAT lumabas ang "Na-modify na file" nang isang beses lang kada save, at bumukas ang website (kung lampas na ang cooldown na 120 segundo at wala pang bukas na website).
+     * I-save ulit ang file sa CLO1A: DAPAT HINDI lumabas ang "Na-modify na file" (bago lang ang binibilang doon).
+     * Ang ~$ at .tmp na file: DAPAT HINDI bumilang.
+     * Kung blangko ang ModifiedWatchPaths: DAPAT gumana pa rin ang CLO1A at CLO1A1 tulad ng dati.
+   - Ang install-watcher.bat ay ikaw mismo ang magpapatakbo (README-WATCHER.txt). Sa company laptop, ipaalam muna sa IT.
+   - Ibalik sa akin kung mali ang ipinakitang path (lalo na kung OneDrive, network drive o http ang pinagbubukasan).
+   - Hindi pa ito nasubukan sa totoong Chrome/Edge ng gumawa (jsdom lang para sa Settings, 26 test; ang watcher ay nasubukan lang sa PowerShell 7 sa Linux); ang unang test ay sa device mo.

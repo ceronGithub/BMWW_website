@@ -5,6 +5,11 @@
 # Mga folder na babantayan (hiwalay gamit ang ; ). Kasama ang mga subfolder.
 WatchPaths=C:\BM-Logging\CLO1A;C:\BM-Logging\CLO1A1
 
+# Mga folder na babantayan din pero kasama ang file na NA-MODIFY (na-save ulit), hindi lang bago (hiwalay gamit ang ; ).
+# Ilagay dito ang full path ng Data source 1 (kopyahin sa Settings ng website). Blangko = hindi ginagamit.
+# Halimbawa: ModifiedWatchPaths=C:\BM-Logging\MASTER
+ModifiedWatchPaths=
+
 # Browser na bubuksan: edge, chrome o default (default = browser ng Windows; maaaring mawala ang #file-search)
 Browser=edge
 
@@ -27,3 +32,6 @@ SkipIfOpen=yes
 IgnorePrefixes=~$;.~
 # Hindi bibilangin ang file na nagtatapos sa mga ito (hiwalay gamit ang ; )
 IgnoreSuffixes=.tmp;.crdownload
+
+# Segundo na hindi na bibilangin ulit ang parehong na-modify na file (isang save ay maraming beses na nagpapadala ng event)
+DebounceSeconds=5

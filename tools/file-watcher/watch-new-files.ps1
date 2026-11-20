@@ -1,11 +1,13 @@
 <#
  FILE    : tools/file-watcher/watch-new-files.ps1
  PURPOSE : Binabantayan ang mga folder (CLO1A, CLO1A1). Kapag may bagong file o folder, binubuksan ang BM Analyzer website.
+           Sa mga folder sa ModifiedWatchPaths (hal. Data source 1), kasama rin ang file na na-modify (na-save ulit).
  INPUT   : watcher-config.txt (nasa tabi ng file na ito)
  OUTPUT  : watcher.log (nasa tabi ng file na ito); nagbubukas ng browser
  NOTE    : Basa lang ang mga folder; walang isinusulat o binubura doon.
  USAGE   : install-watcher.bat (tumatakbo nang tago sa Startup) o run-watcher-visible.bat (may console, pang-test)
  VERSION : v1 | 2026-11-21 | bagong file
+ VERSION : v1.1 | 2026-11-21 | ModifiedWatchPaths (hal. Data source 1): kasama ang na-modify na file, hindi lang bago; DebounceSeconds
 #>
 param([switch]$Visible)
 
@@ -36,6 +38,8 @@ function Read-Config {
         SkipIfOpen = 'yes'
         IgnorePrefixes = '~$;.~'
         IgnoreSuffixes = '.tmp;.crdownload'
+        ModifiedWatchPaths = ''
+        DebounceSeconds = '5'
     }
     if (Test-Path $configFile) {
         foreach ($line in (Get-Content $configFile)) {
@@ -62,14 +66,16 @@ function Test-Ignored([string]$name, $prefixList, $suffixList) {
 }
 
 # Gumagawa ng FileSystemWatcher para sa folder (bagong file/folder at pagpapalit ng pangalan).
-function New-Watcher([string]$path) {
+function New-Watcher([string]$path, [bool]$includeModified) {
     $watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path = $path
     $watcher.IncludeSubdirectories = $true
-    $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, DirectoryName'
+    if ($includeModified) { $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, DirectoryName, LastWrite' }
+    else { $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, DirectoryName' }
     $watcher.InternalBufferSize = 65536
     $null = Register-ObjectEvent $watcher 'Created' -SourceIdentifier ('BMWW.Created.' + $path)
     $null = Register-ObjectEvent $watcher 'Renamed' -SourceIdentifier ('BMWW.Renamed.' + $path)
+    if ($includeModified) { $null = Register-ObjectEvent $watcher 'Changed' -SourceIdentifier ('BMWW.Changed.' + $path) }
     $null = Register-ObjectEvent $watcher 'Error' -SourceIdentifier ('BMWW.Error.' + $path)
     $watcher.EnableRaisingEvents = $true
     return $watcher
@@ -77,7 +83,7 @@ function New-Watcher([string]$path) {
 
 # Isinasara ang watcher at ang mga subscription nito.
 function Remove-Watcher([string]$path, $watcher) {
-    foreach ($kind in 'Created', 'Renamed', 'Error') {
+    foreach ($kind in 'Created', 'Renamed', 'Changed', 'Error') {
         Unregister-Event -SourceIdentifier ('BMWW.' + $kind + '.' + $path) -ErrorAction SilentlyContinue
     }
     if ($watcher) { $watcher.EnableRaisingEvents = $false; $watcher.Dispose() }
@@ -118,11 +124,17 @@ $mutex = New-Object System.Threading.Mutex($true, 'Local\BMWW_FileWatcher', [ref
 if (-not $createdNew) { Write-Log 'May tumatakbo nang watcher. Itinigil ang bago.'; exit 0 }
 
 $config = Read-Config
-$pathList = Split-List $config.WatchPaths
-$prefixList = Split-List $config.IgnorePrefixes
-$suffixList = Split-List $config.IgnoreSuffixes
+$pathList = @(Split-List $config.WatchPaths)
+$modifiedList = @(Split-List $config.ModifiedWatchPaths)
+$modifiedMap = @{}
+foreach ($modifiedPath in $modifiedList) { $modifiedMap[$modifiedPath] = $true }
+$pathList = @(@($pathList) + @($modifiedList) | Select-Object -Unique)
+$prefixList = @(Split-List $config.IgnorePrefixes)
+$suffixList = @(Split-List $config.IgnoreSuffixes)
 $settleSeconds = [int]$config.SettleSeconds
 $cooldownSeconds = [int]$config.CooldownSeconds
+$debounceSeconds = [int]$config.DebounceSeconds
+$recentMap = @{}
 $watcherMap = @{}
 $lastOpen = [DateTime]::MinValue
 Write-Log ('Simula ng watcher. Binabantayan: ' + ($pathList -join ', '))
@@ -132,7 +144,11 @@ while ($true) {
     foreach ($path in $pathList) {
         if ($watcherMap.ContainsKey($path)) { continue }
         if (Test-Path $path) {
-            try { $watcherMap[$path] = New-Watcher $path; Write-Log ('Nababantayan na: ' + $path) }
+            try {
+                $watcherMap[$path] = New-Watcher $path ([bool]$modifiedMap.ContainsKey($path))
+                if ($modifiedMap.ContainsKey($path)) { Write-Log ('Nababantayan na (kasama ang na-modify na file): ' + $path) }
+                else { Write-Log ('Nababantayan na: ' + $path) }
+            }
             catch { Write-Log ('Hindi mabantayan: ' + $path + ' - ' + $_.Exception.Message) }
         }
     }
@@ -154,7 +170,19 @@ while ($true) {
 
     $itemName = [string]$changeInfo.Name
     if (Test-Ignored ([System.IO.Path]::GetFileName($itemName)) $prefixList $suffixList) { continue }
-    Write-Log ('Bagong item: ' + $changeInfo.FullPath)
+    if ($eventName -like 'BMWW.Changed.*') {
+        # Ang Changed ay lumalabas din sa folder at maraming beses kada save: file lang, at isang beses sa loob ng DebounceSeconds.
+        if (-not (Test-Path -LiteralPath $changeInfo.FullPath -PathType Leaf)) { continue }
+        $lastSeen = $recentMap[$changeInfo.FullPath]
+        if ($lastSeen -and (((Get-Date) - $lastSeen).TotalSeconds -lt $debounceSeconds)) { continue }
+        $recentMap[$changeInfo.FullPath] = Get-Date
+        Write-Log ('Na-modify na file: ' + $changeInfo.FullPath)
+    } else {
+        # Ang bagong item ay nagpapatahimik din sa Changed na kasunod nito (habang sinusulat ang file).
+        $recentMap[$changeInfo.FullPath] = Get-Date
+        Write-Log ('Bagong item: ' + $changeInfo.FullPath)
+    }
+    if ($recentMap.Count -gt 500) { $recentMap.Clear() }
 
     if (((Get-Date) - $lastOpen).TotalSeconds -lt $cooldownSeconds) { Write-Log 'Laktawan: nasa cooldown pa.'; continue }
     Start-Sleep -Seconds $settleSeconds

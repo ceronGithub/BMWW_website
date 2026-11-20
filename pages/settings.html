@@ -1,13 +1,15 @@
 <!--
   FILE    : pages/settings.html
   PURPOSE : Settings page: machine name at mga path
-  DEPENDS : css/pages/settings.css, js/pages/settings.js
+  DEPENDS : css/pages/settings.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
   VERSION : v1 | 2026-11-19 | unang bersyon
   VERSION : v2.2 | 2026-11-20 | bagong layout: page header, card head, path list, sticky save bar
   VERSION : v2.4 | 2026-11-20 | tinanggal ang lock badge; note ng path (full path)
+  VERSION : v3.2 | 2026-11-21 | card ng Install File Watcher (css/pages/watcher-install.css, js/pages/watcher-install.js)
 -->
 <!-- PAGE: settings -->
 <link rel="stylesheet" href="css/pages/settings.css">
+<link rel="stylesheet" href="css/pages/watcher-install.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -41,9 +43,12 @@
     <ul id="path-list" class="path-list"></ul>
   </div>
 
+  <div id="watcher-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-status" class="status" role="status"></p>
     <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
   </div>
 </section>
+<script src="js/pages/watcher-install.js"></script>
 <script src="js/pages/settings.js"></script>

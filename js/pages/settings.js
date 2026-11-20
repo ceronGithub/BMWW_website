@@ -1,13 +1,14 @@
 /*
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
- * DEPENDS : config.js, security.js, storage.js
+ * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional)
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
  * VERSION : v2.2 | 2026-11-20 | maraming path (CONFIG.PATH_LIST), status badge, lock badge
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path ng bawat folder (type/paste, may validation)
  * VERSION : v2.3 | 2026-11-20 | ibang path ay sarado hanggang may Saving path; Required marker; highlight kapag kulang
  * VERSION : v5 | 2026-11-20 | Save: settings kada machine (<machine>.json) sa Saving path at Server path; basa ng settings ayon sa machine file
+ * VERSION : v3.2 | 2026-11-21 | tawag sa watcher-install (init at setUnlocked) para sa card ng Install File Watcher
  */
 (function () {
   'use strict';
@@ -175,6 +176,7 @@
       row.buttonElement.disabled = locked || !isSupported;
       row.rowElement.classList.toggle(CONFIG.ROW_CLASS.locked, locked);
     });
+    if (root.watcherInstall) root.watcherInstall.setUnlocked(Boolean(handleMap[CONFIG.ROOT_KEY]));
   }
 
   // Tinatanggal ang highlight ng row.
@@ -361,6 +363,7 @@
       radio.addEventListener('change', renderMachine);
     });
     query('saveButton').addEventListener('click', onSave);
+    if (root.watcherInstall) root.watcherInstall.init();
     if (settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT) query('nameInput').value = settings.machineName || '';
     renderMachine();
     renderPaths();
