@@ -11,6 +11,10 @@
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
  * VERSION : v2.8 | 2026-11-20 | TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected
+ * VERSION : v2.18 | 2026-11-21 | Settings: SELECTOR.settings.unsavedNote; TEXT: fullPathRequired, unsavedNote; text ng folderPicked, fullPathHint, pathsUnlocked
+ * VERSION : v2.17c | 2026-11-21 | SELECTOR.master: latestDate (kapalit ng latestStart at latestEnd)
+ * VERSION : v2.17b | 2026-11-21 | CHART.LABEL_CHAR_WIDTH / LABEL_SLANT / LABEL_MARGIN (dagdag na taas ng line chart para sa mahabang label)
+ * VERSION : v2.17 | 2026-11-21 | TEXT.master: scatterTitle = 'Master Correl', lineTitle = 'Master Repeatability' (machine name ay idinadagdag ng master.js); CHART: mas malaking padding para sa mas malaking text
  * VERSION : v2.7 | 2026-11-20 | MASTER.DEVIATION (green/yellow/red), CHART.PAD_RATIO, TEXT.master legend
  * VERSION : v2.6 | 2026-11-20 | MASTER (column, threshold), CHART, SELECTOR.master, TEXT.master
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
@@ -76,8 +80,10 @@
       ERROR_BY_NAME: { NotFoundError: 'folderMissing', NotAllowedError: 'noPermission', SecurityError: 'noPermission' }
     },
     CHART: {
-      WIDTH: 640, HEIGHT: 360, PADDING: { top: 40, right: 24, bottom: 64, left: 64 },
-      TICK_COUNT: 5, PALETTE_SIZE: 8, LEGEND_MAX: 12, PAD_RATIO: 0.15
+      WIDTH: 640, HEIGHT: 380, PADDING: { top: 44, right: 24, bottom: 78, left: 80 },
+      TICK_COUNT: 5, PALETTE_SIZE: 8, LEGEND_MAX: 12, PAD_RATIO: 0.15,
+      // Pang-sukat ng nakahilig na label sa ilalim ng line chart (px bawat character, sin ng -40 degrees, margin)
+      LABEL_CHAR_WIDTH: 10, LABEL_SLANT: 0.65, LABEL_MARGIN: 30
     },
     ROOT_FOLDER_NAME: 'BMWW',
     SETTINGS_SUBFOLDER: 'settings',
@@ -304,10 +310,10 @@
       settings: {
         modeRadio: 'input[name="machine-mode"]', nameInput: '#machine-name', note: '#machine-note',
         pathList: '#path-list',
-        saveButton: '#save-settings', status: '#settings-status'
+        saveButton: '#save-settings', status: '#settings-status', unsavedNote: '#settings-unsaved'
       },
       master: {
-        source: '#master-source', latestStart: '#latest-start', latestEnd: '#latest-end', latestButton: '#latest-run',
+        source: '#master-source', latestDate: '#latest-date', latestButton: '#latest-run',
         latestStatus: '#latest-status', latestResult: '#latest-result',
         rangeStart: '#range-start', rangeEnd: '#range-end', rangeButton: '#range-run',
         rangeStatus: '#range-status', rangeResult: '#range-result'
@@ -337,8 +343,8 @@
         repeatability: 'Repeatability', averageDifference: 'Avg diff', worstBarcode: 'Worst barcode', maxDifference: 'Max diff',
         difference: 'Difference', records: 'Records', csvFiles: 'CSV files', range: 'Range', masterFiles: 'Master files',
         barcode: 'Barcode', actual: 'Actual', master: 'Master', actualAverageShort: 'Actual avg',
-        scatterTitle: 'Actual Reading vs Master Reading', scatterX: 'Master Reading', scatterY: 'Actual Reading',
-        barTitle: 'Actual AVG vs Master AVG', lineTitle: 'MASTER REPEATABILITY', masterSeries: 'MASTER',
+        scatterTitle: 'Master Correl', scatterX: 'Master Reading', scatterY: 'Actual Reading',
+        barTitle: 'Actual AVG vs Master AVG', lineTitle: 'Master Repeatability', masterSeries: 'MASTER',
         filePanelTitle: 'Files', filePanelNote: 'I-uncheck ang file para alisin ang linya nito sa chart.',
         fileRecords: ' record', fileSelected: 'Napili: {n} / {total} na file', fileNoneSelected: 'Walang napiling file. MASTER lang ang ipinapakita.',
         levelLegendTitle: 'Actual vs Master: ',
@@ -355,6 +361,7 @@
           noFileInRange: 'Walang file sa napiling petsa.',
           noRecordInRange: 'Walang record sa napiling petsa.',
           badDates: 'Maglagay ng valid na Start date at End date.',
+          badDate: 'Maglagay ng valid na Date.',
           startAfterEnd: 'Hindi puwedeng mas huli ang Start date kaysa sa End date.',
           noRegression: 'Hindi makalkula ang R Square (kulang o pare-pareho ang data).',
           readFail: 'May problema sa pagbabasa ng mga file. Subukan ulit.'
@@ -366,7 +373,7 @@
       machineNote: 'Puwede mong palitan ang machine name anumang oras. I-save para magamit.',
       machineMissing: 'Pumili ng uri at maglagay ng machine name.',
       rootMissing: 'Piliin muna ang Saving path (BMWW folder). Kailangan ito bago mag-save.', wrongRoot: 'Ang piliing folder ay dapat na may pangalang BMWW.',
-      noPermission: 'Hindi pinayagan ang access sa folder.', folderPicked: 'Napili ang folder. I-save ang settings.',
+      noPermission: 'Hindi pinayagan ang access sa folder.', folderPicked: 'Napili ang folder. Ilagay ang full path nito, tapos pindutin ang Save settings.',
       folderError: 'Hindi mapili ang folder.', saveError: 'Hindi na-save ang settings. Subukan ulit.',
       saved: 'Na-save sa ', loadError: 'Hindi mabasa ang naunang settings.',
       savedBoth: 'Na-save sa Saving path at Server path: ',
@@ -379,10 +386,12 @@
       badgeRequired: 'Required', badgeClosed: 'Hindi pa bukas',
       lockedPathNote: 'Piliin muna ang Saving path (BMWW) para mabuksan ito.',
       fullPathLabel: 'Full path', fullPathPlaceholder: 'Hal. C:\\Users\\Name\\Desktop\\BMWW', fullPathAria: 'Full path ng ',
-      fullPathHint: 'Hindi ito makukuha ng browser. I-type o i-paste ang buong path.', fullPathEmpty: 'Wala pang full path',
+      fullPathHint: 'Kailangan ito kapag napili na ang folder. Hindi ito makukuha ng browser; i-type o i-paste ang buong path.', fullPathEmpty: 'Wala pang full path',
       fullPathInvalid: 'Hindi tama ang full path. Dapat nagsisimula sa drive (C:\\) o network (\\\\server).',
       fullPathMismatch: 'Hindi tugma ang dulo ng full path sa napiling folder: ', folderLabel: 'Folder: ',
-      pathsUnlocked: 'Bukas na ang ibang path. Piliin ang mga ito, tapos i-save.'
+      fullPathRequired: 'Kailangan ng full path. I-type o i-paste ang buong path ng napiling folder (hal. C:\\BMWW).',
+      unsavedNote: 'May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.',
+      pathsUnlocked: 'Bukas na ang ibang path. Piliin ang mga ito, ilagay ang full path, tapos i-save.'
     }
   });
 

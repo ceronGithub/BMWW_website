@@ -5,6 +5,7 @@
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.2 | 2026-11-20 | kasabay ng pages/settings.html (bagong layout)
  * VERSION : v2.4 | 2026-11-20 | kasabay ng pages/settings.html (walang lock badge)
+ * VERSION : v2.18 | 2026-11-21 | kasabay ng pages/settings.html (paalala na may hindi pa na-save)
  * VERSION : v3.2 | 2026-11-21 | kasabay ng pages/settings.html (card ng Install File Watcher, css at script)
  */
 (function () {
@@ -39,7 +40,7 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Mga path</h2>
-        <p class="card-note">Piliin ang bawat folder, tapos i-type o i-paste ang full path nito. Hindi maibibigay ng browser ang buong path, pangalan lang ng folder.</p>
+        <p class="card-note">Piliin ang bawat folder, tapos ilagay ang full path nito (kailangan ito pagkatapos mapili ang folder). Hindi maibibigay ng browser ang buong path, pangalan lang ng folder. Pindutin ang Save settings para ma-save ang mga pagbabago.</p>
       </div>
     </div>
     <ul id="path-list" class="path-list"></ul>
@@ -48,6 +49,7 @@
   <div id="watcher-card" class="card"></div>
 
   <div class="save-bar">
+    <p id="settings-unsaved" class="unsaved-note" role="status" hidden>May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.</p>
     <p id="settings-status" class="status" role="status"></p>
     <button id="save-settings" class="btn btn-primary" type="button">Save settings</button>
   </div>

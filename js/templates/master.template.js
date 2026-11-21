@@ -3,6 +3,7 @@
  * PURPOSE : Kopya ng pages/master.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
  * VERSION : v2 | 2026-11-20 | bagong file
+ * VERSION : v2.17c | 2026-11-21 | kasabay ng pages/master.html (Latest Master: iisang Date)
  * VERSION : v2.3 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-20 | kasabay ng pages/master.html (Latest Master at Range Master)
  * VERSION : v2.8 | 2026-11-20 | kasabay ng pages/master.html (Master Repeatability, Export to Excel)
@@ -31,17 +32,13 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Latest Master</h2>
-        <p class="card-note">Pinakabagong master record sa napiling petsa (ngayong araw ang default). Puwedeng baguhin ang petsa para sa test.</p>
+        <p class="card-note">Pinakabagong master record sa napiling Date (ngayong araw ang default). Puwedeng baguhin ang Date para sa test.</p>
       </div>
     </div>
     <div class="date-row">
       <div class="form-group">
-        <label class="form-label" for="latest-start">Start date</label>
-        <input id="latest-start" class="form-input" type="date">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="latest-end">End date</label>
-        <input id="latest-end" class="form-input" type="date">
+        <label class="form-label" for="latest-date">Date</label>
+        <input id="latest-date" class="form-input" type="date">
       </div>
     </div>
     <div class="action-row action-row-split">

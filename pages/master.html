@@ -8,6 +8,7 @@
   VERSION : v2.12 | 2026-11-21 | Mode: All data points o Latest per shift (radio); dagdag na script ng shift
   VERSION : v2.14 | 2026-11-21 | button na Open latest repeatability file (kaliwa ng Export to Excel); Run Latest Master ay naging Master Correl
   VERSION : v2.15 | 2026-11-21 | Master Correl: editable na ang Start date at End date
+  VERSION : v2.17c | 2026-11-21 | Latest Master: iisang Date na lang (wala nang Start date at End date)
   VERSION : v2.16 | 2026-11-21 | Master Correl: Open latest correl file at Export to Excel; script ng correl-export
 -->
 <!-- PAGE: master -->
@@ -28,17 +29,13 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Latest Master</h2>
-        <p class="card-note">Pinakabagong master record sa napiling petsa (ngayong araw ang default). Puwedeng baguhin ang petsa para sa test.</p>
+        <p class="card-note">Pinakabagong master record sa napiling Date (ngayong araw ang default). Puwedeng baguhin ang Date para sa test.</p>
       </div>
     </div>
     <div class="date-row">
       <div class="form-group">
-        <label class="form-label" for="latest-start">Start date</label>
-        <input id="latest-start" class="form-input" type="date">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="latest-end">End date</label>
-        <input id="latest-end" class="form-input" type="date">
+        <label class="form-label" for="latest-date">Date</label>
+        <input id="latest-date" class="form-input" type="date">
       </div>
     </div>
     <div class="action-row action-row-split">

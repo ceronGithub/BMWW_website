@@ -4,6 +4,8 @@
  * DEPENDS : js/core/config.js (kulay ay galing sa CSS class sa css/pages/master.css)
  * VERSION : v2.6 | 2026-11-20 | bagong file (para sa Master)
  * VERSION : v2.7 | 2026-11-20 | zoom out (PAD_RATIO sa scatter); kulay ng point at dot ayon sa level (green / yellow / red)
+ * VERSION : v2.17 | 2026-11-21 | ayos: hindi na naputol ang nakahilig na label ng barcode sa line chart (dagdag na taas ayon sa pinakamahabang label)
+ * VERSION : v2.17 | 2026-11-21 | mas malinaw na text: pamagat ng axis (chart-axis-title), equation (chart-equation, may halo), ayos ng sign ng intercept, ayos ng posisyon ng label
  * VERSION : v2.8 | 2026-11-20 | drawLines: series.colorIndex (matatag na kulay kapag may na-unselect) at options.hideLegend
  */
 (function () {
@@ -11,12 +13,27 @@
   const root = window.BMWW;
   const CHART = root.CONFIG.CHART;
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
-  const PLOT = {
-    left: CHART.PADDING.left,
-    top: CHART.PADDING.top,
-    width: CHART.WIDTH - CHART.PADDING.left - CHART.PADDING.right,
-    height: CHART.HEIGHT - CHART.PADDING.top - CHART.PADDING.bottom
-  };
+  // Layout ng kasalukuyang iginuguhit na chart (nagbabago ang taas kapag mahaba ang label sa ilalim).
+  let PLOT = null;
+  let chartHeight = CHART.HEIGHT;
+
+  // Itinatakda ang layout; extraBottom = dagdag na espasyo sa ilalim para sa mahabang label.
+  function useLayout(extraBottom) {
+    chartHeight = CHART.HEIGHT + extraBottom;
+    PLOT = {
+      left: CHART.PADDING.left,
+      top: CHART.PADDING.top,
+      width: CHART.WIDTH - CHART.PADDING.left - CHART.PADDING.right,
+      height: CHART.HEIGHT - CHART.PADDING.top - CHART.PADDING.bottom
+    };
+  }
+
+  // Dagdag na espasyo sa ilalim para sa nakahilig (-40 degrees) na label, ayon sa pinakamahabang label.
+  function getRotatedLabelExtra(labelList) {
+    const longest = labelList.reduce((length, label) => Math.max(length, String(label).length), 0);
+    const needed = Math.ceil(longest * CHART.LABEL_CHAR_WIDTH * CHART.LABEL_SLANT) + CHART.LABEL_MARGIN;
+    return Math.max(0, needed - CHART.PADDING.bottom);
+  }
 
   // Gumagawa ng SVG element (attributes at text lang, walang innerHTML).
   function svgElement(name, attributeMap, text) {
@@ -50,8 +67,8 @@
   // Gumagawa ng bagong SVG sa loob ng container, may pamagat.
   function createSvg(container, titleText) {
     container.replaceChildren();
-    const svg = svgElement('svg', { viewBox: '0 0 ' + CHART.WIDTH + ' ' + CHART.HEIGHT, role: 'img', 'aria-label': titleText, class: 'chart-svg', preserveAspectRatio: 'xMidYMid meet' });
-    svg.append(svgElement('text', { x: CHART.WIDTH / 2, y: 22, class: 'chart-text chart-title', 'text-anchor': 'middle' }, titleText));
+    const svg = svgElement('svg', { viewBox: '0 0 ' + CHART.WIDTH + ' ' + chartHeight, role: 'img', 'aria-label': titleText, class: 'chart-svg', preserveAspectRatio: 'xMidYMid meet' });
+    svg.append(svgElement('text', { x: CHART.WIDTH / 2, y: 28, class: 'chart-text chart-title', 'text-anchor': 'middle' }, titleText));
     container.append(svg);
     return svg;
   }
@@ -66,13 +83,13 @@
     xTickList.forEach((tick) => {
       const xPosition = xScale(tick.value);
       svg.append(svgElement('text', tick.rotate
-        ? { x: xPosition, y: PLOT.top + PLOT.height + 16, class: 'chart-text', 'text-anchor': 'end', transform: 'rotate(-40 ' + xPosition + ' ' + (PLOT.top + PLOT.height + 16) + ')' }
-        : { x: xPosition, y: PLOT.top + PLOT.height + 18, class: 'chart-text', 'text-anchor': 'middle' }, tick.label));
+        ? { x: xPosition, y: PLOT.top + PLOT.height + 18, class: 'chart-text', 'text-anchor': 'end', transform: 'rotate(-40 ' + xPosition + ' ' + (PLOT.top + PLOT.height + 18) + ')' }
+        : { x: xPosition, y: PLOT.top + PLOT.height + 22, class: 'chart-text', 'text-anchor': 'middle' }, tick.label));
     });
     svg.append(svgElement('line', { x1: PLOT.left, x2: PLOT.left + PLOT.width, y1: PLOT.top + PLOT.height, y2: PLOT.top + PLOT.height, class: 'chart-axis' }));
     svg.append(svgElement('line', { x1: PLOT.left, x2: PLOT.left, y1: PLOT.top, y2: PLOT.top + PLOT.height, class: 'chart-axis' }));
-    if (xTitle) svg.append(svgElement('text', { x: PLOT.left + PLOT.width / 2, y: CHART.HEIGHT - 8, class: 'chart-text', 'text-anchor': 'middle' }, xTitle));
-    if (yTitle) svg.append(svgElement('text', { x: 14, y: PLOT.top + PLOT.height / 2, class: 'chart-text', 'text-anchor': 'middle', transform: 'rotate(-90 14 ' + (PLOT.top + PLOT.height / 2) + ')' }, yTitle));
+    if (xTitle) svg.append(svgElement('text', { x: PLOT.left + PLOT.width / 2, y: chartHeight - 10, class: 'chart-text chart-axis-title', 'text-anchor': 'middle' }, xTitle));
+    if (yTitle) svg.append(svgElement('text', { x: 18, y: PLOT.top + PLOT.height / 2, class: 'chart-text chart-axis-title', 'text-anchor': 'middle', transform: 'rotate(-90 18 ' + (PLOT.top + PLOT.height / 2) + ')' }, yTitle));
   }
 
   // Saklaw ng data na may dagdag na espasyo sa gilid (zoom out).
@@ -85,6 +102,7 @@
 
   // Scatter: x = master, y = actual, may trendline (linear), equation at R squared.
   function drawScatter(container, options) {
+    useLayout(0);
     const svg = createSvg(container, options.title);
     const pointList = options.pointList;
     const xRange = getPaddedRange(pointList.map((point) => point.x));
@@ -100,8 +118,8 @@
         x1: xScale(xTicks.minimum), y1: yScale(trend.slope * xTicks.minimum + trend.intercept),
         x2: xScale(xTicks.maximum), y2: yScale(trend.slope * xTicks.maximum + trend.intercept), class: 'chart-trend'
       }));
-      svg.append(svgElement('text', { x: PLOT.left + 8, y: PLOT.top + 16, class: 'chart-text' },
-        'y = ' + trend.slope.toFixed(4) + 'x + ' + trend.intercept.toFixed(4) + '   R\u00b2 = ' + trend.rSquared.toFixed(4)));
+      svg.append(svgElement('text', { x: PLOT.left + 10, y: PLOT.top + 20, class: 'chart-text chart-equation' },
+        'y = ' + trend.slope.toFixed(4) + 'x ' + (trend.intercept < 0 ? '- ' : '+ ') + Math.abs(trend.intercept).toFixed(4) + '   R\u00b2 = ' + trend.rSquared.toFixed(4)));
     }
     pointList.forEach((point) => svg.append(svgElement('circle', { cx: xScale(point.x), cy: yScale(point.y), r: 4, class: point.level ? 'chart-point ' + point.level : 'chart-point' })));
   }
@@ -113,6 +131,7 @@
 
   // Line chart: bawat series ay isang linya sa bawat barcode; ang master ay mas makapal.
   function drawLines(container, options) {
+    useLayout(getRotatedLabelExtra(options.categoryList));
     const svg = createSvg(container, options.title);
     const valueList = [0];
     options.seriesList.forEach((series) => series.values.forEach((value) => { if (value !== null) valueList.push(value); }));
@@ -163,6 +182,7 @@
 
   // Bar chart ng ilang halaga (hal. Actual AVG at Master AVG).
   function drawBars(container, options) {
+    useLayout(0);
     const svg = createSvg(container, options.title);
     const yTicks = buildTicks(Math.min(0, ...options.itemList.map((item) => item.value)), Math.max(0, ...options.itemList.map((item) => item.value)));
     const yScale = (value) => PLOT.top + PLOT.height - ((value - yTicks.minimum) / (yTicks.maximum - yTicks.minimum)) * PLOT.height;

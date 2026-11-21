@@ -2,6 +2,9 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v2.19 | 2026-11-21 | Export ng Master Correl: ipinapasa ang machine name para sa pamagat ng chart sa Excel
+ * VERSION : v2.17c | 2026-11-21 | Latest Master: iisang Date na lang (query latestDate); ang Date ang ginagamit bilang start at end sa analyzeLatest
+ * VERSION : v2.17 | 2026-11-21 | Pamagat ng chart = <machine name> Master Correl / Master Repeatability; ang huling resulta (Master Correl at Master Repeatability, kasama ang petsa, mode at napiling file) ay naaalala kapag umalis at bumalik sa Master page
  * VERSION : v2.3 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-20 | Latest Master at Range Master; error trapping
  * VERSION : v2.7 | 2026-11-20 | kulay green / yellow / red kada reading (point, dot, cell); legend; mas maliit na chart
@@ -31,6 +34,21 @@
   let isBusy = false;
   let lastRangeResult = null;
   let lastLatestRun = null;
+
+  // Alaala ng huling resulta; nananatili habang bukas ang website (hindi nabubura kapag lumipat ng page).
+  const saved = { latest: null, range: null, rangeDates: null, selectedNameSet: null };
+
+  // Machine name mula sa Settings; walang laman kung hindi pa naka-set.
+  function getMachineName() {
+    const settings = storage.readLocalSettings();
+    return typeof settings.machineName === 'string' ? settings.machineName.trim() : '';
+  }
+
+  // Pamagat ng chart: <machine name> + pangalan ng chart (hal. "MWW 1 Master Correl").
+  function buildChartTitle(baseTitle) {
+    const machineName = getMachineName();
+    return machineName ? machineName + ' ' + baseTitle : baseTitle;
+  }
 
   // Napiling mode ng Master Repeatability ('all' o 'shift').
   function getSelectedMode() {
@@ -231,7 +249,7 @@
     area.append(makeLevelLegend(), chartGrid);
     const pointList = [];
     result.masterList.forEach((masterValue, index) => { if (masterValue !== null && result.actualList[index] !== null) pointList.push({ x: masterValue, y: result.actualList[index], level: levelOf(result.actualList[index], masterValue) }); });
-    chart.drawScatter(scatterBox, { title: TEXT.scatterTitle, xTitle: TEXT.scatterX, yTitle: TEXT.scatterY, pointList, trend: result.regression });
+    chart.drawScatter(scatterBox, { title: buildChartTitle(TEXT.scatterTitle), xTitle: TEXT.scatterX, yTitle: TEXT.scatterY, pointList, trend: result.regression });
     chart.drawBars(barBox, { title: TEXT.barTitle, itemList: [{ label: TEXT.actualAverage, value: result.actualAverage || 0 }, { label: TEXT.masterAverage, value: result.masterAverage || 0 }] });
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
   }
@@ -260,7 +278,7 @@
         levelList: column.values.map((value, index) => levelOf(value, result.masterList[index]))
       }));
     seriesList.push({ name: TEXT.masterSeries, values: result.masterList, isMaster: true });
-    chart.drawLines(lineBox, { title: TEXT.lineTitle, categoryList: result.barcodeList, seriesList, hideLegend: true });
+    chart.drawLines(lineBox, { title: buildChartTitle(TEXT.lineTitle), categoryList: result.barcodeList, seriesList, hideLegend: true });
     legendHost.replaceChildren(makeDateLegend(seriesList));
   }
 
@@ -285,7 +303,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'file-checkbox';
-      checkbox.checked = true;
+      checkbox.checked = selectedNameSet.has(group.name);
       checkbox.addEventListener('change', () => {
         if (checkbox.checked) selectedNameSet.add(group.name);
         else selectedNameSet.delete(group.name);
@@ -305,7 +323,7 @@
   }
 
   // Nagre-render ng resulta ng Range Master.
-  function renderRange(result) {
+  function renderRange(result, initialNameSet) {
     const area = query('rangeResult');
     const stats = result.stats;
     const head = makeElement('div', 'result-head');
@@ -336,7 +354,8 @@
     chartBlock.append(scrollBox, legendHost);
     const shownList = result.columnList.slice(-MASTER.RANGE.MAX_LINES);
     const { groupList, groupMap } = groupByFile(shownList);
-    const selectedNameSet = new Set(groupList.map((group) => group.name));
+    const selectedNameSet = new Set(groupList.map((group) => group.name).filter((name) => !initialNameSet || initialNameSet.has(name)));
+    saved.selectedNameSet = selectedNameSet;
     const redraw = () => drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet);
     const layout = makeElement('div', 'range-chart-layout');
     layout.append(chartBlock, makeFilePanel(groupList, selectedNameSet, redraw));
@@ -351,11 +370,11 @@
     if (isBusy) return;
     clearSection('latestStatus', 'latestResult');
     lastLatestRun = null;
+    saved.latest = null;
     updateExportButton();
-    const startDate = csv.parseDateInput(query('latestStart').value);
-    const endDate = csv.parseDateInput(query('latestEnd').value);
-    if (!startDate || !endDate) { setStatus('latestStatus', TEXT.error.badDates, 'error'); return; }
-    if (startDate > endDate) { setStatus('latestStatus', TEXT.error.startAfterEnd, 'error'); return; }
+    const startDate = csv.parseDateInput(query('latestDate').value);
+    if (!startDate) { setStatus('latestStatus', TEXT.error.badDate, 'error'); return; }
+    const endDate = startDate;
     setBusy(true);
     try {
       setStatus('latestStatus', TEXT.working, 'info');
@@ -363,6 +382,7 @@
       const result = await masterAnalysis.analyzeLatest(handle, startDate, (current, total, name) => setStatus('latestStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'), endDate);
       renderLatest(result);
       lastLatestRun = { result, range: { startDate, endDate } };
+      saved.latest = lastLatestRun;
       setStatus('latestStatus', '', '');
     } catch (error) {
       query('latestResult').replaceChildren();
@@ -377,6 +397,9 @@
     if (isBusy) return;
     clearSection('rangeStatus', 'rangeResult');
     lastRangeResult = null;
+    saved.range = null;
+    saved.rangeDates = null;
+    saved.selectedNameSet = null;
     updateExportButton();
     const startDate = csv.parseDateInput(query('rangeStart').value);
     const endDate = csv.parseDateInput(query('rangeEnd').value);
@@ -390,6 +413,8 @@
       const result = root.masterShift.applyMode(analyzed, getSelectedMode());
       renderRange(result);
       lastRangeResult = result;
+      saved.range = result;
+      saved.rangeDates = { startDate, endDate };
       setStatus('rangeStatus', '', '');
     } catch (error) {
       query('rangeResult').replaceChildren();
@@ -470,7 +495,7 @@
       const settings = storage.readLocalSettings();
       const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
       const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
-      const saved = await correlExport.exportCorrel(lastLatestRun.result, lastLatestRun.range, rootHandle, sourceText);
+      const saved = await correlExport.exportCorrel(lastLatestRun.result, lastLatestRun.range, rootHandle, sourceText, getMachineName());
       const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
       const separator = EXPORT.PATH_SEPARATOR;
       setStatus('latestStatus', CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
@@ -501,6 +526,23 @@
     }
   }
 
+  // Ibinabalik ang huling resulta (at ang petsa / mode na ginamit) kapag bumalik sa Master page.
+  function restoreSaved() {
+    if (saved.latest) {
+      query('latestDate').value = csv.formatDateInput(saved.latest.range.startDate);
+      renderLatest(saved.latest.result);
+      lastLatestRun = saved.latest;
+    }
+    if (saved.range && saved.rangeDates) {
+      query('rangeStart').value = csv.formatDateInput(saved.rangeDates.startDate);
+      query('rangeEnd').value = csv.formatDateInput(saved.rangeDates.endDate);
+      const modeRadio = document.querySelector(SHIFT.SELECTOR.checkedMode.replace(':checked', '[value="' + saved.range.mode + '"]'));
+      if (modeRadio) modeRadio.checked = true;
+      renderRange(saved.range, saved.selectedNameSet);
+      lastRangeResult = saved.range;
+    }
+  }
+
   // Init ng page, tinatawag ng router.
   async function init() {
     isBusy = false;
@@ -509,11 +551,11 @@
     lastLatestRun = null;
     const today = new Date();
     const rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - MASTER.RANGE.DEFAULT_DAYS);
-    query('latestStart').value = csv.formatDateInput(today);
-    query('latestEnd').value = csv.formatDateInput(today);
+    query('latestDate').value = csv.formatDateInput(today);
     query('rangeStart').value = csv.formatDateInput(rangeStart);
     query('rangeEnd').value = csv.formatDateInput(today);
     renderSource();
+    restoreSaved();
     query('latestButton').addEventListener('click', onRunLatest);
     query('rangeButton').addEventListener('click', onRunRange);
     getExportButton().addEventListener('click', onExport);

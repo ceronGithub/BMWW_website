@@ -4,6 +4,7 @@
  * DEPENDS : wala (window.BMWW lang)
  * VERSION : v2.8 | 2026-11-20 | bagong file (para sa Export to Excel ng Master Repeatability)
  * VERSION : v2.13 | 2026-11-21 | line chart sa worksheet (sheet.chart): drawing at chart XML
+ * VERSION : v2.19 | 2026-11-21 | scatter: opsyonal na chart.pointSeriesList (isang series kada point, may sariling legend entry: kulay + text); tinatanggal ang legend entry ng trendline
  * VERSION : v2.16 | 2026-11-21 | scatter chart na may trendline (chart.kind = 'scatter', kulay kada point), STYLE.precise (4 decimal) at computeColumnWidths (autofit, galing sa master-export.js)
  * VERSION : v2.14 | 2026-11-21 | puting background ng lahat ng cell (may manipis na border), walang gridlines (sheet.showGridLines), chart na fixed ang laki (oneCellAnchor, hindi lumiliit kapag nag-autofit), puting chart area
  */
@@ -173,25 +174,43 @@
 
   // XML ng scatter chart: x = master, y = actual; may linear trendline (equation at R squared); kulay ng bawat point ayon sa level.
   // chart: { title, xTitle, yTitle, nameRef:{column,row,text}, xRange:{column,firstRow,lastRow}, yRange:{...}, xValues, yValues,
-  //          pointColorList, pointColor, markerSize, trendColor, trendWidth, xMin, xMax, yMin, yMax, anchor }
+  //          pointColorList, pointColor, markerSize, trendColor, trendWidth, xMin, xMax, yMin, yMax, anchor,
+  //          pointSeriesList (opsyonal): [{ name, color, x, y, xColumn, yColumn, row }] }
   function buildScatterChartXml(sheetName, chart) {
     const sheetRef = quoteSheetName(sheetName);
     const fill = (hex) => '<a:solidFill><a:srgbClr val="' + hex + '"/></a:solidFill>';
     const pointXml = (color, index) => '<c:dPt><c:idx val="' + index + '"/><c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(color) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker><c:bubble3D val="0"/><c:spPr>' + fill(color) + '<a:ln><a:noFill/></a:ln></c:spPr></c:dPt>';
     const trendline = '<c:trendline><c:spPr><a:ln w="' + chart.trendWidth + '">' + fill(chart.trendColor) + '<a:prstDash val="dash"/></a:ln></c:spPr><c:trendlineType val="linear"/><c:dispRSqr val="1"/><c:dispEq val="1"/></c:trendline>';
-    const series = '<c:ser><c:idx val="0"/><c:order val="0"/>'
+    // Per-point na series (para may sariling legend entry ang bawat point: kulay + text). Kapag wala, isang series lang na may dPt.
+    const pointSeriesList = chart.pointSeriesList || null;
+    const pointCount = pointSeriesList ? pointSeriesList.length : 0;
+    const pointSeriesXml = (pointSeriesList || []).map((item, index) => '<c:ser><c:idx val="' + index + '"/><c:order val="' + index + '"/>'
+      + '<c:tx><c:v>' + escapeXml(item.name) + '</c:v></c:tx>'
+      + '<c:spPr><a:ln w="19050"><a:noFill/></a:ln></c:spPr>'
+      + '<c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(item.color) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker>'
+      + '<c:xVal><c:numRef><c:f>' + columnRangeText(sheetRef, item.xColumn, item.row, item.row) + '</c:f>' + buildNumberCache([item.x]) + '</c:numRef></c:xVal>'
+      + '<c:yVal><c:numRef><c:f>' + columnRangeText(sheetRef, item.yColumn, item.row, item.row) + '</c:f>' + buildNumberCache([item.y]) + '</c:numRef></c:yVal>'
+      + '<c:smooth val="0"/></c:ser>').join('');
+    const baseMarker = pointSeriesList
+      ? '<c:marker><c:symbol val="none"/></c:marker>'
+      : '<c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(chart.pointColor) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker>';
+    const series = pointSeriesXml + '<c:ser><c:idx val="' + pointCount + '"/><c:order val="' + pointCount + '"/>'
       + '<c:tx><c:strRef><c:f>' + sheetRef + '!' + absoluteRef(chart.nameRef.column, chart.nameRef.row) + '</c:f>' + buildStringCache([chart.nameRef.text]) + '</c:strRef></c:tx>'
       + '<c:spPr><a:ln w="19050"><a:noFill/></a:ln></c:spPr>'
-      + '<c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(chart.pointColor) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker>'
-      + (chart.pointColorList || []).map((color, index) => pointXml(color, index)).join('')
+      + baseMarker
+      + (pointSeriesList ? '' : (chart.pointColorList || []).map((color, index) => pointXml(color, index)).join(''))
       + trendline
       + '<c:xVal><c:numRef><c:f>' + columnRangeText(sheetRef, chart.xRange.column, chart.xRange.firstRow, chart.xRange.lastRow) + '</c:f>' + buildNumberCache(chart.xValues) + '</c:numRef></c:xVal>'
       + '<c:yVal><c:numRef><c:f>' + columnRangeText(sheetRef, chart.yRange.column, chart.yRange.firstRow, chart.yRange.lastRow) + '</c:f>' + buildNumberCache(chart.yValues) + '</c:numRef></c:yVal>'
       + '<c:smooth val="0"/></c:ser>';
+    // Legend: sa per-point mode, tinatanggal ang entry ng base series (pang-trendline lang) at ng trendline.
+    const legendXml = pointSeriesList
+      ? '<c:legend><c:legendPos val="r"/><c:legendEntry><c:idx val="' + pointCount + '"/><c:delete val="1"/></c:legendEntry><c:legendEntry><c:idx val="' + (pointCount + 1) + '"/><c:delete val="1"/></c:legendEntry><c:overlay val="0"/></c:legend>'
+      : '<c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend>';
     return XML_HEADER + '<c:chartSpace xmlns:c="' + CHART_NS + '" xmlns:a="' + DRAWINGML_NS + '" xmlns:r="' + REL_NS + '"><c:roundedCorners val="0"/><c:chart>' + buildChartTitleXml(chart.title) + '<c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>'
       + '<c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>' + series + '<c:axId val="60010"/><c:axId val="60020"/></c:scatterChart>'
       + buildScatterAxisXml(60010, 60020, 'b', chart.xTitle, chart.xMin, chart.xMax) + buildScatterAxisXml(60020, 60010, 'l', chart.yTitle, chart.yMin, chart.yMax)
-      + '</c:plotArea><c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>'
+      + '</c:plotArea>' + legendXml + '<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>'
       + '<c:spPr>' + fill('FFFFFF') + '<a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>';
   }
 

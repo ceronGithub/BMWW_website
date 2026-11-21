@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional)
+ * VERSION : v2.18 | 2026-11-21 | kailangan na ang full path ng bawat napiling folder; paalala na may hindi pa na-save (isDirty) kapag may binago
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
  * VERSION : v2.2 | 2026-11-20 | maraming path (CONFIG.PATH_LIST), status badge, lock badge
@@ -23,10 +24,18 @@
   const handleMap = {};
   const rowMap = {};
   const INPUT = CONFIG.ROW_INPUT_CLASS;
+  let isDirty = false;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
     return document.querySelector(SEL[key]);
+  }
+
+  // Minamarkahan kung may pagbabago na hindi pa na-save; ipinapakita o itinatago ang paalala.
+  function setDirty(nextDirty) {
+    isDirty = nextDirty;
+    query('unsavedNote').hidden = !nextDirty;
+    if (nextDirty && !query('status').classList.contains('is-error')) setStatus('', false);
   }
 
   // Nagpapakita ng status (error o success).
@@ -93,10 +102,10 @@
 
   // Sinusuri ang full path. Ibinibigay ang error message o '' kung ayos (o walang laman).
   function validateFullPath(key, fullPath) {
-    if (!fullPath) return '';
+    const folderName = handleMap[key] ? handleMap[key].name : getSavedName(key);
+    if (!fullPath) return folderName ? TEXT.fullPathRequired : '';
     if (!CONFIG.FULL_PATH_PATTERN.test(fullPath)) return TEXT.fullPathInvalid;
     const lastSegment = getLastSegment(fullPath);
-    const folderName = handleMap[key] ? handleMap[key].name : getSavedName(key);
     const isDriveRoot = /^[A-Za-z]:$/.test(lastSegment);
     if (folderName && !isDriveRoot && lastSegment.toLowerCase() !== folderName.toLowerCase()) return TEXT.fullPathMismatch + folderName;
     return '';
@@ -201,6 +210,7 @@
     const row = rowMap[key];
     row.inputElement.classList.remove(INPUT.error);
     row.rowElement.classList.remove(CONFIG.ROW_CLASS.attention);
+    setDirty(true);
     renderPaths();
   }
 
@@ -256,7 +266,9 @@
       await storage.saveHandle(CONFIG.HANDLE_KEY[key], handle);
       if (key === CONFIG.ROOT_KEY) clearAttention();
       renderPaths();
+      setDirty(true);
       setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
+      if (!getInputFullPath(key)) rowMap[key].inputElement.focus();
     } catch (error) {
       if (error && error.name === 'AbortError') return;
       setStatus(TEXT.folderError, true);
@@ -337,6 +349,7 @@
       if (previousFile && !isSameFileName(previousFile, fileName)) await storage.removeMachineSettings(rootHandle, previousFile);
       settings = next;
       storage.writeLocalSettings(settings);
+      setDirty(false);
       const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, previousFile);
       renderMachine();
       renderPaths();
@@ -360,13 +373,15 @@
     CONFIG.PATH_LIST.forEach((pathItem) => { rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key); });
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => {
       radio.checked = radio.value === settings.machineMode;
-      radio.addEventListener('change', renderMachine);
+      radio.addEventListener('change', () => { renderMachine(); setDirty(true); });
     });
     query('saveButton').addEventListener('click', onSave);
+    query('nameInput').addEventListener('input', () => setDirty(true));
     if (root.watcherInstall) root.watcherInstall.init();
     if (settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT) query('nameInput').value = settings.machineName || '';
     renderMachine();
     renderPaths();
+    setDirty(false);
     if (!storage.isFolderAccessSupported()) setStatus(TEXT.unsupported, true);
   }
 

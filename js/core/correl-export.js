@@ -2,6 +2,7 @@
  * FILE    : js/core/correl-export.js
  * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Correl (isang record) at sine-save sa <Saving path>\master-correl\<petsa ng export>\
  * DEPENDS : js/core/config.js, master-export-config.js, correl-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
+ * VERSION : v2.19 | 2026-11-21 | table: Barcode, Actual, Master (dating Master, Actual, Barcode); legend ng chart: kulay + Actual / Master kada point; pamagat ng chart: <machine name> Master Correl
  * VERSION : v2.16 | 2026-11-21 | bagong file
  */
 (function () {
@@ -68,17 +69,27 @@
   }
 
   // Scatter chart: x = master, y = actual, may trendline (linear) at R squared. Ang mga point na may blangkong halaga ay hindi isinasama.
-  function buildChart(result, headerRow, firstDataRow, columnCount) {
+  function buildChart(result, headerRow, firstDataRow, columnCount, machineName) {
     const setting = CORREL.CHART;
     const pairList = result.masterList.map((masterValue, index) => ({ x: masterValue, y: result.actualList[index], level: getLevel(result.actualList[index], masterValue) }));
     const usable = pairList.filter((pair) => pair.x !== null && pair.y !== null);
     const xLimits = getPaddedLimits(usable.map((pair) => pair.x));
     const yLimits = getPaddedLimits(usable.map((pair) => pair.y));
     const lastDataRow = firstDataRow + pairList.length - 1;
+    const columns = CORREL.COLUMN;
+    // Legend: isang entry kada point (kulay + Actual / Master), ayon sa ayos ng table.
+    const pointSeriesList = [];
+    pairList.forEach((pair, index) => {
+      if (pair.x === null || pair.y === null) return;
+      pointSeriesList.push({
+        name: pair.y.toFixed(setting.LEGEND_DIGITS) + setting.LEGEND_SEPARATOR + pair.x.toFixed(setting.LEGEND_DIGITS),
+        color: getLevelColor(pair.level), x: pair.x, y: pair.y, xColumn: columns.master, yColumn: columns.actual, row: firstDataRow + index
+      });
+    });
     return {
-      kind: 'scatter', title: TEXT.scatterTitle, xTitle: TEXT.scatterX, yTitle: TEXT.scatterY,
-      nameRef: { column: 1, row: headerRow, text: TEXT.actual },
-      xRange: { column: 0, firstRow: firstDataRow, lastRow: lastDataRow }, yRange: { column: 1, firstRow: firstDataRow, lastRow: lastDataRow },
+      kind: 'scatter', title: (machineName ? machineName + ' ' : '') + TEXT.scatterTitle, xTitle: TEXT.scatterX, yTitle: TEXT.scatterY,
+      nameRef: { column: columns.actual, row: headerRow, text: TEXT.actual }, pointSeriesList,
+      xRange: { column: columns.master, firstRow: firstDataRow, lastRow: lastDataRow }, yRange: { column: columns.actual, firstRow: firstDataRow, lastRow: lastDataRow },
       xValues: pairList.map((pair) => pair.x), yValues: pairList.map((pair) => pair.y),
       pointColorList: pairList.map((pair) => getLevelColor(pair.level)), pointColor: setting.POINT_COLOR, markerSize: setting.MARKER_SIZE,
       trendColor: setting.TREND_COLOR, trendWidth: setting.TREND_WIDTH,
@@ -87,8 +98,8 @@
     };
   }
 
-  // Sheet: buod sa taas, table ng barcode / master / actual sa ibaba, chart sa kanan.
-  function buildSheet(result, range, exportedAt, sourceText) {
+  // Sheet: buod sa taas, table ng barcode / actual / master sa ibaba, chart sa kanan.
+  function buildSheet(result, range, exportedAt, sourceText, machineName) {
     const label = (text) => ({ v: text, s: STYLE.bold });
     const rows = [
       [label(CORREL.LABEL.title)],
@@ -106,13 +117,13 @@
       []
     ];
     const headerRow = rows.length;
-    rows.push([TEXT.master, TEXT.actual, TEXT.barcode].map((header) => ({ v: header, s: STYLE.header })));
+    rows.push([TEXT.barcode, TEXT.actual, TEXT.master].map((header) => ({ v: header, s: STYLE.header })));
     const firstDataRow = rows.length;
     result.barcodeList.forEach((barcode, index) => {
       const level = getLevel(result.actualList[index], result.masterList[index]);
-      rows.push([numberCell(result.masterList[index]), numberCell(result.actualList[index], getLevelStyle(level)), barcode]);
+      rows.push([barcode, numberCell(result.actualList[index], getLevelStyle(level)), numberCell(result.masterList[index])]);
     });
-    return { name: CORREL.SHEET, rows, columnWidths: xlsx.computeColumnWidths(rows, EXPORT.AUTOFIT), showGridLines: false, chart: buildChart(result, headerRow, firstDataRow, 3) };
+    return { name: CORREL.SHEET, rows, columnWidths: xlsx.computeColumnWidths(rows, EXPORT.AUTOFIT), showGridLines: false, chart: buildChart(result, headerRow, firstDataRow, 3, machineName) };
   }
 
   // Pangalan ng file: master-correl_<petsa ng record>_<yyyymmdd-hhmmss>.xlsx (hindi nao-overwrite ang luma).
@@ -122,14 +133,14 @@
   }
 
   // Gumagawa ng Blob ng Excel file mula sa resulta ng analyzeLatest. range = { startDate, endDate } (mga petsang pinili sa screen).
-  function buildBlob(result, range, exportedAt, sourceText) {
-    return xlsx.buildWorkbook([buildSheet(result, range, exportedAt, sourceText)], EXPORT.COLOR);
+  function buildBlob(result, range, exportedAt, sourceText, machineName) {
+    return xlsx.buildWorkbook([buildSheet(result, range, exportedAt, sourceText, machineName)], EXPORT.COLOR);
   }
 
   // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa).
-  async function exportCorrel(result, range, rootHandle, sourceText) {
+  async function exportCorrel(result, range, rootHandle, sourceText, machineName) {
     const exportedAt = new Date();
-    const blob = buildBlob(result, range, exportedAt, sourceText);
+    const blob = buildBlob(result, range, exportedAt, sourceText, machineName);
     const subfolderHandle = await rootHandle.getDirectoryHandle(CORREL.SUBFOLDER, { create: true });
     const dateFolderName = formatDay(exportedAt);
     const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });

@@ -1,3 +1,32 @@
+INSTRUCTIONS v2.19 (Excel ng Master Correl: Barcode / Actual / Master, legend na may kulay at Actual / Master, pamagat na may machine name; kasama ang v2.17 hanggang v2.18)
+1. Backup muna ng buong website folder. Ipalit ang 13 binagong file: js/core/xlsx-writer.js, js/core/correl-export.js, js/core/correl-export-config.js, js/core/config.js, js/core/chart-draw.js, js/pages/master.js, css/pages/master.css, pages/master.html, js/templates/master.template.js, js/pages/settings.js, css/pages/settings.css, pages/settings.html, js/templates/settings.template.js (at ang README.txt at 00_INSTRUCTIONS.txt). Walang bagong file. Ctrl+F5 sa index.html (Chrome o Edge).
+2. TEST STEPS v2.19 (Excel ng Master Correl):
+   - Patakbuhin ang Master Correl, pindutin ang Export to Excel, buksan ang .xlsx.
+   - Table: DAPAT ang ayos ng column ay Barcode, Actual, Master (dati Master, Actual, Barcode). Nandoon pa rin ang green / yellow / red sa Actual.
+   - Chart: DAPAT "<machine name> Master Correl" ang pamagat (hal. "MWW 1 Master Correl"). Walang machine name sa Settings: "Master Correl" lang.
+   - Legend (kanan): DAPAT bawat point ay may kulay at ang text na "<Actual> / <Master>" (hal. 55.714 / 57.270), sa ayos ng table. DAPAT walang entry ng trendline o "Actual" sa legend. May dashed trendline pa rin, equation at R squared.
+   - Hindi nagbago: mga point na green / yellow / red, axis title, at Master Repeatability export.
+   - Nasubukan ang laman ng .xlsx (openpyxl) at ang chart sa LibreOffice. Hindi pa nasubukan sa totoong Excel (Excel 2007 ang nasa screenshot mo); kung iba ang itsura ng legend o may lumabas na entry ng trendline, ipakita sa akin.
+3. TEST STEPS v2.18 (Settings):
+   - Buksan ang Settings: DAPAT nakatago ang paalalang "May pagbabago na hindi pa na-save...".
+   - Palitan ang kahit ano (machine name, uri, full path, o pumili ng folder): DAPAT lumabas ang paalalang iyon sa tabi ng Save settings (kulay amber). Pindutin ang Save settings at kapag nag-success: DAPAT mawala ang paalala. Palitan ulit: DAPAT lumabas ulit.
+   - Pumili ng folder (hal. BMWW) na walang full path: DAPAT lumabas ang "Napili ang folder. Ilagay ang full path nito..." at mapunta ang cursor sa Full path field ng row na iyon.
+   - Save na may napiling folder pero walang full path: DAPAT may error na "Kailangan ng full path...", naka-highlight ang row, at HINDI ma-save. Ilagay ang full path (hal. C:\BMWW) at Save: DAPAT ma-save. Ang path na walang napiling folder (hal. wala pang Server path): DAPAT hindi hinihingian ng full path.
+   - Master page: pagkatapos mailagay ang full path ng Saving path, DAPAT hindi na lumabas ang "Ilagay ang FULL PATH ng Saving path..." sa Open latest correl file.
+   - Nasubukan sa jsdom (paalala, required na full path, Save). Hindi pa nasubukan sa totoong Chrome/Edge.
+3. TEST STEPS v2.17 (Master page; may Machine name sa Settings, hal. MWW 1):
+   - v2.17c: Latest Master card: DAPAT iisang "Date" na lang ang field (wala nang Start date at End date), ngayong araw ang default. Palitan ang Date sa araw na may record at pindutin ang Master Correl: DAPAT lumabas ang pinakabagong record ng araw na iyon. Date na walang record: DAPAT "Walang master record sa napiling petsa.". Blangkong Date: DAPAT "Maglagay ng valid na Date.". Umalis at bumalik sa Master: DAPAT nandoon pa rin ang Date na ginamit at ang resulta. Gumagana pa rin ang Export to Excel at Open latest correl file. Hindi ginalaw ang Master Repeatability (may Start at End date pa rin).
+   - v2.17b: Master Correl: DAPAT itim at malinaw ang lahat ng text sa scatter at bar chart (pamagat, numero, Master Reading / Actual Reading). Master Repeatability: DAPAT kumpleto ang mga label ng barcode sa ilalim (walang naputol, lalo na ang una sa kaliwa), at kasya ang mas mahahabang barcode.
+   - Patakbuhin ang Master Correl: DAPAT "MWW 1 Master Correl" ang pamagat ng scatter chart (hindi na "Actual Reading vs Master Reading"). DAPAT mas malaki at malinaw ang text: pamagat, numero sa axis, "Master Reading" / "Actual Reading" sa gilid, at ang equation (y = ... R\u00b2 = ...). Ang bar chart (Actual AVG vs Master AVG) ay hindi binago ang pamagat.
+   - Patakbuhin ang Master Repeatability: DAPAT "MWW 1 Master Repeatability" ang pamagat ng line chart (hindi na "MASTER REPEATABILITY"). DAPAT kasya ang mga label ng barcode sa ilalim.
+   - Walang Machine name sa Settings: DAPAT "Master Correl" / "Master Repeatability" lang ang pamagat.
+   - Patakbuhin ang Master Correl at Master Repeatability, pumunta sa Dashboard (o ibang page), tapos bumalik sa Master: DAPAT nandoon pa rin ang dalawang resulta (table at chart), ang Start / End date na ginamit, ang napiling mode (All data points / Latest per shift), at ang mga na-uncheck na file sa Repeatability. DAPAT bukas pa rin ang Export to Excel ng dalawa.
+   - Palitan ang petsa at patakbuhin ulit: DAPAT mapalitan ang naka-save na resulta. Kapag may error ang bagong takbo: DAPAT mawala ang lumang resulta (hindi maiiwan ang luma).
+   - Tandaan: naaalala ang resulta habang hindi pa nire-refresh ang website. Kapag Ctrl+F5 o isinara ang tab, blangko ulit ang Master page.
+   - DAPAT HINDI mangyari: error sa console; magbago ang pamagat ng Excel export (hindi ito ginalaw).
+   - Nasubukan ng gumawa sa jsdom (pamagat, restore ng resulta, petsa, mode, checkbox). Hindi pa nasubukan sa totoong Chrome/Edge, kaya ang laki ng text ay sa screen mo unang makikita.
+
+--- LUMANG INSTRUCTIONS (v2.16) ---
 INSTRUCTIONS v2.16 (Master Correl: Export to Excel at Open latest correl file)
 1. Backup muna ng buong website folder. Ipalit ang mga binagong file at ilagay ang 2 bagong file (js/core/correl-export-config.js, js/core/correl-export.js). Ctrl+F5 sa index.html (Chrome o Edge).
 2. Open handler: ipalit ang tools\open-handler\open-file.ps1 (ito ang nagbago; HINDI kailangang i-install ulit ang handler). Kung hindi pa naka-install, tingnan ang v2.15 sa baba.

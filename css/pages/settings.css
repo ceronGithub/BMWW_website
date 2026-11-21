@@ -2,6 +2,7 @@
  * FILE    : css/pages/settings.css
  * PURPOSE : Style ng settings (naka-scope)
  * DEPENDS : css/components.css
+ * VERSION : v2.18 | 2026-11-21 | .unsaved-note (paalala na may hindi pa na-save)
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2.3 | 2026-11-20 | naka-gray na row, Required marker, highlight
  * VERSION : v2.4 | 2026-11-20 | full path input
@@ -30,6 +31,9 @@
 .page-settings .path-full-input.is-error { border-color: var(--color-danger); }
 .page-settings .save-bar { position: sticky; bottom: var(--space-4); z-index: 3; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover); }
 .page-settings .save-bar .status { margin: 0; }
+.page-settings .save-bar .unsaved-note { margin: 0; font-weight: 600; color: var(--unsaved-color); }
+.page-settings { --unsaved-color: #b45309; }
+@media (prefers-color-scheme: dark) { .page-settings { --unsaved-color: #fbbf24; } }
 .page-settings .save-bar .btn { align-self: flex-start; }
 @media (min-width: 768px) {
   .page-settings .radio-group { grid-template-columns: 1fr 1fr; }
