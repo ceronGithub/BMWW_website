@@ -6,6 +6,7 @@
  * VERSION : v2.13 | 2026-11-21 | CHART (kulay, kapal, laki, posisyon) para sa chart sa sheet na Readings
  * VERSION : v2.15 | 2026-11-21 | PROTOCOL (bmww-open:) para sa Open latest; bagong text at error (walang download)
  * VERSION : v2.20 | 2026-11-21 | REVEAL_PREFIX at OPEN_MODE_FOLDER (pagbukas ng folder sa Master Correl)
+ * VERSION : v8.14 | 2026-11-22 | LABEL.machine (row na Machine sa buod ng Excel)
  * VERSION : v2.14 | 2026-11-21 | puting cell (COLOR.cell, COLOR.border), AUTOFIT ng column, CHART WIDTH/HEIGHT_PIXELS (mas malaki, fixed), button at text ng Open latest file
  */
 (function () {
@@ -38,7 +39,7 @@
     // Autofit ng column: lapad = pinakamahabang text sa column * BOLD_FACTOR (kung bold) + EXTRA, sa pagitan ng MIN at MAX.
     AUTOFIT: { MIN: 8, MAX: 45, EXTRA: 3, BOLD_FACTOR: 1.15 },
     ERROR_BY_NAME: { NotAllowedError: 'noPermission', SecurityError: 'noPermission', NotFoundError: 'folderMissing', QuotaExceededError: 'diskFull' },
-    LABEL: { title: 'MASTER REPEATABILITY', chartRecords: 'Chart records', status: 'Status', exportedAt: 'Exported', dataSource: 'Data source' },
+    LABEL: { title: 'MASTER REPEATABILITY', machine: 'Machine', chartRecords: 'Chart records', status: 'Status', exportedAt: 'Exported', dataSource: 'Data source' },
     TEXT: {
       exporting: 'Sine-save ang Excel file...',
       openingLatest: 'Hinahanap ang pinakabagong Repeatability file...',

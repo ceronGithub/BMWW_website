@@ -2,6 +2,7 @@
  * FILE    : js/templates/master.template.js
  * PURPOSE : Kopya ng pages/master.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v8.15 | 2026-11-22 | kasabay ng pages/master.html (walang button na Open latest repeatability file at Export to Excel; walang script ng master-open-latest)
  * VERSION : v8.11 | 2026-11-21 | kasabay ng pages/master.html (Latest Master: readonly na Date, walang Open latest correl file at Export to Excel; script ng repeatability-sync)
  * VERSION : v7.3 | 2026-11-21 | dagdag na script ng correl-sync-config at correl-sync (status ng Master Correl para sa LEAD PC)
  * VERSION : v7.1 | 2026-11-21 | kasabay ng pages/master.html (card na Compare sliders)
@@ -92,8 +93,6 @@
     </fieldset>
     <div class="action-row action-row-split">
       <button id="range-run" class="btn btn-primary" type="button">Master Repeatability</button>
-      <button id="range-open-latest" class="btn btn-secondary" type="button">Open latest repeatability file</button>
-      <button id="range-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="range-status" class="status" role="status"></p>
     <div id="range-result" class="result-area"></div>
@@ -104,7 +103,6 @@
 <script src="js/core/master-shift.js"></script>
 <script src="js/core/xlsx-writer.js"></script>
 <script src="js/core/master-export.js"></script>
-<script src="js/core/master-open-latest.js"></script>
 <script src="js/core/correl-export-config.js"></script>
 <script src="js/core/correl-export.js"></script>
 <script src="js/core/repeatability-sync-config.js"></script>

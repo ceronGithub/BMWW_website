@@ -3,6 +3,7 @@
  * PURPOSE : Export ng Master Repeatability sa <Saving path> (may timestamp) at kopya (overwrite) sa <Server path>\master-repeatability\<machine name>\<petsa ngayon>\master-repeatability_latest.xlsx
  * DEPENDS : js/core/config.js, storage.js, queue.js, csv-reader.js, master-export-config.js, master-export.js, correl-export.js, repeatability-sync-config.js
  * VERSION : v8.11 | 2026-11-21 | bagong file
+ * VERSION : v8.14 | 2026-11-22 | ipinapasa ang machineName sa masterExport.buildBlob at exportRepeatability (machine name sa Excel)
  */
 (function () {
   'use strict';
@@ -40,7 +41,7 @@
     if (serverFound.state !== CONFIG.QUEUE.CONNECTION.ok) return { ok: false, message: stateText[serverFound.state] || stateText.error };
     try {
       const exportedAt = new Date();
-      const blob = masterExport.buildBlob(result, exportedAt, sourceText);
+      const blob = masterExport.buildBlob(result, exportedAt, sourceText, machineName);
       const subfolderHandle = await serverFound.handle.getDirectoryHandle(SYNC.SERVER.SUBFOLDER, { create: true });
       const machineFolderName = correlExport.getMachineFolderName(machineName);
       const machineHandle = await subfolderHandle.getDirectoryHandle(machineFolderName, { create: true });
@@ -65,7 +66,7 @@
     const settings = storage.readLocalSettings();
     const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
     const sourceText = paths[CONFIG.MASTER.SOURCE_KEY] || (settings.folderNames || {})[CONFIG.MASTER.SOURCE_KEY] || CONFIG.TEXT.master.sourceNotSet;
-    const saved = await masterExport.exportRepeatability(result, rootHandle, sourceText);
+    const saved = await masterExport.exportRepeatability(result, rootHandle, sourceText, machineName);
     const separator = EXPORT.PATH_SEPARATOR;
     const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
     const savedText = EXPORT.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName;

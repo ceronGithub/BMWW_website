@@ -3,6 +3,7 @@
  * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Repeatability at sine-save sa subfolder ng Saving path (BMWW)
  * DEPENDS : js/core/config.js, master-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
  * VERSION : v2.8 | 2026-11-20 | bagong file
+ * VERSION : v8.14 | 2026-11-22 | machineName (optional, huling parameter): row na Machine sa buod at <machine name> sa pamagat ng chart sa Excel, kapareho ng Master Correl at ng screen
  * VERSION : v2.13 | 2026-11-21 | chart (line chart ng Readings) sa loob ng Excel, sa kanan ng table
  * VERSION : v2.16 | 2026-11-21 | ang autofit ay galing na sa xlsx.computeColumnWidths (xlsx-writer)
  * VERSION : v2.14 | 2026-11-21 | autofit ng lahat ng column (Repeatability at Readings), walang gridlines, mas malaki at fixed na chart
@@ -50,12 +51,13 @@
   }
 
   // Sheet 1: buod at talaan kada barcode.
-  function buildSummarySheet(result, exportedAt, sourceText) {
+  function buildSummarySheet(result, exportedAt, sourceText, machineName) {
     const stats = result.stats;
     const label = (text) => ({ v: text, s: STYLE.bold });
     const rangeText = formatDay(result.startDate) + ' - ' + formatDay(result.endDate);
     const rows = [
       [label(EXPORT.LABEL.title)],
+      [label(EXPORT.LABEL.machine), machineName || '-'],
       [label(EXPORT.LABEL.status), stats.status],
       [label(TEXT.repeatability + ' (%)'), numberCell(stats.score)],
       [label(TEXT.averageDifference), numberCell(stats.averageDifference)],
@@ -92,7 +94,7 @@
   }
 
   // Line chart ng Readings: bawat record ay isang linya (pangalan = petsa), x = barcode, kasama ang MASTER.
-  function buildReadingsChart(result, leadCount) {
+  function buildReadingsChart(result, leadCount, machineName) {
     const setting = EXPORT.CHART;
     const firstRecordRow = 2;
     const skipCount = result.columnList.length - getChartColumnList(result).length;
@@ -110,14 +112,14 @@
     const pad = (high - low || 1) * CONFIG.CHART.PAD_RATIO;
     return {
       yMin: Math.floor(low - pad), yMax: Math.ceil(high + pad),
-      title: TEXT.lineTitle, xTitle: setting.X_TITLE, yTitle: setting.Y_TITLE, nameColumn: 0, categoryRow: 0,
+      title: (machineName ? machineName + ' ' : '') + TEXT.lineTitle, xTitle: setting.X_TITLE, yTitle: setting.Y_TITLE, nameColumn: 0, categoryRow: 0,
       firstColumn: leadCount, lastColumn, categoryList: result.barcodeList, seriesList,
       anchor: { column: lastColumn + 1 + setting.GAP_COLUMNS, row: 0, widthPixels: setting.WIDTH_PIXELS, heightPixels: setting.HEIGHT_PIXELS }
     };
   }
 
   // Sheet 2: lahat ng record (petsa sa row, barcode sa column), may MASTER row sa taas.
-  function buildReadingsSheet(result) {
+  function buildReadingsSheet(result, machineName) {
     const hasShift = result.mode === SHIFT.MODE.shift;
     const header = [{ v: TEXT.recordDate, s: STYLE.header }].concat(hasShift ? [{ v: SHIFT.TEXT.shiftColumn, s: STYLE.header }] : [], result.barcodeList.map((barcode) => ({ v: barcode, s: STYLE.header })));
     const masterRow = [{ v: TEXT.masterSeries, s: STYLE.bold }].concat(hasShift ? [''] : [], result.masterList.map((value) => numberCell(value)));
@@ -126,7 +128,7 @@
       rows.push([column.key].concat(hasShift ? [column.shift || ''] : [], column.values.map((value, index) => numberCell(value, getLevelStyle(value, result.masterList[index])))));
     });
     const leadCount = hasShift ? 2 : 1;
-    return { name: EXPORT.SHEET.readings, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 2, columns: leadCount }, chart: buildReadingsChart(result, leadCount) };
+    return { name: EXPORT.SHEET.readings, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 2, columns: leadCount }, chart: buildReadingsChart(result, leadCount, machineName) };
   }
 
   // Pangalan ng file: prefix_start_to_end_yyyymmdd-hhmmss.xlsx (hindi nao-overwrite ang luma).
@@ -137,14 +139,14 @@
   }
 
   // Gumagawa ng Blob ng Excel file mula sa resulta ng analyzeRange.
-  function buildBlob(result, exportedAt, sourceText) {
-    return xlsx.buildWorkbook([buildSummarySheet(result, exportedAt, sourceText), buildReadingsSheet(result)], EXPORT.COLOR);
+  function buildBlob(result, exportedAt, sourceText, machineName) {
+    return xlsx.buildWorkbook([buildSummarySheet(result, exportedAt, sourceText, machineName), buildReadingsSheet(result, machineName)], EXPORT.COLOR);
   }
 
   // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa).
-  async function exportRepeatability(result, rootHandle, sourceText) {
+  async function exportRepeatability(result, rootHandle, sourceText, machineName) {
     const exportedAt = new Date();
-    const blob = buildBlob(result, exportedAt, sourceText);
+    const blob = buildBlob(result, exportedAt, sourceText, machineName);
     const subfolderHandle = await rootHandle.getDirectoryHandle(EXPORT.SUBFOLDER, { create: true });
     const dateFolderName = formatDay(exportedAt);
     const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });

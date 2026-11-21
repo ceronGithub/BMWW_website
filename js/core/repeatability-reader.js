@@ -3,9 +3,10 @@
  * PURPOSE : Binabasa ang pinakabagong na-export na Master Repeatability Excel: LEAD PC = <Server path>\master-repeatability\<machine name>\<petsa>\ ; Sender = <Saving path>\master-repeatability\<petsa ngayon>\
  * DEPENDS : js/core/config.js, master-export-config.js, master-shift-config.js, correl-export-config.js, repeatability-sync-config.js, repeatability-tile-config.js
  * INPUT   : folder handle (Server path o Saving path), pangalan ng machine o petsa (yyyy-mm-dd)
- * OUTPUT  : details { fileName, modifiedMs, status, score, averageDifference, maxDifference, worst, records, range, mode, exportedAt, grid } o null; hindi nagtatapon ng error. Basa lang, walang sinusulat.
+ * OUTPUT  : details { fileName, modifiedMs, status, score, averageDifference, maxDifference, worst, records, range, mode, exportedAt, grid, readings } o null; hindi nagtatapon ng error. Basa lang, walang sinusulat. getIssue(machineName, isSender) = dahilan kung bakit null ang huling basa.
  * NOTE    : Walang library: sariling basa ng ZIP (store at deflate) at XML. Ang deflate ay nangangailangan ng DecompressionStream (Chrome / Edge).
  * VERSION : v8.12 | 2026-11-21 | bagong file
+ * VERSION : v8.14 | 2026-11-22 | (1) details.readings: binabasa na rin ang sheet na Readings (barcode, MASTER, mga record) para sa chart ng Preview. (2) getIssue: dahilan kung bakit walang nabasa (walang folder, walang file, hindi mabasa, error)
  */
 (function () {
   'use strict';
@@ -20,6 +21,9 @@
   const EOCD_SIGNATURE = 0x06054b50;
   const CENTRAL_SIGNATURE = 0x02014b50;
   const detailsCache = new Map();
+  const issueMap = new Map();
+  const ISSUE = TILE.ISSUE;
+  const READINGS = TILE.READINGS;
 
   // Mga entry ng ZIP { name: { method, compressedSize, localOffset } } mula sa central directory; null kung hindi ZIP.
   function readZipEntries(view) {
@@ -63,13 +67,14 @@
     return Array.from(doc.getElementsByTagName('si')).map((item) => Array.from(item.getElementsByTagName('t')).map((node) => node.textContent).join(''));
   }
 
-  // Lahat ng cell ng sheet bilang Map('A21' -> halaga), hanggang CELL_ROW_LIMIT na row.
-  function parseAllCells(sheetXml, sharedList) {
+  // Lahat ng cell ng sheet bilang Map('A21' -> halaga), hanggang rowLimit na row (default CELL_ROW_LIMIT).
+  function parseAllCells(sheetXml, sharedList, rowLimit) {
+    const maxRow = rowLimit || TILE.CELL_ROW_LIMIT;
     const doc = new DOMParser().parseFromString(sheetXml, 'application/xml');
     const cellMap = new Map();
     Array.from(doc.getElementsByTagName('c')).forEach((cell) => {
       const match = /^([A-Z]+)(\d+)$/.exec(cell.getAttribute('r') || '');
-      if (!match || Number(match[2]) > TILE.CELL_ROW_LIMIT) return;
+      if (!match || Number(match[2]) > maxRow) return;
       const type = cell.getAttribute('t');
       let value = '';
       if (type === 'inlineStr') value = Array.from(cell.getElementsByTagName('t')).map((node) => node.textContent).join('');
@@ -118,6 +123,53 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  // Numero ng column mula sa letra (A = 1, Z = 26, AA = 27).
+  function columnNumberOf(letters) {
+    let columnNumber = 0;
+    for (const letter of letters) columnNumber = columnNumber * 26 + (letter.charCodeAt(0) - 64);
+    return columnNumber;
+  }
+
+  // Cell ng sheet bilang Map(row -> Map(column -> halaga)); blangkong cell ay hindi isinasama.
+  function toRowMap(cellMap) {
+    const rowMap = new Map();
+    cellMap.forEach((value, reference) => {
+      const match = /^([A-Z]+)(\d+)$/.exec(reference);
+      if (!match || value === '') return;
+      const row = Number(match[2]);
+      if (!rowMap.has(row)) rowMap.set(row, new Map());
+      rowMap.get(row).set(columnNumberOf(match[1]), value);
+    });
+    return rowMap;
+  }
+
+  // Data ng chart mula sa sheet na Readings: { barcodeList, masterList, recordList: [{ key, values }] }; null kung kulang o iba ang ayos. May column na Shift sa ikalawang column kapag mode na shift.
+  function parseReadings(cellMap) {
+    const rowMap = toRowMap(cellMap);
+    const headerRow = rowMap.get(READINGS.HEADER_ROW);
+    const masterRow = rowMap.get(READINGS.MASTER_ROW);
+    if (!headerRow || !masterRow) return null;
+    const shiftText = root.shiftConfig ? root.shiftConfig.TEXT.shiftColumn : '';
+    const leadCount = shiftText && headerRow.get(2) === shiftText ? 2 : 1;
+    let lastColumn = 0;
+    headerRow.forEach((text, column) => { if (column > leadCount) lastColumn = Math.max(lastColumn, column); });
+    if (lastColumn === 0) return null;
+    const barcodeList = [];
+    const masterList = [];
+    for (let column = leadCount + 1; column <= lastColumn; column += 1) {
+      barcodeList.push(headerRow.get(column) || '');
+      masterList.push(toNumber(masterRow.get(column) || ''));
+    }
+    const recordList = [];
+    Array.from(rowMap.keys()).filter((row) => row >= READINGS.FIRST_RECORD_ROW).sort((first, second) => first - second).forEach((row) => {
+      const recordRow = rowMap.get(row);
+      const key = recordRow.get(1);
+      if (!key) return;
+      recordList.push({ key, values: barcodeList.map((barcode, index) => toNumber(recordRow.get(leadCount + 1 + index) || '')) });
+    });
+    return { barcodeList, masterList, recordList };
+  }
+
   // Binabasa ang isang Excel file at ibinibigay ang details; null kung hindi mabasa o walang Status.
   async function readDetailsFromFile(file) {
     if (file.size > TILE.FILE_MAX_BYTES) return null;
@@ -126,10 +178,19 @@
     if (!entryMap) return null;
     const sheetXml = await readEntryText(view, entryMap, SHEET_PATH);
     if (!sheetXml) return null;
-    const cellMap = parseAllCells(sheetXml, parseSharedStrings(await readEntryText(view, entryMap, STRINGS_PATH)));
+    const sharedList = parseSharedStrings(await readEntryText(view, entryMap, STRINGS_PATH));
+    const cellMap = parseAllCells(sheetXml, sharedList);
     const status = findValue(cellMap, EXPORT.LABEL.status);
     if (!status) return null;
     const shiftText = root.shiftConfig ? root.shiftConfig.TEXT.modeLabel : '';
+    // Sheet na Readings: kung wala o hindi mabasa, ang chart lang ang mawawala (buod at grid ay tuloy).
+    let readings = null;
+    try {
+      const readingsXml = await readEntryText(view, entryMap, READINGS.SHEET_PATH);
+      readings = readingsXml ? parseReadings(parseAllCells(readingsXml, sharedList, READINGS.ROW_LIMIT)) : null;
+    } catch (error) {
+      readings = null;
+    }
     return {
       fileName: file.name,
       modifiedMs: file.lastModified,
@@ -142,7 +203,8 @@
       range: findValue(cellMap, TEXT.range),
       mode: shiftText ? findValue(cellMap, shiftText) : '',
       exportedAt: findValue(cellMap, EXPORT.LABEL.exportedAt),
-      grid: buildGrid(cellMap)
+      grid: buildGrid(cellMap),
+      readings
     };
   }
 
@@ -176,16 +238,46 @@
     return cleaned || setting.NO_MACHINE_FOLDER;
   }
 
-  // LEAD PC: pinakabagong Excel ng machine sa <Server path>\master-repeatability\<machine>\<petsa>\. Tinitingnan ang folder ng petsa mula pinakabago (yyyy-mm-dd) hanggang makakita ng file.
+  // Itinatala ang dahilan kung bakit walang nabasa ({ code, detail }) sa ilalim ng key.
+  function setIssue(key, code, detail) {
+    issueMap.set(key, { code, detail: detail || '' });
+  }
+
+  // Walang folder ba (NotFoundError) ang dahilan ng error?
+  function isNotFound(error) {
+    return Boolean(error) && error.name === 'NotFoundError';
+  }
+
+  // Dahilan kung bakit hindi nabasa ang huling subok: { code, detail } o null. Sender: isSender = true (walang machine name).
+  function getIssue(machineName, isSender) {
+    return issueMap.get(isSender ? ISSUE.SENDER_KEY : normalizeName(machineName)) || null;
+  }
+
+  // LEAD PC: pinakabagong Excel ng machine sa <Server path>\master-repeatability\<machine>\<petsa>\. Tinitingnan ang folder ng petsa mula pinakabago (yyyy-mm-dd) hanggang makakita ng file. Kapag null, may dahilan sa getIssue.
   async function readForMachine(serverHandle, machineName) {
+    const issueKey = normalizeName(machineName);
+    issueMap.delete(issueKey);
     try {
-      const baseHandle = await serverHandle.getDirectoryHandle(SYNC.SERVER.SUBFOLDER);
+      let baseHandle;
+      try {
+        baseHandle = await serverHandle.getDirectoryHandle(SYNC.SERVER.SUBFOLDER);
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+        setIssue(issueKey, 'noBaseFolder');
+        return null;
+      }
       const wanted = normalizeName(getMachineFolderName(machineName));
       let machineHandle = null;
+      const folderNameList = [];
       for await (const [folderName, handle] of baseHandle.entries()) {
-        if (handle.kind === 'directory' && normalizeName(folderName) === wanted) { machineHandle = handle; break; }
+        if (handle.kind !== 'directory') continue;
+        if (normalizeName(folderName) === wanted) { machineHandle = handle; break; }
+        folderNameList.push(folderName);
       }
-      if (!machineHandle) return null;
+      if (!machineHandle) {
+        setIssue(issueKey, 'noFolder', folderNameList.slice(0, ISSUE.FOLDER_LIST_LIMIT).join(', '));
+        return null;
+      }
       const dayList = [];
       for await (const [dayName, handle] of machineHandle.entries()) {
         if (handle.kind === 'directory') dayList.push({ dayName, handle });
@@ -193,24 +285,49 @@
       dayList.sort((first, second) => (first.dayName < second.dayName ? 1 : -1));
       for (const day of dayList) {
         const latest = await findLatestInFolder(day.handle);
-        if (latest) return await readCached(latest);
+        if (!latest) continue;
+        const details = await readCached(latest);
+        if (!details) setIssue(issueKey, 'unreadable', latest.name);
+        return details;
       }
+      setIssue(issueKey, 'noFile');
       return null;
     } catch (error) {
+      setIssue(issueKey, 'error', error && error.name ? error.name : '');
       return null;
     }
   }
 
-  // Sender: pinakabagong Excel ngayong araw sa <Saving path>\master-repeatability\<dayName>\ (dayName = yyyy-mm-dd).
+  // Sender: pinakabagong Excel ngayong araw sa <Saving path>\master-repeatability\<dayName>\ (dayName = yyyy-mm-dd). Kapag null, may dahilan sa getIssue(machineName, true).
   async function readInSavingPath(rootHandle, dayName) {
+    issueMap.delete(ISSUE.SENDER_KEY);
     try {
-      const baseHandle = await rootHandle.getDirectoryHandle(EXPORT.SUBFOLDER);
-      const latest = await findLatestInFolder(await baseHandle.getDirectoryHandle(dayName));
-      return latest ? await readCached(latest) : null;
+      let baseHandle;
+      try {
+        baseHandle = await rootHandle.getDirectoryHandle(EXPORT.SUBFOLDER);
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+        setIssue(ISSUE.SENDER_KEY, 'noBaseFolder');
+        return null;
+      }
+      let dayHandle;
+      try {
+        dayHandle = await baseHandle.getDirectoryHandle(dayName);
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+        setIssue(ISSUE.SENDER_KEY, 'noDayFolder');
+        return null;
+      }
+      const latest = await findLatestInFolder(dayHandle);
+      if (!latest) { setIssue(ISSUE.SENDER_KEY, 'noFile'); return null; }
+      const details = await readCached(latest);
+      if (!details) setIssue(ISSUE.SENDER_KEY, 'unreadable', latest.name);
+      return details;
     } catch (error) {
+      setIssue(ISSUE.SENDER_KEY, 'error', error && error.name ? error.name : '');
       return null;
     }
   }
 
-  root.repeatabilityReader = Object.freeze({ readForMachine, readInSavingPath, readDetailsFromFile });
+  root.repeatabilityReader = Object.freeze({ readForMachine, readInSavingPath, readDetailsFromFile, getIssue });
 })();

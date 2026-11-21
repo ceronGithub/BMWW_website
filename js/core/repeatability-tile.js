@@ -1,9 +1,10 @@
 /*
  * FILE    : js/core/repeatability-tile.js
- * PURPOSE : Tile ng Master Repeatability sa Dashboard (status, Repeatability %, Worst slider, Range) at Preview sa bagong tab
- * DEPENDS : js/core/config.js, queue.js, storage.js, csv-reader.js, dashboard-machines-config.js, correl-sync-config.js, repeatability-tile-config.js, repeatability-reader.js, preview-tab.js
+ * PURPOSE : Tile ng Master Repeatability sa Dashboard (status, Repeatability %, Worst slider, Range, dahilan kung walang nabasa) at Preview sa bagong tab (buod, chart at sheet)
+ * DEPENDS : js/core/config.js, queue.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js, dashboard-machines-config.js, correl-sync-config.js, repeatability-tile-config.js, repeatability-reader.js, preview-tab.js
  * INPUT   : details (galing sa repeatabilityReader), oras ngayon (ms), pangalan ng machine, isSender (true = Sender, false = LEAD PC)
  * OUTPUT  : elemento ng tile; Preview tab (basa lang). Hindi nagtatapon ng error.
+ * VERSION : v8.14 | 2026-11-22 | (1) Preview tab ay may line chart (buildChart) mula sa sheet na Readings. (2) Kapag walang nabasa, ipinapakita sa tile at sa Preview ang dahilan (getIssueText)
  * VERSION : v8.12 | 2026-11-21 | bagong file
  */
 (function () {
@@ -14,6 +15,7 @@
   const TILE = root.repeatabilityTileConfig;
   const TEXT = TILE.TEXT;
   const CLASS = TILE.CLASS;
+  const MASTER_TEXT = CONFIG.TEXT.master;
   let previewClearId = null;
 
   // Gumagawa ng elemento na may class at text (textContent lang, ligtas sa XSS).
@@ -22,6 +24,39 @@
     if (className) element.className = className;
     if (text !== undefined && text !== null && text !== '') element.textContent = text;
     return element;
+  }
+
+  // Text ng dahilan kung bakit walang nabasa (galing sa repeatabilityReader.getIssue); walang laman kung walang naitalang dahilan.
+  function getIssueText(machineName, isSender) {
+    if (!root.repeatabilityReader || !root.repeatabilityReader.getIssue) return '';
+    const issue = root.repeatabilityReader.getIssue(machineName, isSender);
+    if (!issue) return '';
+    const issueText = TEXT.issue;
+    const template = (isSender && issueText[issue.code + 'Sender']) || issueText[issue.code] || issueText.error;
+    const detail = issue.code === 'noFolder' && !issue.detail ? issueText.none : issue.detail;
+    return template.replace('{detail}', detail);
+  }
+
+  // Level (green / yellow / red) ng reading vs master, kapareho ng screen; walang laman kung walang halaga.
+  function getLevel(value, masterValue) {
+    if (typeof value !== 'number' || typeof masterValue !== 'number') return '';
+    return root.masterAnalysis.classifyDeviation(value, masterValue);
+  }
+
+  // Line chart ng Preview mula sa sheet na Readings: bawat record ay isang linya, x = barcode, kasama ang MASTER. Huling MAX_LINES lang (kapareho ng screen). Null kapag walang data.
+  function buildChart(details, machineName) {
+    const readings = details.readings;
+    if (!readings || readings.recordList.length === 0 || readings.barcodeList.length < TILE.CHART.MIN_BARCODES) return null;
+    const shownList = readings.recordList.slice(-CONFIG.MASTER.RANGE.MAX_LINES);
+    const seriesList = shownList.map((record, index) => ({
+      name: record.key, values: record.values, isMaster: false, colorIndex: index % TILE.CHART.COLOR_CYCLE,
+      levelList: record.values.map((value, barcodeIndex) => getLevel(value, readings.masterList[barcodeIndex]))
+    }));
+    seriesList.push({ name: MASTER_TEXT.masterSeries, values: readings.masterList, isMaster: true });
+    const box = document.createElement('div');
+    box.className = 'chart-box';
+    root.chart.drawLines(box, { title: (machineName ? machineName + ' ' : '') + MASTER_TEXT.lineTitle, categoryList: readings.barcodeList, seriesList, hideLegend: false });
+    return box;
   }
 
   // Mensahe sa ilalim ng mga tile kapag hinarang ang bagong tab (nawawala pagkalipas ng ilang segundo).
@@ -42,15 +77,15 @@
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
       if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: panelText.noRoot };
       const details = await root.repeatabilityReader.readInSavingPath(rootHandle, root.csv.formatDateInput(new Date()));
-      return details ? { details } : { message: panelText.noFileSender };
+      return details ? { details } : { message: getIssueText(machineName, true) || panelText.noFileSender };
     }
     const found = await root.queue.findServerHandle(true);
     if (found.state !== CONFIG.QUEUE.CONNECTION.ok) return { message: DM.TEXT.preview.error[found.state] || DM.TEXT.preview.error.error };
     const details = await root.repeatabilityReader.readForMachine(found.handle, machineName);
-    return details ? { details } : { message: panelText.noFileLead };
+    return details ? { details } : { message: getIssueText(machineName, false) || panelText.noFileLead };
   }
 
-  // Pahina ng Preview tab: status, buod at laman ng sheet (walang chart).
+  // Pahina ng Preview tab: status, buod, chart (mula sa sheet na Readings) at laman ng sheet.
   function buildPage(details, machineName) {
     const stats = TEXT.panel.stats;
     const sync = root.correlSyncConfig;
@@ -69,7 +104,7 @@
         [stats.exportedAt, details.exportedAt || '-'],
         [stats.file, details.fileName]
       ],
-      chartBox: null,
+      chartBox: buildChart(details, machineName),
       grid: details.grid,
       fileName: details.fileName,
       modifiedMs: details.modifiedMs
@@ -104,6 +139,8 @@
       row.append(createElementWith('span', CLASS.empty, TEXT.none));
       const emptyBox = createElementWith('div', CLASS.box + ' ' + CLASS.none);
       emptyBox.append(row);
+      const issueText = getIssueText(machineName, isSender);
+      if (issueText) emptyBox.append(createElementWith('p', CLASS.meta, issueText));
       return emptyBox;
     }
     const box = createElementWith('div', CLASS.box + ' ' + (sync.STATUS_CLASS[details.status] || ''));
