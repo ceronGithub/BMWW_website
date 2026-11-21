@@ -351,7 +351,7 @@
           folderMissing: 'Hindi mahanap ang Data source folder. Piliin ulit ito sa Settings.',
           emptyFolder: 'Walang CSV file sa Data source folder.',
           noMasterFile: 'Walang master file na may 15 headers sa mga file na nabasa.',
-          noRecordToday: 'Walang master record ngayong araw.',
+          noRecordToday: 'Walang master record sa napiling petsa.',
           noFileInRange: 'Walang file sa napiling petsa.',
           noRecordInRange: 'Walang record sa napiling petsa.',
           badDates: 'Maglagay ng valid na Start date at End date.',

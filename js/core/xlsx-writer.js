@@ -4,6 +4,8 @@
  * DEPENDS : wala (window.BMWW lang)
  * VERSION : v2.8 | 2026-11-20 | bagong file (para sa Export to Excel ng Master Repeatability)
  * VERSION : v2.13 | 2026-11-21 | line chart sa worksheet (sheet.chart): drawing at chart XML
+ * VERSION : v2.16 | 2026-11-21 | scatter chart na may trendline (chart.kind = 'scatter', kulay kada point), STYLE.precise (4 decimal) at computeColumnWidths (autofit, galing sa master-export.js)
+ * VERSION : v2.14 | 2026-11-21 | puting background ng lahat ng cell (may manipis na border), walang gridlines (sheet.showGridLines), chart na fixed ang laki (oneCellAnchor, hindi lumiliit kapag nag-autofit), puting chart area
  */
 (function () {
   'use strict';
@@ -16,9 +18,11 @@
   const CHART_NS = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
   const DRAWING_NS = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
   const DRAWINGML_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+  // 1 pixel = 9525 EMU (unit ng laki ng drawing sa Excel).
+  const EMU_PER_PIXEL = 9525;
   const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
   // Index ng style sa styles.xml (ang mga ito ang ginagamit ng nagtatawag).
-  const STYLE = Object.freeze({ normal: 0, header: 1, bold: 2, number: 3, green: 4, yellow: 5, red: 6 });
+  const STYLE = Object.freeze({ normal: 0, header: 1, bold: 2, number: 3, green: 4, yellow: 5, red: 6, precise: 7 });
   const encoder = new TextEncoder();
 
   // CRC32 table (para sa ZIP).
@@ -73,13 +77,14 @@
   }
 
   // Freeze panes (rows sa taas, columns sa kaliwa).
-  function buildSheetView(freeze) {
-    if (!freeze || (!freeze.rows && !freeze.columns)) return '<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+  function buildSheetView(freeze, showGridLines) {
+    const gridAttribute = showGridLines === false ? ' showGridLines="0"' : '';
+    if (!freeze || (!freeze.rows && !freeze.columns)) return '<sheetViews><sheetView' + gridAttribute + ' workbookViewId="0"/></sheetViews>';
     const rows = freeze.rows || 0;
     const columns = freeze.columns || 0;
     const pane = columns && rows ? 'bottomRight' : rows ? 'bottomLeft' : 'topRight';
     const attributes = (columns ? ' xSplit="' + columns + '"' : '') + (rows ? ' ySplit="' + rows + '"' : '');
-    return '<sheetViews><sheetView workbookViewId="0"><pane' + attributes + ' topLeftCell="' + columnLetter(columns) + (rows + 1) + '" activePane="' + pane + '" state="frozen"/></sheetView></sheetViews>';
+    return '<sheetViews><sheetView' + gridAttribute + ' workbookViewId="0"><pane' + attributes + ' topLeftCell="' + columnLetter(columns) + (rows + 1) + '" activePane="' + pane + '" state="frozen"/></sheetView></sheetViews>';
   }
 
   // XML ng isang worksheet.
@@ -89,22 +94,24 @@
       const cellXml = cellList.map((cell, columnIndex) => buildCell(cell, rowIndex, columnIndex)).join('');
       return cellXml ? '<row r="' + (rowIndex + 1) + '">' + cellXml + '</row>' : '';
     }).join('');
-    return XML_HEADER + '<worksheet xmlns="' + MAIN_NS + '" xmlns:r="' + REL_NS + '">' + buildSheetView(sheet.freeze) + '<sheetFormatPr defaultRowHeight="15"/>' + (columnXml ? '<cols>' + columnXml + '</cols>' : '') + '<sheetData>' + rowXml + '</sheetData>' + (hasDrawing ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
+    return XML_HEADER + '<worksheet xmlns="' + MAIN_NS + '" xmlns:r="' + REL_NS + '">' + buildSheetView(sheet.freeze, sheet.showGridLines) + '<sheetFormatPr defaultRowHeight="15"/>' + (columnXml ? '<cols>' + columnXml + '</cols>' : '') + '<sheetData>' + rowXml + '</sheetData>' + (hasDrawing ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
   }
 
-  // XML ng styles (index ayon sa STYLE). colorMap: header, green, yellow, red (hex na walang #).
+  // XML ng styles (index ayon sa STYLE). colorMap: header, cell, border, green, yellow, red (hex na walang #).
+  // Lahat ng cell ay may solid na puting fill (cell) at manipis na border; ang green / yellow / red lang ang may kulay.
   function buildStylesXml(colorMap) {
     const solidFill = (hex) => '<fill><patternFill patternType="solid"><fgColor rgb="FF' + hex + '"/><bgColor indexed="64"/></patternFill></fill>';
     const fontXml = (isBold, isWhite) => '<font>' + (isBold ? '<b/>' : '') + '<sz val="11"/>' + (isWhite ? '<color rgb="FFFFFFFF"/>' : '') + '<name val="Calibri"/></font>';
-    const xf = (fontId, fillId, numberFormatId) => '<xf numFmtId="' + numberFormatId + '" fontId="' + fontId + '" fillId="' + fillId + '" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1"/>';
+    const xf = (fontId, fillId, numberFormatId) => '<xf numFmtId="' + numberFormatId + '" fontId="' + fontId + '" fillId="' + fillId + '" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"/>';
+    const side = (name) => '<' + name + ' style="thin"><color rgb="FF' + colorMap.border + '"/></' + name + '>';
     return XML_HEADER + '<styleSheet xmlns="' + MAIN_NS + '">'
-      + '<numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts>'
+      + '<numFmts count="2"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.0000"/></numFmts>'
       + '<fonts count="3">' + fontXml(false, false) + fontXml(true, false) + fontXml(true, true) + '</fonts>'
-      + '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
-      + solidFill(colorMap.header) + solidFill(colorMap.green) + solidFill(colorMap.yellow) + solidFill(colorMap.red) + '</fills>'
-      + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+      + '<fills count="7"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+      + solidFill(colorMap.header) + solidFill(colorMap.green) + solidFill(colorMap.yellow) + solidFill(colorMap.red) + solidFill(colorMap.cell) + '</fills>'
+      + '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>' + side('left') + side('right') + side('top') + side('bottom') + '<diagonal/></border></borders>'
       + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-      + '<cellXfs count="7">' + xf(0, 0, 0) + xf(1, 2, 0) + xf(1, 0, 0) + xf(0, 0, 164) + xf(2, 3, 164) + xf(1, 4, 164) + xf(2, 5, 164) + '</cellXfs>'
+      + '<cellXfs count="8">' + xf(0, 6, 0) + xf(1, 2, 0) + xf(1, 6, 0) + xf(0, 6, 164) + xf(2, 3, 164) + xf(1, 4, 164) + xf(2, 5, 164) + xf(0, 6, 165) + '</cellXfs>'
       + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
   }
 
@@ -142,25 +149,75 @@
       + '<c:smooth val="0"/></c:ser>';
   }
 
+  // Pamagat ng chart.
+  function buildChartTitleXml(text) {
+    return '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1400" b="1"/></a:pPr><a:r><a:rPr lang="en-US" sz="1400" b="1"/><a:t>' + escapeXml(text) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>';
+  }
+
+  // Pamagat ng axis (blangko kung walang text).
+  function buildAxisTitleXml(text) {
+    return text ? '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="1000" b="0"/><a:t>' + escapeXml(text) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>' : '';
+  }
+
+  // Saklaw ng cell ng isang column (patayo), hal. Sheet!$B$14:$B$20.
+  function columnRangeText(sheetRef, columnIndex, firstRow, lastRow) {
+    return sheetRef + '!' + absoluteRef(columnIndex, firstRow) + ':' + absoluteRef(columnIndex, lastRow);
+  }
+
+  // Style ng isang value axis ng scatter (x sa ibaba, y sa kaliwa).
+  function buildScatterAxisXml(axisId, crossId, position, title, minValue, maxValue) {
+    const scaling = '<c:scaling><c:orientation val="minMax"/>' + (maxValue !== undefined ? '<c:max val="' + maxValue + '"/><c:min val="' + minValue + '"/>' : '') + '</c:scaling>';
+    return '<c:valAx><c:axId val="' + axisId + '"/>' + scaling + '<c:delete val="0"/><c:axPos val="' + position + '"/><c:majorGridlines/>' + buildAxisTitleXml(title)
+      + '<c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:crossAx val="' + crossId + '"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/></c:valAx>';
+  }
+
+  // XML ng scatter chart: x = master, y = actual; may linear trendline (equation at R squared); kulay ng bawat point ayon sa level.
+  // chart: { title, xTitle, yTitle, nameRef:{column,row,text}, xRange:{column,firstRow,lastRow}, yRange:{...}, xValues, yValues,
+  //          pointColorList, pointColor, markerSize, trendColor, trendWidth, xMin, xMax, yMin, yMax, anchor }
+  function buildScatterChartXml(sheetName, chart) {
+    const sheetRef = quoteSheetName(sheetName);
+    const fill = (hex) => '<a:solidFill><a:srgbClr val="' + hex + '"/></a:solidFill>';
+    const pointXml = (color, index) => '<c:dPt><c:idx val="' + index + '"/><c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(color) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker><c:bubble3D val="0"/><c:spPr>' + fill(color) + '<a:ln><a:noFill/></a:ln></c:spPr></c:dPt>';
+    const trendline = '<c:trendline><c:spPr><a:ln w="' + chart.trendWidth + '">' + fill(chart.trendColor) + '<a:prstDash val="dash"/></a:ln></c:spPr><c:trendlineType val="linear"/><c:dispRSqr val="1"/><c:dispEq val="1"/></c:trendline>';
+    const series = '<c:ser><c:idx val="0"/><c:order val="0"/>'
+      + '<c:tx><c:strRef><c:f>' + sheetRef + '!' + absoluteRef(chart.nameRef.column, chart.nameRef.row) + '</c:f>' + buildStringCache([chart.nameRef.text]) + '</c:strRef></c:tx>'
+      + '<c:spPr><a:ln w="19050"><a:noFill/></a:ln></c:spPr>'
+      + '<c:marker><c:symbol val="circle"/><c:size val="' + chart.markerSize + '"/><c:spPr>' + fill(chart.pointColor) + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker>'
+      + (chart.pointColorList || []).map((color, index) => pointXml(color, index)).join('')
+      + trendline
+      + '<c:xVal><c:numRef><c:f>' + columnRangeText(sheetRef, chart.xRange.column, chart.xRange.firstRow, chart.xRange.lastRow) + '</c:f>' + buildNumberCache(chart.xValues) + '</c:numRef></c:xVal>'
+      + '<c:yVal><c:numRef><c:f>' + columnRangeText(sheetRef, chart.yRange.column, chart.yRange.firstRow, chart.yRange.lastRow) + '</c:f>' + buildNumberCache(chart.yValues) + '</c:numRef></c:yVal>'
+      + '<c:smooth val="0"/></c:ser>';
+    return XML_HEADER + '<c:chartSpace xmlns:c="' + CHART_NS + '" xmlns:a="' + DRAWINGML_NS + '" xmlns:r="' + REL_NS + '"><c:roundedCorners val="0"/><c:chart>' + buildChartTitleXml(chart.title) + '<c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>'
+      + '<c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>' + series + '<c:axId val="60010"/><c:axId val="60020"/></c:scatterChart>'
+      + buildScatterAxisXml(60010, 60020, 'b', chart.xTitle, chart.xMin, chart.xMax) + buildScatterAxisXml(60020, 60010, 'l', chart.yTitle, chart.yMin, chart.yMax)
+      + '</c:plotArea><c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>'
+      + '<c:spPr>' + fill('FFFFFF') + '<a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>';
+  }
+
   // XML ng line chart: bawat series ay isang linya; categories = barcode.
   function buildChartXml(sheetName, chart) {
+    if (chart.kind === 'scatter') return buildScatterChartXml(sheetName, chart);
     const sheetRef = quoteSheetName(sheetName);
-    const titleXml = '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1400" b="1"/></a:pPr><a:r><a:rPr lang="en-US" sz="1400" b="1"/><a:t>' + escapeXml(chart.title) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>';
-    const axisTitle = (text) => (text ? '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="1000" b="0"/><a:t>' + escapeXml(text) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>' : '');
+    const titleXml = buildChartTitleXml(chart.title);
+    const axisTitle = buildAxisTitleXml;
     return XML_HEADER + '<c:chartSpace xmlns:c="' + CHART_NS + '" xmlns:a="' + DRAWINGML_NS + '" xmlns:r="' + REL_NS + '"><c:roundedCorners val="0"/><c:chart>' + titleXml + '<c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>'
       + '<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>' + chart.seriesList.map((series, index) => buildSeriesXml(series, index, sheetRef, chart)).join('') + '<c:marker val="1"/><c:axId val="50010"/><c:axId val="50020"/></c:lineChart>'
       + '<c:catAx><c:axId val="50010"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/>' + axisTitle(chart.xTitle) + '<c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:crossAx val="50020"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>'
       + '<c:valAx><c:axId val="50020"/><c:scaling><c:orientation val="minMax"/>' + (chart.yMax !== undefined ? '<c:max val="' + chart.yMax + '"/><c:min val="' + chart.yMin + '"/>' : '') + '</c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/>' + axisTitle(chart.yTitle) + '<c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:crossAx val="50010"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>'
-      + '</c:plotArea><c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>';
+      + '</c:plotArea><c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>';
   }
 
-  // XML ng drawing: saan nakalagay ang chart sa sheet (anchor: column, row, columnSpan, rowSpan).
+  // XML ng drawing: saan nakalagay ang chart sa sheet. anchor: { column, row, widthPixels, heightPixels }.
+  // oneCellAnchor = fixed ang laki (hindi lumiliit o lumalaki kapag binago ang lapad ng column o taas ng row).
   function buildDrawingXml(anchor) {
-    const point = (tag, column, row) => '<xdr:' + tag + '><xdr:col>' + column + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + row + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:' + tag + '>';
-    return XML_HEADER + '<xdr:wsDr xmlns:xdr="' + DRAWING_NS + '" xmlns:a="' + DRAWINGML_NS + '"><xdr:twoCellAnchor>'
-      + point('from', anchor.column, anchor.row) + point('to', anchor.column + anchor.columnSpan, anchor.row + anchor.rowSpan)
-      + '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>'
-      + '<a:graphic><a:graphicData uri="' + CHART_NS + '"><c:chart xmlns:c="' + CHART_NS + '" xmlns:r="' + REL_NS + '" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>';
+    const widthEmu = Math.round(anchor.widthPixels * EMU_PER_PIXEL);
+    const heightEmu = Math.round(anchor.heightPixels * EMU_PER_PIXEL);
+    return XML_HEADER + '<xdr:wsDr xmlns:xdr="' + DRAWING_NS + '" xmlns:a="' + DRAWINGML_NS + '"><xdr:oneCellAnchor>'
+      + '<xdr:from><xdr:col>' + anchor.column + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + anchor.row + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+      + '<xdr:ext cx="' + widthEmu + '" cy="' + heightEmu + '"/>'
+      + '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="' + widthEmu + '" cy="' + heightEmu + '"/></xdr:xfrm>'
+      + '<a:graphic><a:graphicData uri="' + CHART_NS + '"><c:chart xmlns:c="' + CHART_NS + '" xmlns:r="' + REL_NS + '" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
   }
 
   // Relationships file na may isang target.
@@ -246,5 +303,26 @@
     return buildZip(buildPackageEntries(sheetList, colorMap));
   }
 
-  root.xlsx = Object.freeze({ STYLE, buildWorkbook });
+  // Text na makikita sa cell (3 decimal para sa numero na may number o level style), para sa autofit.
+  function getDisplayText(cell) {
+    const isObject = cell !== null && typeof cell === 'object';
+    const value = isObject ? cell.v : cell;
+    if (value === null || value === undefined) return '';
+    const isFormatted = isObject && cell.s && cell.s !== STYLE.header && cell.s !== STYLE.bold;
+    return typeof value === 'number' && isFormatted ? value.toFixed(cell.s === STYLE.precise ? 4 : 3) : String(value);
+  }
+
+  // Autofit: lapad ng bawat column ayon sa pinakamahabang laman (bold ay mas malapad nang kaunti).
+  // setting: { MIN, MAX, EXTRA, BOLD_FACTOR }.
+  function computeColumnWidths(rows, setting) {
+    const widthList = [];
+    rows.forEach((cellList) => cellList.forEach((cell, columnIndex) => {
+      const isBold = cell !== null && typeof cell === 'object' && Boolean(cell.s) && cell.s !== STYLE.number;
+      const length = Array.from(getDisplayText(cell)).length * (isBold ? setting.BOLD_FACTOR : 1);
+      widthList[columnIndex] = Math.max(widthList[columnIndex] || 0, length);
+    }));
+    return Array.from(widthList, (length) => Math.min(setting.MAX, Math.max(setting.MIN, Math.ceil((length || 0) + setting.EXTRA))));
+  }
+
+  root.xlsx = Object.freeze({ STYLE, buildWorkbook, computeColumnWidths });
 })();

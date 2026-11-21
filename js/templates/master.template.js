@@ -7,6 +7,9 @@
  * VERSION : v2.6 | 2026-11-20 | kasabay ng pages/master.html (Latest Master at Range Master)
  * VERSION : v2.8 | 2026-11-20 | kasabay ng pages/master.html (Master Repeatability, Export to Excel)
  * VERSION : v2.12 | 2026-11-21 | kasabay ng pages/master.html (mode radio at script ng shift)
+ * VERSION : v2.14 | 2026-11-21 | button na Open latest repeatability file (kaliwa ng Export to Excel); Run Latest Master ay naging Master Correl
+ * VERSION : v2.15 | 2026-11-21 | Master Correl: editable na ang Start date at End date
+ * VERSION : v2.16 | 2026-11-21 | Master Correl: Open latest correl file at Export to Excel; script ng correl-export
  */
 (function () {
   'use strict';
@@ -28,21 +31,23 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Latest Master</h2>
-        <p class="card-note">Pinakabagong master record ngayong araw. Hindi ma-e-edit ang petsa.</p>
+        <p class="card-note">Pinakabagong master record sa napiling petsa (ngayong araw ang default). Puwedeng baguhin ang petsa para sa test.</p>
       </div>
     </div>
     <div class="date-row">
       <div class="form-group">
         <label class="form-label" for="latest-start">Start date</label>
-        <input id="latest-start" class="form-input" type="date" readonly aria-readonly="true">
+        <input id="latest-start" class="form-input" type="date">
       </div>
       <div class="form-group">
         <label class="form-label" for="latest-end">End date</label>
-        <input id="latest-end" class="form-input" type="date" readonly aria-readonly="true">
+        <input id="latest-end" class="form-input" type="date">
       </div>
     </div>
-    <div class="action-row">
-      <button id="latest-run" class="btn btn-primary" type="button">Run Latest Master</button>
+    <div class="action-row action-row-split">
+      <button id="latest-run" class="btn btn-primary" type="button">Master Correl</button>
+      <button id="latest-open" class="btn btn-secondary" type="button">Open latest correl file</button>
+      <button id="latest-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="latest-status" class="status" role="status"></p>
     <div id="latest-result" class="result-area"></div>
@@ -72,6 +77,7 @@
     </fieldset>
     <div class="action-row action-row-split">
       <button id="range-run" class="btn btn-primary" type="button">Master Repeatability</button>
+      <button id="range-open-latest" class="btn btn-secondary" type="button">Open latest repeatability file</button>
       <button id="range-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="range-status" class="status" role="status"></p>
@@ -83,6 +89,9 @@
 <script src="js/core/master-shift.js"></script>
 <script src="js/core/xlsx-writer.js"></script>
 <script src="js/core/master-export.js"></script>
+<script src="js/core/master-open-latest.js"></script>
+<script src="js/core/correl-export-config.js"></script>
+<script src="js/core/correl-export.js"></script>
 <script src="js/pages/master.js"></script>
 `);
 })();

@@ -1,3 +1,49 @@
+INSTRUCTIONS v2.16 (Master Correl: Export to Excel at Open latest correl file)
+1. Backup muna ng buong website folder. Ipalit ang mga binagong file at ilagay ang 2 bagong file (js/core/correl-export-config.js, js/core/correl-export.js). Ctrl+F5 sa index.html (Chrome o Edge).
+2. Open handler: ipalit ang tools\open-handler\open-file.ps1 (ito ang nagbago; HINDI kailangang i-install ulit ang handler). Kung hindi pa naka-install, tingnan ang v2.15 sa baba.
+3. TEST STEPS (Master page, Latest Master card):
+   - DAPAT may tatlong button: Master Correl (kaliwa), Open latest correl file, at Export to Excel (kanan). Disabled ang Export hangga't walang resulta.
+   - Open latest correl file bago pa may export: DAPAT "Wala pang na-export na Correl file...".
+   - Patakbuhin ang Master Correl (petsa na may record), tapos Export to Excel: DAPAT lumabas ang "Na-save ang Excel file: <Saving path>\master-correl\<petsa>\master-correl_<petsa ng record>_<oras>.xlsx".
+   - Buksan ang .xlsx: DAPAT puti ang lahat ng cell at walang gridlines; ang Actual column lang ang may green / yellow / red (kapareho ng screen); R Square, Slope at Intercept sa 4 decimal; autofit ang column; sa kanan ay scatter chart (x = Master, y = Actual) na may dashed trendline at nakasulat na equation at R squared; ang mga point ay green / yellow / red.
+   - Pindutin ang Open latest correl file: DAPAT bumukas sa Excel ang pinakabagong file sa master-correl, walang download. Mag-export ulit: DAPAT ang pinakabago ang mabuksan.
+   - Start date na mas huli sa End date: DAPAT may error at HINDI bumukas ang Export.
+   - DAPAT HINDI mangyari: mabuksan ang file ng Repeatability mula sa Correl (at vice versa); error sa console.
+   - Hindi pa nasubukan sa totoong Chrome/Edge at Excel ng gumawa. Nasubukan: laman at format ng .xlsx (openpyxl, LibreOffice) at ang mga button (jsdom, may pekeng folder). Ang LibreOffice ay hindi nagpapakita ng kulay ng bawat point sa chart, kaya sa Excel mo ito unang makikita. Hindi napatakbo ang open-file.ps1 (walang PowerShell sa pinagsubukan).
+
+--- LUMANG INSTRUCTIONS (v2.15) ---
+INSTRUCTIONS v2.15 (Open latest repeatability file na walang download; Master Correl na may editable na petsa)
+1. Backup muna ng buong website folder. Ipalit ang mga binagong file, ilagay ang folder tools\open-handler (bago) at js/core/master-open-latest.js. Ctrl+F5 sa index.html (Chrome o Edge).
+2. I-INSTALL ANG OPEN HANDLER (isang beses): i-double-click ang tools\open-handler\install-open-handler.bat. DAPAT lumabas ang "TAPOS". Tingnan ang README-OPEN.txt (safety, uninstall).
+3. Settings: siguraduhing FULL PATH ang Saving path (hal. C:\BMWW), hindi lang pangalan ng folder.
+4. TEST STEPS:
+   - Master Repeatability > Export to Excel, tapos pindutin ang Open latest repeatability file. Unang beses: magtatanong ang browser; i-tick ang Always allow at pindutin ang Open. DAPAT bumukas ang pinakabagong .xlsx sa Excel. DAPAT HINDI mag-download ng kopya.
+   - Mag-export ulit (ibang range): DAPAT ang pinakabago ang mabuksan.
+   - Kung walang bumukas: tingnan ang tools\open-handler\open-handler.log (dahilan). Kung blangko ang log, hindi pa naka-install ang handler.
+   - Saving path na pangalan lang ng folder (hindi full path): DAPAT lumabas ang mensaheng ilagay ang full path.
+   - Wala pang na-export: DAPAT lumabas ang "Wala pang na-export...".
+   - Master Correl: DAPAT editable ang Start date at End date (ngayong araw ang default). Palitan ang petsa sa araw na may record at pindutin ang Master Correl: DAPAT lumabas ang resulta ng pinakabagong record sa pagitan ng dalawang petsa.
+   - Petsa na walang record: DAPAT "Walang master record sa napiling petsa.". Start date na mas huli sa End date o blangko: DAPAT may mensahe ng error at walang pagbasa ng file.
+   - Tandaan: sa Master Correl, ang pinakabagong 60 file lang (ayon sa last modified) ang tinitingnan; kung napakaluma ng petsa, puwedeng hindi makita.
+   - Hindi pa nasubukan sa totoong Chrome/Edge at Windows ng gumawa (ang open-file.ps1 ay hindi napatakbo; binasa lang). Ang unang test ay sa device mo; ipaalam sa IT kung company laptop.
+
+--- LUMANG INSTRUCTIONS (v2.14) ---
+INSTRUCTIONS v2.14 (Master: puting cell + autofit + mas malaking fixed na chart sa Excel export; Open latest repeatability file; Master Correl)
+1. Mag-Save As muna ng kopya ng buong website folder (backup). Ipalit ang mga binagong file at ilagay ang 1 bagong file (js/core/master-open-latest.js). Buksan ang index.html sa Chrome o Edge, Ctrl+F5.
+2. TEST STEPS (Master page, may Saving path at Data source 1 na sa Settings):
+   - Ang button sa Latest Master card: DAPAT "Master Correl" na ang nakasulat (hindi na "Run Latest Master"). DAPAT gumagana pa rin ito tulad ng dati.
+   - Sa Master Repeatability card: DAPAT may "Open latest repeatability file" sa kaliwa ng "Export to Excel" (magkatabi sa kanan). Bukas ito kahit wala pang resulta.
+   - Pindutin ang Open latest bago pa may na-export: DAPAT lumabas ang "Wala pang na-export na Repeatability file...".
+   - Patakbuhin ang Master Repeatability > Export to Excel. Buksan ang .xlsx:
+     * Sheet na Readings: DAPAT puti ang lahat ng cell at header (ang green / yellow / red lang ang may kulay), walang gridlines, may manipis na border.
+     * DAPAT kasya ang laman ng bawat column (autofit) sa Repeatability at Readings. Ang napakahabang Data source path lang ang puwedeng lumampas sa column B (hanggang 45 ang lapad).
+     * DAPAT mas malaki ang chart kaysa dati (mga 1000 x 720 px) at HINDI lumiliit o lumalaki kapag binago ang lapad ng column.
+   - Pindutin ang Open latest repeatability file: DAPAT ma-download/mabuksan ang pinakabagong .xlsx (galing sa master-repeatability\\<petsa>), at lumabas ang pangalan ng file sa ilalim ng button.
+   - DAPAT HINDI mangyari: error sa console; nagbago ang laman ng Saving path folder (basa lang ang Open latest).
+   - Tandaan: hindi kayang patakbuhin ng browser ang Excel nang direkta, kaya dina-download ang kopya ng file (Downloads) at binubuksan mula sa download bar.
+   - Hindi pa ito nasubukan sa totoong Chrome/Edge ng gumawa; ang Excel output ay nasubukan sa openpyxl at LibreOffice. Ang unang test ng button ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v3.4) ---
 INSTRUCTIONS v3.4 (File Watcher: kasama na ang Data source 1 na may na-modify na file; may Install at Paano i-uninstall sa Settings)
 1. Mag-Save As muna ng kopya ng buong website folder (backup). I-unzip ang BMWW_website_v3.2.zip sa BAGONG folder, o ipalit ang 3 binagong file at ilagay ang 2 bagong file (tingnan ang listahan sa README, v3.2).
 2. Buksan ang index.html sa Chrome o Edge (double-click), tapos Ctrl+F5. Pumunta sa Settings.

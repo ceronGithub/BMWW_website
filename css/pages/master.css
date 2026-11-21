@@ -9,6 +9,8 @@
  * VERSION : v2.6 | 2026-11-20 | date row, status badge, stats, table, SVG chart (walang library)
  * VERSION : v2.12 | 2026-11-21 | mode-group (radio: All data points / Latest per shift)
  * VERSION : v2.8 | 2026-11-20 | action-row-split (Export sa kanan); chart-scroll (x/y scroll); date-legend
+ * VERSION : v2.16 | 2026-11-21 | Open latest correl file sa kaliwa ng Export (Latest Master card)
+ * VERSION : v2.14 | 2026-11-21 | Open latest repeatability file sa kaliwa ng Export to Excel (magkatabi sa kanan)
  */
 .page-master {
   --chart-1: #2563eb; --chart-2: #16a34a; --chart-3: #d97706; --chart-4: #9333ea;
@@ -26,7 +28,7 @@
 .page-master .mode-option input { flex: none; width: 1.125rem; height: 1.125rem; accent-color: var(--color-primary); cursor: pointer; }
 .page-master .action-row { margin-top: var(--space-4); }
 .page-master .action-row-split { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
-.page-master .action-row-split .btn-secondary { margin-left: auto; }
+.page-master .action-row-split #range-open-latest, .page-master .action-row-split #latest-open { margin-left: auto; }
 .page-master .status.is-info { color: var(--color-muted); }
 .page-master .result-area { margin-top: var(--space-4); }
 .page-master .result-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }

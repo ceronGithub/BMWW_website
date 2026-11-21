@@ -9,6 +9,10 @@
  * VERSION : v2.8 | 2026-11-20 | Range Master: listahan ng file sa gilid ng chart (lahat naka-check); kapag na-uncheck, nawawala ang linya ng file sa chart
  * VERSION : v2.12 | 2026-11-21 | Mode ng Master Repeatability: All data points (flat) o Latest per shift (Morning / Night kada petsa)
  * VERSION : v2.10 | 2026-11-20 | Master Repeatability: chart sa scroll box (x/y), legend = petsa ng napiling file; Export to Excel sa Saving path
+ * VERSION : v2.16 | 2026-11-21 | Master Correl: Export to Excel (master-correl) at Open latest correl file
+ * VERSION : v2.15 | 2026-11-21 | Open latest: walang download; full path ng Saving path ang ipinapasa sa masterOpenLatest
+ * VERSION : v2.15 | 2026-11-21 | Master Correl: editable ang Start date at End date (may validation), hindi na ino-overwrite ng ngayong araw
+ * VERSION : v2.14 | 2026-11-21 | Open latest repeatability file (kaliwa ng Export to Excel): binubuksan ang pinakabagong na-export na Excel
  */
 (function () {
   'use strict';
@@ -18,13 +22,15 @@
   const CHART = CONFIG.CHART;
   const SEL = CONFIG.SELECTOR.master;
   const TEXT = CONFIG.TEXT.master;
-  const { storage, csv, masterAnalysis, chart, masterExport } = root;
+  const { storage, csv, masterAnalysis, chart, masterExport, masterOpenLatest, correlExport } = root;
   const EXPORT = root.exportConfig;
+  const CORREL = root.correlConfig;
   const SHIFT = root.shiftConfig;
 
   let sourceHandle = null;
   let isBusy = false;
   let lastRangeResult = null;
+  let lastLatestRun = null;
 
   // Napiling mode ng Master Repeatability ('all' o 'shift').
   function getSelectedMode() {
@@ -68,9 +74,23 @@
     return document.querySelector(EXPORT.SELECTOR.exportButton);
   }
 
-  // Bukas lang ang Export kapag may resulta ng Master Repeatability at walang tumatakbo.
+  // Button ng Open latest repeatability file (hindi ito nasa CONFIG.SELECTOR.master).
+  function getOpenLatestButton() {
+    return document.querySelector(EXPORT.SELECTOR.openLatestButton);
+  }
+
+  // Mga button ng Master Correl (Open latest correl file at Export to Excel).
+  function getCorrelOpenButton() {
+    return document.querySelector(CORREL.SELECTOR.openLatestButton);
+  }
+  function getCorrelExportButton() {
+    return document.querySelector(CORREL.SELECTOR.exportButton);
+  }
+
+  // Bukas lang ang Export kapag may resulta (Master Repeatability o Master Correl) at walang tumatakbo.
   function updateExportButton() {
     getExportButton().disabled = isBusy || !lastRangeResult;
+    getCorrelExportButton().disabled = isBusy || !lastLatestRun;
   }
 
   // Disable ng mga button habang tumatakbo.
@@ -78,6 +98,8 @@
     isBusy = nextBusy;
     query('latestButton').disabled = nextBusy;
     query('rangeButton').disabled = nextBusy;
+    getOpenLatestButton().disabled = nextBusy;
+    getCorrelOpenButton().disabled = nextBusy;
     updateExportButton();
   }
 
@@ -327,16 +349,20 @@
   // Click ng Run Latest Master.
   async function onRunLatest() {
     if (isBusy) return;
-    setBusy(true);
     clearSection('latestStatus', 'latestResult');
+    lastLatestRun = null;
+    updateExportButton();
+    const startDate = csv.parseDateInput(query('latestStart').value);
+    const endDate = csv.parseDateInput(query('latestEnd').value);
+    if (!startDate || !endDate) { setStatus('latestStatus', TEXT.error.badDates, 'error'); return; }
+    if (startDate > endDate) { setStatus('latestStatus', TEXT.error.startAfterEnd, 'error'); return; }
+    setBusy(true);
     try {
-      const today = new Date();
-      query('latestStart').value = csv.formatDateInput(today);
-      query('latestEnd').value = csv.formatDateInput(today);
       setStatus('latestStatus', TEXT.working, 'info');
       const handle = await getReadyHandle();
-      const result = await masterAnalysis.analyzeLatest(handle, today, (current, total, name) => setStatus('latestStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'));
+      const result = await masterAnalysis.analyzeLatest(handle, startDate, (current, total, name) => setStatus('latestStatus', TEXT.progress + current + '/' + total + ' ' + name, 'info'), endDate);
       renderLatest(result);
+      lastLatestRun = { result, range: { startDate, endDate } };
       setStatus('latestStatus', '', '');
     } catch (error) {
       query('latestResult').replaceChildren();
@@ -398,11 +424,89 @@
     }
   }
 
+  // Click ng Open latest repeatability file: hinahanap sa <Saving path>/<subfolder>/ ang pinakabagong .xlsx at binubuksan.
+  async function onOpenLatestFile() {
+    if (isBusy) return;
+    setBusy(true);
+    try {
+      setStatus('rangeStatus', EXPORT.TEXT.openingLatest, 'info');
+      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle) throw csv.createError('noRoot');
+      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+      const paths = storage.readLocalSettings()[CONFIG.FOLDER_PATHS_FIELD] || {};
+      const opened = await masterOpenLatest.openLatest(rootHandle, paths[CONFIG.ROOT_KEY]);
+      setStatus('rangeStatus', EXPORT.TEXT.openedLatest + opened.fullPath + EXPORT.TEXT.openedHint, 'success');
+    } catch (error) {
+      const messageMap = EXPORT.TEXT.error;
+      const known = error && messageMap[error.code];
+      setStatus('rangeStatus', known ? messageMap[error.code] : (error && EXPORT.ERROR_BY_NAME[error.name] ? messageMap[EXPORT.ERROR_BY_NAME[error.name]] : messageMap.openFail), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Friendly na mensahe ng error ng Correl export / open: Correl text muna, tapos ang pangkalahatan ng export (walang teknikal na detalye).
+  function getCorrelErrorMessage(error, fallbackKey) {
+    const correlMap = CORREL.TEXT.error;
+    const exportMap = EXPORT.TEXT.error;
+    if (error && correlMap[error.code]) return correlMap[error.code];
+    if (error && exportMap[error.code]) return exportMap[error.code];
+    if (error && EXPORT.ERROR_BY_NAME[error.name]) return exportMap[EXPORT.ERROR_BY_NAME[error.name]];
+    return correlMap[fallbackKey];
+  }
+
+  // Click ng Export to Excel ng Master Correl: sine-save sa <Saving path>/master-correl/<petsa>/.
+  async function onExportCorrel() {
+    if (isBusy) return;
+    if (!lastLatestRun) { setStatus('latestStatus', CORREL.TEXT.error.noResult, 'error'); return; }
+    setBusy(true);
+    try {
+      setStatus('latestStatus', CORREL.TEXT.exporting, 'info');
+      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle) throw csv.createError('noRoot');
+      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+      const settings = storage.readLocalSettings();
+      const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+      const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
+      const saved = await correlExport.exportCorrel(lastLatestRun.result, lastLatestRun.range, rootHandle, sourceText);
+      const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
+      const separator = EXPORT.PATH_SEPARATOR;
+      setStatus('latestStatus', CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
+    } catch (error) {
+      setStatus('latestStatus', getCorrelErrorMessage(error, 'exportFail'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Click ng Open latest correl file: binubuksan sa Excel (handler na bmww-open:) ang pinakabagong file sa master-correl.
+  async function onOpenLatestCorrel() {
+    if (isBusy) return;
+    setBusy(true);
+    try {
+      setStatus('latestStatus', CORREL.TEXT.openingLatest, 'info');
+      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle) throw csv.createError('noRoot');
+      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+      const paths = storage.readLocalSettings()[CONFIG.FOLDER_PATHS_FIELD] || {};
+      const opened = await masterOpenLatest.openLatest(rootHandle, paths[CONFIG.ROOT_KEY], CORREL);
+      setStatus('latestStatus', CORREL.TEXT.openedLatest + opened.fullPath + EXPORT.TEXT.openedHint, 'success');
+    } catch (error) {
+      setStatus('latestStatus', getCorrelErrorMessage(error, 'openFail'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Init ng page, tinatawag ng router.
   async function init() {
     isBusy = false;
     sourceHandle = null;
     lastRangeResult = null;
+    lastLatestRun = null;
     const today = new Date();
     const rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - MASTER.RANGE.DEFAULT_DAYS);
     query('latestStart').value = csv.formatDateInput(today);
@@ -413,6 +517,9 @@
     query('latestButton').addEventListener('click', onRunLatest);
     query('rangeButton').addEventListener('click', onRunRange);
     getExportButton().addEventListener('click', onExport);
+    getOpenLatestButton().addEventListener('click', onOpenLatestFile);
+    getCorrelExportButton().addEventListener('click', onExportCorrel);
+    getCorrelOpenButton().addEventListener('click', onOpenLatestCorrel);
     updateExportButton();
     if (!storage.isFolderAccessSupported()) {
       setBusy(true);

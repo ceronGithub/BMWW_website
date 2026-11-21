@@ -4,6 +4,8 @@
  * DEPENDS : js/core/config.js, master-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
  * VERSION : v2.8 | 2026-11-20 | bagong file
  * VERSION : v2.13 | 2026-11-21 | chart (line chart ng Readings) sa loob ng Excel, sa kanan ng table
+ * VERSION : v2.16 | 2026-11-21 | ang autofit ay galing na sa xlsx.computeColumnWidths (xlsx-writer)
+ * VERSION : v2.14 | 2026-11-21 | autofit ng lahat ng column (Repeatability at Readings), walang gridlines, mas malaki at fixed na chart
  * VERSION : v2.12 | 2026-11-21 | mode (All / Shift) sa summary, column na Shift sa Readings, suffix sa pangalan ng file
  * VERSION : v2.11 | 2026-11-21 | isang subfolder (master-repeatability) at sa loob nito ay folder na petsa ng export (yyyy-mm-dd)
  */
@@ -20,6 +22,11 @@
   // Dalawang digit (hal. 7 -> 07).
   function padTwo(value) {
     return String(value).padStart(2, '0');
+  }
+
+  // Autofit ng column (nasa xlsx-writer, para magamit din ng ibang export).
+  function computeColumnWidths(rows) {
+    return xlsx.computeColumnWidths(rows, EXPORT.AUTOFIT);
   }
 
   // Cell ng numero; blangko kung walang halaga.
@@ -76,8 +83,7 @@
         numberCell(entry.maxDifference, entry.maxDifference === null ? STYLE.number : getLevelStyle(entry.maxDifference, 0))
       ]);
     });
-    const width = EXPORT.COLUMN_WIDTH;
-    return { name: EXPORT.SHEET.summary, rows, columnWidths: [width.label, width.value, width.value, width.value, width.value] };
+    return { name: EXPORT.SHEET.summary, rows, columnWidths: computeColumnWidths(rows), showGridLines: false };
   }
 
   // Mga record na nasa chart: huling MAX_LINES (kapareho ng chart sa screen). Kumpleto pa rin ang table.
@@ -106,7 +112,7 @@
       yMin: Math.floor(low - pad), yMax: Math.ceil(high + pad),
       title: TEXT.lineTitle, xTitle: setting.X_TITLE, yTitle: setting.Y_TITLE, nameColumn: 0, categoryRow: 0,
       firstColumn: leadCount, lastColumn, categoryList: result.barcodeList, seriesList,
-      anchor: { column: lastColumn + 1 + setting.GAP_COLUMNS, row: 0, columnSpan: setting.COLUMN_SPAN, rowSpan: setting.ROW_SPAN }
+      anchor: { column: lastColumn + 1 + setting.GAP_COLUMNS, row: 0, widthPixels: setting.WIDTH_PIXELS, heightPixels: setting.HEIGHT_PIXELS }
     };
   }
 
@@ -119,9 +125,8 @@
     result.columnList.forEach((column) => {
       rows.push([column.key].concat(hasShift ? [column.shift || ''] : [], column.values.map((value, index) => numberCell(value, getLevelStyle(value, result.masterList[index])))));
     });
-    const width = EXPORT.COLUMN_WIDTH;
-    const leadWidthList = hasShift ? [width.date, width.reading] : [width.date];
-    return { name: EXPORT.SHEET.readings, rows, columnWidths: leadWidthList.concat(result.barcodeList.map(() => width.reading)), freeze: { rows: 2, columns: leadWidthList.length }, chart: buildReadingsChart(result, leadWidthList.length) };
+    const leadCount = hasShift ? 2 : 1;
+    return { name: EXPORT.SHEET.readings, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 2, columns: leadCount }, chart: buildReadingsChart(result, leadCount) };
   }
 
   // Pangalan ng file: prefix_start_to_end_yyyymmdd-hhmmss.xlsx (hindi nao-overwrite ang luma).

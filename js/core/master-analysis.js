@@ -4,6 +4,7 @@
  * DEPENDS : js/core/config.js, js/core/csv-reader.js
  * VERSION : v2.6 | 2026-11-20 | bagong file (para sa Master)
  * VERSION : v2.7 | 2026-11-20 | classifyDeviation (green / yellow / red)
+ * VERSION : v2.15 | 2026-11-21 | analyzeLatest: may optional na endDate (pinakabagong record sa pagitan ng start at end date); kapag wala, isang araw lang gaya ng dati
  */
 (function () {
   'use strict';
@@ -20,11 +21,6 @@
   // 00:00 ng araw ng petsa.
   function startOfDay(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  }
-
-  // Pareho ba ang araw ng dalawang petsa.
-  function isSameDay(firstDate, secondDate) {
-    return startOfDay(firstDate).getTime() === startOfDay(secondDate).getTime();
   }
 
   // Average ng mga numero (null ay hindi kasama); null kung walang numero.
@@ -141,8 +137,11 @@
     };
   }
 
-  // Latest Master: pinakabagong master file na may record sa araw ng referenceDate.
-  async function analyzeLatest(directoryHandle, referenceDate, onProgress) {
+  // Latest Master: pinakabagong master record sa pagitan ng referenceDate (start) at endDate (kasama ang buong araw).
+  // Kapag walang endDate, isang araw lang (referenceDate) gaya ng dati.
+  async function analyzeLatest(directoryHandle, referenceDate, onProgress, endDate) {
+    const dayStart = startOfDay(referenceDate).getTime();
+    const dayEnd = new Date((endDate || referenceDate).getFullYear(), (endDate || referenceDate).getMonth(), (endDate || referenceDate).getDate() + 1).getTime();
     const { fileList, skippedCount } = await csv.listCsvFiles(directoryHandle);
     if (!fileList.length) throw csv.createError('emptyFolder');
     fileList.sort((first, second) => second.modifiedAt - first.modifiedAt);
@@ -166,7 +165,7 @@
       let bestDate = null;
       for (let rowIndex = MASTER.DATA_START_ROW; rowIndex < rowList.length; rowIndex += 1) {
         const rowDate = csv.parseAnyDate(csv.getCell(rowList, rowIndex, MASTER.DATE_COLUMN));
-        if (rowDate && isSameDay(rowDate, referenceDate) && (!bestDate || rowDate > bestDate)) { bestDate = rowDate; bestIndex = rowIndex; }
+        if (rowDate && rowDate.getTime() >= dayStart && rowDate.getTime() < dayEnd && (!bestDate || rowDate > bestDate)) { bestDate = rowDate; bestIndex = rowIndex; }
       }
       if (bestIndex < 0) continue;
       const points = readPoints(rowList, bestIndex);
