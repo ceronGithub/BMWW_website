@@ -2,6 +2,7 @@
  * FILE    : js/templates/dashboard.template.js
  * PURPOSE : Kopya ng pages/dashboard.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v7.4 | 2026-11-21 | kasabay ng pages/dashboard.html (Preview button ng Master Correl)
  * VERSION : v7.3 | 2026-11-21 | kasabay ng pages/dashboard.html (script ng correl-sync-config at correl-sync)
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v3 | 2026-11-20 | kopya na ng bagong pages/dashboard.html (Date at oras, kalendaryo, Events)
@@ -31,6 +32,7 @@
     <div id="dm-pinned" class="dm-pinned"></div>
     <div id="dm-grid" class="dm-grid"></div>
     <p id="dm-message" class="status" role="status"></p>
+    <p id="dm-preview-status" class="status" role="status"></p>
     <button id="dm-grant" class="btn btn-secondary" type="button" hidden>Payagan ang folder</button>
   </section>
   <div class="dash-events">
@@ -79,6 +81,10 @@
 <script src="js/core/compare-sync.js"></script>
 <script src="js/core/correl-sync-config.js"></script>
 <script src="js/core/correl-sync.js"></script>
+<script src="js/core/master-export-config.js"></script>
+<script src="js/core/correl-export-config.js"></script>
+<script src="js/core/master-open-latest.js"></script>
+<script src="js/core/correl-preview.js"></script>
 <script src="js/core/dashboard-machines-config.js"></script>
 <script src="js/pages/dashboard-machines.js"></script>
 `);

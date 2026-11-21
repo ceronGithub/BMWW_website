@@ -2,9 +2,10 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js
+ * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v7.4 | 2026-11-21 | Preview button sa Master Correl ng tile: binubuksan sa Windows (File Explorer) ang pinakabagong Master Correl file ng machine
  * VERSION : v7.3 | 2026-11-21 | status ng Master Correl ng machine (<Server path>\correl): badge na PASS / WARNING / FAIL sa tile, chip na Correl fail, FAIL ay nauuna sa listahan
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
  * VERSION : v7 | 2026-11-21 | worst slider ng machine (<Server path>\compare): alert sa tile, chip, at listahan ng slider (actual at master)
@@ -20,6 +21,8 @@
   const MONITOR = CONFIG.MONITOR;
   let timerId = null;
   let isBusy = false;
+  let isPreviewBusy = false;
+  let previewClearId = null;
 
   // Gumagawa ng elemento na may class at text (textContent lang, ligtas sa XSS).
   function createElementWith(tagName, className, text) {
@@ -213,6 +216,40 @@
     return box;
   }
 
+  // Mensahe ng Preview sa #dm-preview-status (hindi ito binubura ng refresh); kusang nawawala pagkalipas ng ilang segundo.
+  function setPreviewStatus(message, isError) {
+    const element = query(SEL.previewStatus);
+    if (!element) return;
+    element.textContent = message;
+    element.classList.toggle('is-error', Boolean(isError));
+    window.clearTimeout(previewClearId);
+    if (message) previewClearId = window.setTimeout(() => setPreviewStatus('', false), TEXT.preview.clearMs);
+  }
+
+  // Click ng Preview: binubuksan sa Windows (File Explorer) ang pinakabagong Master Correl file ng machine. Isa lang ang sabay na tumatakbo.
+  async function handlePreviewClick(machineName) {
+    if (isPreviewBusy || !root.correlPreview) return;
+    isPreviewBusy = true;
+    const text = TEXT.preview;
+    try {
+      setPreviewStatus(text.opening + machineName + '...', false);
+      const result = await root.correlPreview.previewLatest(machineName, true);
+      if (result.ok) setPreviewStatus(text.opened + result.openedPath + text.openedHint, false);
+      else setPreviewStatus(text.error[result.code] || text.error.error, true);
+    } finally {
+      isPreviewBusy = false;
+    }
+  }
+
+  // Preview button ng Master Correl ng isang machine (text at aria-label, hindi icon lang).
+  function buildPreviewButton(machineName) {
+    const button = createElementWith('button', 'btn btn-secondary dm-preview-button', TEXT.preview.button);
+    button.type = 'button';
+    button.setAttribute('aria-label', TEXT.preview.aria + machineName);
+    button.addEventListener('click', () => handlePreviewClick(machineName));
+    return button;
+  }
+
   // Status ng Master Correl sa tile: PASS / WARNING / FAIL (may icon at text, hindi lang kulay), R Square, petsa ng record at kailan naipadala.
   function buildCorrelBlock(correlItem, nowMs) {
     const text = TEXT.correl;
@@ -232,6 +269,7 @@
     row.append(badge);
     const updatedMs = correlItem.modifiedMs || Date.parse(status.updatedAt);
     if (updatedMs && nowMs - updatedMs > sync.STALE_MS) row.append(createElementWith('span', 'dm-tag', text.stale));
+    row.append(buildPreviewButton(status.machineName));
     const recordMs = Date.parse(status.recordDate);
     const rSquared = typeof status.rSquared === 'number' ? status.rSquared.toFixed(sync.R_SQUARED_DIGITS) : '-';
     box.append(row, createElementWith('p', 'card-note dm-correl-meta', text.rSquared + rSquared + ' | ' + text.record + (recordMs ? new Date(recordMs).toLocaleDateString() : '-') + ' | ' + text.sent + formatAgo(updatedMs, nowMs)));

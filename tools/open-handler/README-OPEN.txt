@@ -1,4 +1,4 @@
-BMWW OPEN HANDLER (v1 | 2026-11-21)
+BMWW OPEN HANDLER (v1.3 | 2026-11-21)
 Para sa mga button na "Open latest repeatability file" at "Open latest correl file" sa Master page: binubuksan nito sa Excel ang pinakabagong na-export na file, walang download.
 
 BAKIT KAILANGAN ITO
@@ -13,7 +13,7 @@ PAANO I-UNINSTALL
 I-double-click ang uninstall-open-handler.bat.
 
 SAFETY
-- Dalawa lang ang kaya nitong buksan: .xlsx na nagsisimula sa master-repeatability at nasa master-repeatability\<petsa>\, o nagsisimula sa master-correl at nasa master-correl\<petsa>\. Ang iba ay hindi bubuksan.
+- Dalawa lang ang kaya nitong buksan: .xlsx na nagsisimula sa master-repeatability at nasa master-repeatability\<petsa>\, o nagsisimula sa master-correl at nasa master-correl\<petsa>\ o master-correl\<machine>\<petsa>\ (kopya sa Server path, para sa Preview button ng LEAD PC). Ang iba ay hindi bubuksan.
 - Kung naka-install ka na ng v1, ipalit lang ang open-file.ps1 (hindi na kailangang i-install ulit).
 - Hindi nagbabago, hindi nagbubura ng file. Walang tumatakbong program sa background; tumatakbo lang ito kapag pinindot ang button.
 - Log: open-handler.log (sa folder na ito). Doon makikita kung bakit hindi nabuksan.

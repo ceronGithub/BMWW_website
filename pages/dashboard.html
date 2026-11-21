@@ -2,6 +2,7 @@
   FILE    : pages/dashboard.html
   PURPOSE : Dashboard page
   DEPENDS : css/pages/dashboard.css, css/pages/dashboard-events.css, js/pages/dashboard.js, js/pages/dashboard-events.js, css/pages/dashboard-machines.css, js/core/dashboard-machines-config.js, js/pages/dashboard-machines.js
+  VERSION : v7.4 | 2026-11-21 | Preview button ng Master Correl: dagdag na #dm-preview-status at script ng master-export-config, correl-export-config, master-open-latest, correl-preview
   VERSION : v7.3 | 2026-11-21 | dagdag na script ng correl-sync-config at correl-sync (status ng Master Correl sa tile ng machine)
   VERSION : v1 | 2026-11-19 | unang bersyon
   VERSION : v3 | 2026-11-20 | dagdag na Date at oras, kalendaryo at Events (css/js ng dashboard-events)
@@ -29,6 +30,7 @@
     <div id="dm-pinned" class="dm-pinned"></div>
     <div id="dm-grid" class="dm-grid"></div>
     <p id="dm-message" class="status" role="status"></p>
+    <p id="dm-preview-status" class="status" role="status"></p>
     <button id="dm-grant" class="btn btn-secondary" type="button" hidden>Payagan ang folder</button>
   </section>
   <div class="dash-events">
@@ -77,5 +79,9 @@
 <script type="module" src="js/core/compare-sync.js"></script>
 <script type="module" src="js/core/correl-sync-config.js"></script>
 <script type="module" src="js/core/correl-sync.js"></script>
+<script type="module" src="js/core/master-export-config.js"></script>
+<script type="module" src="js/core/correl-export-config.js"></script>
+<script type="module" src="js/core/master-open-latest.js"></script>
+<script type="module" src="js/core/correl-preview.js"></script>
 <script type="module" src="js/core/dashboard-machines-config.js"></script>
 <script type="module" src="js/pages/dashboard-machines.js"></script>

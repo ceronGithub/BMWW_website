@@ -25,6 +25,7 @@
  * VERSION : v5 | 2026-11-20 | SERVER_KEY, MACHINE_FILE, MACHINE_FILE_FIELD at text para sa save ng settings kada machine sa Saving path at Server path
  * VERSION : v5.1 | 2026-11-21 | QUEUE (constants ng <Server path>\queue: subfolder, mode, state, source, presence, oras at limit)
  * VERSION : v5.2 | 2026-11-21 | MONITOR (constants ng monitor ng Data source 1, 2, 3 sa not-LEAD PC)
+ * VERSION : v5.3 | 2026-11-21 | LEAD_BLOCKED_PAGES (Search Files, Calibration, Master ay hindi makikita ng LEAD PC), SETTINGS_CHANGED_EVENT
  */
 (function () {
   'use strict';
@@ -144,6 +145,10 @@
     SETTINGS_PATH_LABEL: 'C:\\desktop\\BMWW\\settings',
     MACHINE_MODE: { USER_INPUT: 'user-input', LEAD_PC: 'lead-pc' },
     LEAD_PC_NAME: 'LEAD PC',
+    // Mga page na hindi makikita ng LEAD PC (monitor lang ito): itinatago sa sidebar at hinaharang sa router.
+    LEAD_BLOCKED_PAGES: ['file-search', 'calibration', 'master'],
+    // Event na ibinabato kapag nagbago ang settings sa localStorage (para ma-update ang sidebar nang hindi nire-reload ang page).
+    SETTINGS_CHANGED_EVENT: 'bmww:settings-changed',
     MACHINE_NAME_MAX: 30,
     // Full path ng folder: hindi ito maibibigay ng browser, kaya tina-type/pine-paste ng user.
     FULL_PATH_MAX: 260,

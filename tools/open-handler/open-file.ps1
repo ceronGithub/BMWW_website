@@ -3,9 +3,10 @@
  PURPOSE : Binubuksan sa Excel ang na-export na Repeatability file kapag pinindot ang "Open latest repeatability file" sa website (protocol bmww-open:)
  INPUT   : bmww-open:<full path na naka-encode> (galing sa Windows, via registry ng install-open-handler.ps1)
  SAFETY  : Basa lang. Binubuksan LANG ang .xlsx na ang pangalan ay nagsisimula sa master-repeatability o master-correl at nasa loob ng folder na
-           master-repeatability\<petsa>\ o master-correl\<petsa>\ (magkapareho ang pangalan ng folder at ng simula ng file). Ang iba (exe, bat, folder, UNC path, "..") ay HINDI bubuksan.
+           master-repeatability\<petsa>\, master-correl\<petsa>\ o master-correl\<machine>\<petsa>\ (magkapareho ang pangalan ng folder at ng simula ng file). Ang iba (exe, bat, folder, UNC path, "..") ay HINDI bubuksan.
  VERSION : v1 | 2026-11-21 | bagong file
  VERSION : v1.1 | 2026-11-21 | pinapayagan din ang master-correl (Master Correl export)
+ VERSION : v1.3 | 2026-11-21 | pinapayagan din ang master-correl\<machine>\<petsa>\ (kopya sa Server path; Preview button ng LEAD PC)
  VERSION : v1.2 | 2026-11-21 | bagong mode na bmww-open:reveal:<path>: binubuksan ang FOLDER sa File Explorer at naka-highlight ang file (hindi binubuksan ang Excel). Parehong safety check.
 #>
 param(
@@ -16,6 +17,7 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $logPath = Join-Path $scriptDir 'open-handler.log'
 $allowedNameList = @('master-repeatability', 'master-correl')
+$correlName = 'master-correl'
 $requiredExtension = '.xlsx'
 $protocolPrefix = 'bmww-open:'
 $revealPrefix = 'reveal:'
@@ -51,11 +53,14 @@ function Test-AllowedPath([string]$path) {
     $leaf = [IO.Path]::GetFileName($path)
     $dateFolder = [IO.Path]::GetDirectoryName($path)
     $parentFolder = if ($dateFolder) { [IO.Path]::GetFileName([IO.Path]::GetDirectoryName($dateFolder)) } else { '' }
+    # Isang antas pa pataas: sa Server path ang Correl file ay nasa master-correl\<machine>\<petsa>\
+    $machineParent = if ($dateFolder -and [IO.Path]::GetDirectoryName($dateFolder)) { [IO.Path]::GetFileName([IO.Path]::GetDirectoryName([IO.Path]::GetDirectoryName($dateFolder))) } else { '' }
     $isAllowed = $false
     foreach ($allowedName in $allowedNameList) {
         if ($parentFolder -ieq $allowedName -and $leaf.StartsWith($allowedName, [StringComparison]::OrdinalIgnoreCase)) { $isAllowed = $true }
     }
-    if (-not $isAllowed) { return 'hindi Repeatability o Correl file, o wala sa master-repeatability\<petsa> / master-correl\<petsa>' }
+    if ($machineParent -ieq $correlName -and $leaf.StartsWith($correlName, [StringComparison]::OrdinalIgnoreCase)) { $isAllowed = $true }
+    if (-not $isAllowed) { return 'hindi Repeatability o Correl file, o wala sa master-repeatability\<petsa> / master-correl\<petsa> / master-correl\<machine>\<petsa>' }
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return 'walang file sa path' }
     return ''
 }

@@ -2,6 +2,7 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v7.4 | 2026-11-21 | TEXT.preview at SELECTOR.previewStatus (Preview button ng Master Correl sa tile ng machine)
  * VERSION : v7.3 | 2026-11-21 | TEXT.correl at TEXT.summary.correlFail (status ng Master Correl: PASS / WARNING / FAIL)
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file (hiwalay sa config.js para hindi magalaw ang existing)
  * VERSION : v7 | 2026-11-21 | COMPARE (worst slider mula sa <Server path>\compare), RANK.alert, text at class ng alert
@@ -44,7 +45,8 @@
       grid: '#dm-grid',
       message: '#dm-message',
       grant: '#dm-grant',
-      role: '#dm-role'
+      role: '#dm-role',
+      previewStatus: '#dm-preview-status'
     },
     TEXT: {
       titleLead: 'Mga machine na nagpapadala',
@@ -93,7 +95,24 @@
         unsupported: 'Hindi suportado ng browser na ito ang folder access (gamitin ang Chrome o Edge).',
         error: 'May problema sa monitor. Susubukan ulit.'
       },
-      grant: 'Payagan ang folder'
+      grant: 'Payagan ang folder',
+      // Preview button ng Master Correl: binubuksan ang File Explorer sa pinakabagong file ng machine sa Server path.
+      preview: {
+        button: 'Preview',
+        aria: 'Buksan sa Windows ang pinakabagong Master Correl file ng ',
+        opening: 'Hinahanap ang pinakabagong Master Correl file ng ',
+        opened: 'Ipinadala ang utos na buksan ang folder: ',
+        openedHint: ' | Kung walang bumukas: i-install muna ang tools\\open-handler\\install-open-handler.bat, at sa tanong ng browser piliin ang Open.',
+        clearMs: 12000,
+        error: {
+          noFile: 'Wala pang na-export na Master Correl file ng machine na ito sa Server path. Kailangang mag-Export to Excel muna ito sa Master page.',
+          noRootPath: 'Ilagay ang FULL PATH ng Server path sa Settings na may drive letter (hal. Z:\\BMWW). Hindi gumagana ang \\\\server na path.',
+          noFolder: 'Wala pang Server path. Itakda sa Settings.',
+          noPermission: 'Kailangan ng pahintulot sa Server folder. Pindutin ulit ang Preview at i-Allow.',
+          unsupported: 'Hindi suportado ng browser na ito ang folder access (gamitin ang Chrome o Edge).',
+          error: 'Hindi mabuksan ang Master Correl file. Subukan ulit.'
+        }
+      }
     }
   });
 })();

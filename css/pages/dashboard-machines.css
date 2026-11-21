@@ -116,3 +116,6 @@
 .page-dashboard .dm-correl-warning .dm-correl-badge { color: var(--dm-warning); }
 .page-dashboard .dm-correl-fail { border-color: var(--color-danger); }
 .page-dashboard .dm-correl-fail .dm-correl-badge { color: var(--color-danger); }
+
+/* v7.4: Preview button ng Master Correl (binubuksan ang File Explorer sa pinakabagong file ng machine) */
+.page-dashboard .dm-preview-button { margin-left: auto; }

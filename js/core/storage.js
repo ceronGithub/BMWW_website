@@ -5,6 +5,7 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module)
  * VERSION : v5 | 2026-11-20 | settings kada machine: toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
+ * VERSION : v5.3 | 2026-11-21 | writeLocalSettings ay nagbabato ng SETTINGS_CHANGED_EVENT pagkatapos mag-save
  */
 (function () {
   'use strict';
@@ -77,6 +78,8 @@
     } catch (error) {
       // Hindi kritikal: ang file sa BMWW ang pangunahing tala.
     }
+    // Sinasabihan ang sidebar at router na nagbago ang settings (hal. naging LEAD PC), para ma-update agad ang access.
+    window.dispatchEvent(new CustomEvent(CONFIG.SETTINGS_CHANGED_EVENT));
   }
 
   // Gumagawa ng settings folder (kung wala pa) at sinusulat ang settings.json.

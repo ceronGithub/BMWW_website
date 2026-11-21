@@ -1,9 +1,10 @@
 /*
  * FILE    : js/core/router.js
  * PURPOSE : Nagloload ng page sa content area
- * DEPENDS : js/core/config.js, js/core/registry.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/storage.js
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | template mula sa registry at classic script (walang fetch, walang import)
+ * VERSION : v5.3 | 2026-11-21 | isPageBlocked at applyNavAccess: hinaharang ang Search Files, Calibration, Master sa LEAD PC
  */
 (function () {
   'use strict';
@@ -62,8 +63,31 @@
     });
   }
 
+  // LEAD PC ba ang machine na ito? Binabasa ang settings sa localStorage (parehong pinagkukunan ng monitor at dashboard).
+  function isLeadPc() {
+    return root.storage.readLocalSettings().machineMode === CONFIG.MACHINE_MODE.LEAD_PC;
+  }
+
+  // Bawal ba sa machine na ito ang page? Ang LEAD PC ay hindi puwede sa Search Files, Calibration at Master.
+  function isPageBlocked(pageName) {
+    return isLeadPc() && CONFIG.LEAD_BLOCKED_PAGES.includes(pageName);
+  }
+
+  // Itinatago ang mga link ng bawal na page sa sidebar (ibinabalik kapag hindi na LEAD PC).
+  function applyNavAccess() {
+    document.querySelectorAll(CONFIG.SELECTOR.navLink).forEach((link) => {
+      const item = link.closest('li');
+      if (item) item.hidden = isPageBlocked(link.dataset.page);
+    });
+  }
+
   // Nilo-load ang page: template, CSS, JS, tapos init ng page.
   async function loadPage(pageName) {
+    // Kung bawal ang page (LEAD PC na nag-type ng #master sa URL), ibabalik sa Dashboard. Ang hashchange ang magbubukas ng Dashboard.
+    if (isPageBlocked(pageName)) {
+      window.location.replace('#' + CONFIG.DEFAULT_PAGE);
+      return;
+    }
     const pageToLoad = CONFIG.PAGE_LIST.includes(pageName) ? pageName : CONFIG.NOT_FOUND_PAGE;
     showMessage(CONFIG.TEXT.loading);
     try {
@@ -85,5 +109,5 @@
     }
   }
 
-  root.router = Object.freeze({ loadPage, getPageFromHash });
+  root.router = Object.freeze({ loadPage, getPageFromHash, isPageBlocked, applyNavAccess });
 })();

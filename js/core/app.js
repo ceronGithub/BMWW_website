@@ -5,13 +5,14 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | sidebar mula sa registry (walang fetch, walang import)
  * VERSION : v5.2 | 2026-11-21 | sinisimulan ang monitor (monitor.start) pagkatapos buksan ang unang page
+ * VERSION : v5.3 | 2026-11-21 | itinatago sa sidebar ang Search Files, Calibration, Master kapag LEAD PC; nag-a-update kapag nagbago ang settings
  */
 (function () {
   'use strict';
   const root = window.BMWW;
   const CONFIG = root.CONFIG;
   const { initSecurity } = root.security;
-  const { loadPage, getPageFromHash } = root.router;
+  const { loadPage, getPageFromHash, isPageBlocked, applyNavAccess } = root.router;
 
   // Nilalagay ang sidebar component (template mula sa registry).
   async function loadSidebar() {
@@ -48,8 +49,14 @@
   async function initApp() {
     initSecurity();
     await loadSidebar();
+    applyNavAccess();
     bindMenu();
     window.addEventListener('hashchange', handleNavigate);
+    // Kapag nagbago ang settings (hal. naging LEAD PC): i-update ang sidebar, at paalisin sa page na hindi na puwede.
+    window.addEventListener(CONFIG.SETTINGS_CHANGED_EVENT, () => {
+      applyNavAccess();
+      if (isPageBlocked(getPageFromHash())) handleNavigate();
+    });
     await handleNavigate();
     root.monitor.start(false);
   }
