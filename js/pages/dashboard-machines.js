@@ -2,9 +2,13 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
+ * DEPENDS : js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v7.8 | 2026-11-21 | itinatago ang stale at hindi naka-register na machine (lumang pangalan); buod ay kinukuwenta ulit
+ * VERSION : v7.7 | 2026-11-21 | ipinapakita sa #dm-message ang dahilan kung bakit hindi nabasa ang Master Correl Excel ng machine
+ * VERSION : v7.6 | 2026-11-21 | LEAD PC: tuwing refresh, binabasa ang pinakabagong Excel sa <Server path>\master-correl\<machine>\<petsa>\ (Status, R Square, Record) at ito ang ginagamit kapag mas bago kaysa sa correl\<machine>.json
+ * VERSION : v7.5 | 2026-11-21 | Tuwing refresh ng page, binabasa ulit ng machine ang pinakabagong Master Correl (source1) at ipinapadala ang status sa Server path
  * VERSION : v7.4 | 2026-11-21 | Preview button sa Master Correl ng tile: binubuksan sa Windows (File Explorer) ang pinakabagong Master Correl file ng machine
  * VERSION : v7.3 | 2026-11-21 | status ng Master Correl ng machine (<Server path>\correl): badge na PASS / WARNING / FAIL sa tile, chip na Correl fail, FAIL ay nauuna sa listahan
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
@@ -157,6 +161,28 @@
       // hindi mabasa ang correl folder: ituloy ang listahan nang walang badge
     }
     return correlMap;
+  }
+
+  // Basa ng pinakabagong Excel ng bawat machine sa <Server path>\\master-correl\\<machine>\\<petsa>\\; ginagamit kapag mas bago ito kaysa sa correl\\<machine>.json.
+  async function applyLatestCorrelExcel(serverHandle, machineItemList) {
+    const issueList = [];
+    if (!root.correlExcelReader || !serverHandle) return issueList;
+    let correlFolder;
+    try {
+      correlFolder = await serverHandle.getDirectoryHandle(root.correlConfig.SERVER.SUBFOLDER);
+    } catch (error) {
+      return issueList;
+    }
+    await Promise.all(machineItemList.map(async (item) => {
+      const excelItem = await root.correlExcelReader.readLatestForMachine(correlFolder, item.machineName);
+      if (excelItem && (!item.correl || excelItem.modifiedMs > item.correl.modifiedMs)) item.correl = excelItem;
+      const issue = excelItem ? null : root.correlExcelReader.getIssue(item.machineName);
+      if (issue && !item.correl) {
+        const detail = issue.code === 'noFolder' && !issue.detail ? TEXT.excelIssue.none : issue.detail;
+        issueList.push((TEXT.excelIssue[issue.code] || TEXT.excelIssue.error).replace('{machine}', item.machineName).replace('{detail}', detail));
+      }
+    }));
+    return issueList;
   }
 
   // Maliit na table ng mga slider na kailangang tingnan: Actual at Master (previous > today), Diff, Trend.
@@ -334,6 +360,8 @@
       setMessage(TEXT.connection[snapshot.state] || TEXT.connection.error, snapshot.state === QUEUE.CONNECTION.noPermission);
       return;
     }
+    if (DM.HIDE_ORPHANS) snapshot.machineItemList = snapshot.machineItemList.filter((item) => item.registered || item.presence !== QUEUE.PRESENCE.stale);
+    snapshot.summary = root.queue.summarize(snapshot.machineItemList);
     const compareMap = await readCompareMap(snapshot.handle);
     const correlMap = await readCorrelMap(snapshot.handle);
     if (!query(SEL.section)) return;
@@ -341,10 +369,12 @@
       item.compare = compareMap.get(item.machineName.toLowerCase()) || null;
       item.correl = correlMap.get(item.machineName.toLowerCase()) || null;
     });
+    const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
+    if (!query(SEL.section)) return;
     renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
     grid.replaceChildren(...sortedList.map((item) => buildMachineTile(item, nowMs)));
-    setMessage(sortedList.length === 0 ? TEXT.emptyGrid : '', false);
+    setMessage(sortedList.length === 0 ? TEXT.emptyGrid : excelIssueList.join(' | '), false);
   }
 
   // Pinakamahalagang state ng sariling machine: ongoing, kung wala ay done, kung wala ay idle.
@@ -444,6 +474,24 @@
     await refresh(true);
   }
 
+  // Machine lang: binabasa ulit ang pinakabagong Master Correl ng araw na ito (Data source 1) at ipinapadala ang status sa Server path,
+  // para laging bago ang nakikita ng LEAD PC. Tahimik kung walang source, walang permission, o walang record ngayong araw (walang popup).
+  async function rereadOwnCorrel() {
+    const settings = root.storage.readLocalSettings();
+    if (getRole(settings).key !== DM.ROLE.sender.key) return;
+    if (!root.masterAnalysis || !root.correlSync || !root.storage.isFolderAccessSupported()) return;
+    try {
+      const sourceHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.MASTER.SOURCE_KEY]);
+      if (!sourceHandle || !(await root.storage.hasPermission(sourceHandle, false))) return;
+      const nowDate = new Date();
+      const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+      const result = await root.masterAnalysis.analyzeLatest(sourceHandle, today, null, today);
+      await root.correlSync.publishStatus(result, settings, false);
+    } catch (error) {
+      // walang master record ngayon o hindi mabasa ang source: ituloy ang dashboard, susubukan ulit sa susunod na refresh
+    }
+  }
+
   // Init ng page, tinatawag ng dashboard.js.
   function init() {
     stopTimer();
@@ -451,6 +499,8 @@
     const grantButton = query(SEL.grant);
     if (grantButton) grantButton.addEventListener('click', handleGrantClick);
     refresh(false);
+    // Sa bawat refresh/pagbukas ng Dashboard: basahin ulit ang pinakabagong Master Correl (hindi hinaharang ang unang render).
+    rereadOwnCorrel();
     timerId = window.setInterval(() => refresh(false), DM.POLL_MS);
   }
 

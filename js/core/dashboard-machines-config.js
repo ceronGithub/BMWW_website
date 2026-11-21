@@ -2,6 +2,8 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v7.8 | 2026-11-21 | HIDE_ORPHANS (itinatago ang stale at hindi naka-register na machine, hal. lumang pangalan)
+ * VERSION : v7.7 | 2026-11-21 | TEXT.excelIssue (dahilan kung bakit hindi nabasa ang Master Correl Excel)
  * VERSION : v7.4 | 2026-11-21 | TEXT.preview at SELECTOR.previewStatus (Preview button ng Master Correl sa tile ng machine)
  * VERSION : v7.3 | 2026-11-21 | TEXT.correl at TEXT.summary.correlFail (status ng Master Correl: PASS / WARNING / FAIL)
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file (hiwalay sa config.js para hindi magalaw ang existing)
@@ -14,6 +16,8 @@
   root.dashboardMachinesConfig = Object.freeze({
     // Gaano kadalas mag-refresh ang view (ms).
     POLL_MS: 5000,
+    // true = hindi ipinapakita (at hindi binibilang) ang machine na STALE at hindi naka-register (hal. naiwang entry ng lumang pangalan). Walang binubura sa Server.
+    HIDE_ORPHANS: true,
     // Role ng PC: lead = nagbabasa lang; sender = nagpapadala ng status sa queue.
     ROLE: {
       lead: { key: 'lead', label: 'LEAD PC', note: 'MONITOR ONLY', icon: '\u25C9' },
@@ -64,6 +68,13 @@
       emptyGrid: 'Wala pang naka-register na machine.',
       noFile: 'Walang file pa',
       lastSent: 'Huling naipadala: ',
+      excelIssue: {
+        noFolder: '{machine}: walang folder sa master-correl na ganito ang pangalan. Mga folder na nakita: {detail}',
+        noFile: '{machine}: walang master-correl Excel file sa folder ng machine.',
+        unreadable: '{machine}: hindi mabasa ang Excel na {detail}.',
+        error: '{machine}: pumalya ang pagbasa ng Excel ({detail}).',
+        none: '(wala)'
+      },
       summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider', correlFail: 'Correl fail' },
       correl: { label: 'MASTER CORREL', none: 'Wala pang resulta', rSquared: 'R Square ', record: 'Record: ', sent: 'Sent: ', stale: 'LUMA', icon: { PASS: '\u2714', WARNING: '\u25B2', FAIL: '\u2716' } },
       compare: {

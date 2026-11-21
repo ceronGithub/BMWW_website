@@ -2,6 +2,7 @@
  * FILE    : js/core/correl-export-config.js
  * PURPOSE : Constants ng Master Correl export (Excel): subfolder, file name, selector, kulay ng chart, text
  * DEPENDS : js/core/master-export-config.js (kulay, autofit, separator at protocol ay galing doon)
+ * VERSION : v8 | 2026-11-21 | AUTO (kusang export pagkatapos ng Run Latest Master), SERVER.FILE_NAME (iisang file sa Server na ino-overwrite), TEXT.autoSkipped
  * VERSION : v7.2 | 2026-11-21 | SERVER (subfolder ng kopya sa Server path, pangalan ng folder ng machine) at TEXT.serverSaved / serverFailed / serverState
  * VERSION : v2.21 | 2026-11-21 | CHART.SHOW_LEGEND = false (walang legend sa Excel chart)
  * VERSION : v2.20 | 2026-11-21 | OPEN_MODE: 'folder'; openedLatest ay para sa folder
@@ -18,7 +19,9 @@
     FILE_PREFIX: 'master-correl',
     FILE_EXTENSION: '.xlsx',
     // Kopya sa Server path: <Server path>\<SUBFOLDER>\<machine name>\<petsa ng export>\<file>. UNSAFE_NAME = mga character na bawal sa pangalan ng folder (pinapalitan ng _); TRIM_NAME = tinatanggal na espasyo at tuldok sa dulo.
-    SERVER: { SUBFOLDER: 'master-correl', NO_MACHINE_FOLDER: 'no-machine-name', UNSAFE_NAME: /[<>:"/\\|?*\u0000-\u001f]/g, TRIM_NAME: /^[\s.]+|[\s.]+$/g },
+    SERVER: { FILE_NAME: 'master-correl_latest.xlsx', SUBFOLDER: 'master-correl', NO_MACHINE_FOLDER: 'no-machine-name', UNSAFE_NAME: /[<>:"/\\|?*\u0000-\u001f]/g, TRIM_NAME: /^[\s.]+|[\s.]+$/g },
+    // Kusang export pagkatapos ng Run Latest Master: nilalaktawan kapag pareho pa ang record. STORAGE_KEY = localStorage (huling na-export na record).
+    AUTO: { ENABLED: true, STORAGE_KEY: 'bmww.correlAutoExport' },
     NO_FILE_CODE: 'noLatestCorrelFile',
     // 'folder' = ang Open latest correl file ay nagbubukas ng FOLDER (naka-highlight ang pinakabagong file). Alisin ito para Excel ang bumukas.
     OPEN_MODE: 'folder',
@@ -38,6 +41,7 @@
     TEXT: {
       exporting: 'Sine-save ang Excel file ng Master Correl...',
       saved: 'Na-save ang Excel file: ',
+      autoSkipped: 'Walang bagong record mula sa huling na-export, kaya hindi na nag-export ulit. Pindutin ang Export to Excel kung gusto mo pa ring mag-export.',
       serverSaved: '. Kopya sa Server: ',
       serverFailed: '. Hindi nakopya sa Server path: ',
       serverState: {

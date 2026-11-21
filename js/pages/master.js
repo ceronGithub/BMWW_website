@@ -2,6 +2,7 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v8 | 2026-11-21 | Kusang export ng Master Correl pagkatapos ng Run Latest Master (autoExportCorrel); nilalaktawan kapag pareho pa ang record; ang kopya sa Server ay ino-overwrite
  * VERSION : v7.3 | 2026-11-21 | Master Correl: pagkatapos ng run, ipinapadala ang status (PASS / WARNING / FAIL) sa Server path para sa LEAD PC (sendCorrelToLead)
  * VERSION : v7.2 | 2026-11-21 | Export ng Master Correl: may kopya na rin sa Server path (findServerForCopy, copyCorrelToServer); hindi pumapalya ang Saving path kapag pumalya ang Server
  * VERSION : v7.1 | 2026-11-21 | Master Correl: tinanggal ang Worst slider sa stat list (formatWorstSlider); nasa hiwalay na card na Compare sliders na ito
@@ -441,6 +442,7 @@
       saved.latest = lastLatestRun;
       setStatus('latestStatus', '', '');
       await sendCorrelToLead(result);
+      await autoExportCorrel();
     } catch (error) {
       query('latestResult').replaceChildren();
       setStatus('latestStatus', getErrorMessage(error), 'error');
@@ -561,32 +563,82 @@
     }
   }
 
-  // Click ng Export to Excel ng Master Correl: sine-save sa <Saving path>/master-correl/<petsa>/ at kinokopya sa <Server path>/master-correl/<machine name>/<petsa>/.
+  // Susi ng record para malaman kung na-export na: machine + petsa ng record + pangalan ng file + R Square.
+  function getCorrelExportKey(result) {
+    const rSquared = result.regression ? result.regression.rSquared : '';
+    return [getMachineName().toLowerCase(), result.recordDate ? result.recordDate.getTime() : '', result.fileName, rSquared].join('|');
+  }
+
+  // Huling na-export na record (localStorage); walang laman kung wala o hindi mabasa.
+  function readExportedKey() {
+    try {
+      return window.localStorage.getItem(CORREL.AUTO.STORAGE_KEY) || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  // Tinatandaan ang record na na-export na (hindi nagtatapon ng error).
+  function writeExportedKey(key) {
+    try {
+      window.localStorage.setItem(CORREL.AUTO.STORAGE_KEY, key);
+    } catch (error) {
+      // walang storage: lalaktawan lang ang pagtatanda
+    }
+  }
+
+  // Ang buong export: Saving path (may timestamp) at kopya sa Server path (ino-overwrite). Ibinibigay { message, kind } at tinatandaan ang record kapag nakopya sa Server. Nagtatapon ng error kapag pumalya ang Saving path.
+  async function exportCorrelFiles() {
+    if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+    const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+    if (!rootHandle) throw csv.createError('noRoot');
+    if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+    const serverFound = await findServerForCopy();
+    const settings = storage.readLocalSettings();
+    const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+    const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
+    const run = lastLatestRun;
+    const saved = await correlExport.exportCorrel(run.result, run.range, rootHandle, sourceText, getMachineName());
+    const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
+    const separator = EXPORT.PATH_SEPARATOR;
+    const savedText = CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName;
+    const serverCopy = await copyCorrelToServer(serverFound, saved, paths);
+    if (serverCopy.ok) {
+      writeExportedKey(getCorrelExportKey(run.result));
+      return { message: savedText + CORREL.TEXT.serverSaved + serverCopy.path, kind: 'success' };
+    }
+    return { message: savedText + CORREL.TEXT.serverFailed + serverCopy.message, kind: 'error' };
+  }
+
+  // Click ng Export to Excel ng Master Correl: sine-save sa <Saving path>/master-correl/<petsa>/ at kinokopya (overwrite) sa <Server path>/master-correl/<machine name>/<petsa>/.
   async function onExportCorrel() {
     if (isBusy) return;
     if (!lastLatestRun) { setStatus('latestStatus', CORREL.TEXT.error.noResult, 'error'); return; }
     setBusy(true);
     try {
       setStatus('latestStatus', CORREL.TEXT.exporting, 'info');
-      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
-      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
-      if (!rootHandle) throw csv.createError('noRoot');
-      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
-      const serverFound = await findServerForCopy();
-      const settings = storage.readLocalSettings();
-      const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
-      const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
-      const saved = await correlExport.exportCorrel(lastLatestRun.result, lastLatestRun.range, rootHandle, sourceText, getMachineName());
-      const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
-      const separator = EXPORT.PATH_SEPARATOR;
-      const savedText = CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName;
-      const serverCopy = await copyCorrelToServer(serverFound, saved, paths);
-      if (serverCopy.ok) setStatus('latestStatus', savedText + CORREL.TEXT.serverSaved + serverCopy.path, 'success');
-      else setStatus('latestStatus', savedText + CORREL.TEXT.serverFailed + serverCopy.message, 'error');
+      const outcome = await exportCorrelFiles();
+      setStatus('latestStatus', outcome.message, outcome.kind);
     } catch (error) {
       setStatus('latestStatus', getCorrelErrorMessage(error, 'exportFail'), 'error');
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Kusang export pagkatapos ng Run Latest Master. Nilalaktawan kapag ang record ay na-export na (at nakopya na sa Server). Tinatawag habang busy pa ang page.
+  async function autoExportCorrel() {
+    if (!CORREL.AUTO.ENABLED || !lastLatestRun) return;
+    if (readExportedKey() === getCorrelExportKey(lastLatestRun.result)) {
+      setStatus('latestStatus', CORREL.TEXT.autoSkipped, 'info');
+      return;
+    }
+    try {
+      setStatus('latestStatus', CORREL.TEXT.exporting, 'info');
+      const outcome = await exportCorrelFiles();
+      setStatus('latestStatus', outcome.message, outcome.kind);
+    } catch (error) {
+      setStatus('latestStatus', getCorrelErrorMessage(error, 'exportFail'), 'error');
     }
   }
 

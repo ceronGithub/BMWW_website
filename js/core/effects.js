@@ -2,6 +2,7 @@
  * FILE    : js/core/effects.js
  * PURPOSE : Maliliit na effects: spotlight sa card, ripple sa button, sliding indicator sa sidebar
  * DEPENDS : js/core/config.js (REDUCED_MOTION_QUERY, SELECTOR.sidebar), css/theme.css
+ * VERSION : v7.9 | 2026-11-21 | fix: ina-update na ang indicator ng sidebar kapag may link na itinago o ibinalik (hidden ng li, hal. paglipat sa Lead PC); hindi na umuulit ang update kapag walang nagbago
  * VERSION : v4 | 2026-11-20 | bagong file
  */
 (function () {
@@ -20,7 +21,8 @@
     LINK: '.sidebar-link',
     ACTIVE_CLASS: 'is-active',
     INDICATOR_CLASS: 'sidebar-indicator',
-    READY_CLASS: 'has-indicator'
+    READY_CLASS: 'has-indicator',
+    OBSERVED_ATTRIBUTES: ['class', 'hidden']
   });
   let frameId = 0;
   let indicatorFrameId = 0;
@@ -69,7 +71,7 @@
     const active = list.querySelector(EFFECTS.LINK + '.' + EFFECTS.ACTIVE_CLASS);
     let indicator = list.querySelector('.' + EFFECTS.INDICATOR_CLASS);
     if (!active) {
-      if (indicator) indicator.hidden = true;
+      if (indicator && !indicator.hidden) indicator.hidden = true;
       return;
     }
     const isNew = !indicator;
@@ -80,7 +82,7 @@
       indicator.style.transition = 'none';
       list.prepend(indicator);
     }
-    indicator.hidden = false;
+    if (indicator.hidden) indicator.hidden = false;
     indicator.style.height = active.offsetHeight + 'px';
     indicator.style.transform = 'translateY(' + active.offsetTop + 'px)';
     if (isNew) {
@@ -102,7 +104,7 @@
     document.addEventListener('pointerdown', handlePointerDown, { passive: true });
     const sidebar = document.querySelector(CONFIG.SELECTOR.sidebar);
     if (sidebar) {
-      new MutationObserver(scheduleIndicator).observe(sidebar, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(scheduleIndicator).observe(sidebar, { childList: true, subtree: true, attributes: true, attributeFilter: EFFECTS.OBSERVED_ATTRIBUTES });
     }
     window.addEventListener('resize', scheduleIndicator);
     scheduleIndicator();

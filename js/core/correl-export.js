@@ -2,6 +2,7 @@
  * FILE    : js/core/correl-export.js
  * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Correl (isang record) at sine-save sa <Saving path>\master-correl\<petsa ng export>\ (may kopya sa <Server path>\master-correl\<machine name>\<petsa ng export>\)
  * DEPENDS : js/core/config.js, master-export-config.js, correl-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
+ * VERSION : v8 | 2026-11-21 | copyToServer: iisang file (CORREL.SERVER.FILE_NAME) na ino-overwrite sa Server; ang Saving path ay may timestamp pa rin kada export
  * VERSION : v7.2 | 2026-11-21 | copyToServer (kopya sa <Server path>\master-correl\<machine name>\<petsa>\); writeBlob (pinagsamang sulat ng file); exportCorrel ay nagbibigay na rin ng blob at dateFolderName
  * VERSION : v2.22 | 2026-11-21 | Worst slider sa buod ng sheet
  * VERSION : v2.21 | 2026-11-21 | walang legend sa chart ng Excel (CORREL.CHART.SHOW_LEGEND = false); isang series na lang na may kulay kada point
@@ -184,8 +185,8 @@
     const machineFolderName = getMachineFolderName(machineName);
     const machineHandle = await subfolderHandle.getDirectoryHandle(machineFolderName, { create: true });
     const folderHandle = await machineHandle.getDirectoryHandle(saved.dateFolderName, { create: true });
-    await writeBlob(folderHandle, saved.fileName, saved.blob);
-    return { folderName: [CORREL.SERVER.SUBFOLDER, machineFolderName, saved.dateFolderName].join(EXPORT.PATH_SEPARATOR), fileName: saved.fileName };
+    await writeBlob(folderHandle, CORREL.SERVER.FILE_NAME, saved.blob);
+    return { folderName: [CORREL.SERVER.SUBFOLDER, machineFolderName, saved.dateFolderName].join(EXPORT.PATH_SEPARATOR), fileName: CORREL.SERVER.FILE_NAME };
   }
 
   root.correlExport = Object.freeze({ buildBlob, buildFileName, exportCorrel, copyToServer, getMachineFolderName });

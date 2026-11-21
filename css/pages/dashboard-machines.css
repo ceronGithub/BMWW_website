@@ -5,7 +5,9 @@
  * VERSION : v7.3 | 2026-11-21 | badge ng Master Correl (PASS / WARNING / FAIL) sa tile at chip na Correl fail
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
  * VERSION : v7 | 2026-11-21 | alert ng worst slider, listahan ng slider
- */
+ 
+ * VERSION : v7.8 | 2026-11-21 | 2 column na lang kada row (inalis ang 3 column sa malaking screen)
+*/
 .page-dashboard {
   --dm-warning: #b45309;
 }
@@ -82,7 +84,6 @@
 }
 
 @media (min-width: 768px) { .page-dashboard .dm-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1280px) { .page-dashboard .dm-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* v7: alert ng worst slider (galing sa Master Correl ng machine) */
 .page-dashboard .dm-chip-alert .dm-chip-count { color: var(--color-danger); }
