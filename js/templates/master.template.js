@@ -11,11 +11,13 @@
  * VERSION : v2.14 | 2026-11-21 | button na Open latest repeatability file (kaliwa ng Export to Excel); Run Latest Master ay naging Master Correl
  * VERSION : v2.15 | 2026-11-21 | Master Correl: editable na ang Start date at End date
  * VERSION : v2.16 | 2026-11-21 | Master Correl: Open latest correl file at Export to Excel; script ng correl-export
+ * VERSION : v3.5 | 2026-11-21 | kasabay ng pages/master.html (Compare vs previous)
  */
 (function () {
   'use strict';
   window.BMWW.registry.registerTemplate('master', `<!-- PAGE: master -->
 <link rel="stylesheet" href="css/pages/master.css">
+<link rel="stylesheet" href="css/pages/master-compare.css">
 <section class="page page-master" data-page="master">
   <header class="page-header">
     <h1 class="page-title">Master</h1>
@@ -47,7 +49,13 @@
       <button id="latest-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="latest-status" class="status" role="status"></p>
+    <div class="action-row compare-actions">
+      <button id="compare-run" class="btn btn-secondary" type="button" disabled>Compare vs previous</button>
+      <button id="compare-export" class="btn btn-secondary" type="button" disabled>Export compare to Excel</button>
+    </div>
+    <p id="compare-status" class="status" role="status"></p>
     <div id="latest-result" class="result-area"></div>
+    <div id="compare-result" class="result-area"></div>
   </div>
 
   <div class="card">
@@ -89,6 +97,10 @@
 <script src="js/core/master-open-latest.js"></script>
 <script src="js/core/correl-export-config.js"></script>
 <script src="js/core/correl-export.js"></script>
+<script src="js/core/master-compare-config.js"></script>
+<script src="js/core/master-compare.js"></script>
+<script src="js/core/master-compare-export.js"></script>
+<script src="js/core/master-compare-ui.js"></script>
 <script src="js/pages/master.js"></script>
 `);
 })();

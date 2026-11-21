@@ -2,6 +2,7 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v3.5 | 2026-11-21 | Compare vs previous: init ng root.compareUi (pagkatapos ng restoreSaved) at refresh sa updateExportButton
  * VERSION : v2.19 | 2026-11-21 | Export ng Master Correl: ipinapasa ang machine name para sa pamagat ng chart sa Excel
  * VERSION : v2.17c | 2026-11-21 | Latest Master: iisang Date na lang (query latestDate); ang Date ang ginagamit bilang start at end sa analyzeLatest
  * VERSION : v2.17 | 2026-11-21 | Pamagat ng chart = <machine name> Master Correl / Master Repeatability; ang huling resulta (Master Correl at Master Repeatability, kasama ang petsa, mode at napiling file) ay naaalala kapag umalis at bumalik sa Master page
@@ -112,6 +113,7 @@
   function updateExportButton() {
     getExportButton().disabled = isBusy || !lastRangeResult;
     getCorrelExportButton().disabled = isBusy || !lastLatestRun;
+    if (root.compareUi) root.compareUi.refresh();
   }
 
   // Disable ng mga button habang tumatakbo.
@@ -605,6 +607,7 @@
     query('rangeEnd').value = csv.formatDateInput(today);
     renderSource();
     restoreSaved();
+    root.compareUi.init({ getLatestRun: () => lastLatestRun, isBusy: () => isBusy, setBusy, getReadyHandle, getReadErrorMessage: getErrorMessage, getMachineName });
     query('latestButton').addEventListener('click', onRunLatest);
     query('rangeButton').addEventListener('click', onRunRange);
     getExportButton().addEventListener('click', onExport);
