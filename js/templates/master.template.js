@@ -2,6 +2,7 @@
  * FILE    : js/templates/master.template.js
  * PURPOSE : Kopya ng pages/master.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v8.11 | 2026-11-21 | kasabay ng pages/master.html (Latest Master: readonly na Date, walang Open latest correl file at Export to Excel; script ng repeatability-sync)
  * VERSION : v7.3 | 2026-11-21 | dagdag na script ng correl-sync-config at correl-sync (status ng Master Correl para sa LEAD PC)
  * VERSION : v7.1 | 2026-11-21 | kasabay ng pages/master.html (card na Compare sliders)
  * VERSION : v2 | 2026-11-20 | bagong file
@@ -37,19 +38,17 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Latest Master</h2>
-        <p class="card-note">Pinakabagong master record sa napiling Date (ngayong araw ang default). Puwedeng baguhin ang Date para sa test.</p>
+        <p class="card-note">Pinakabagong master record ngayong araw. Ang Date ay laging today at hindi puwedeng baguhin.</p>
       </div>
     </div>
     <div class="date-row">
       <div class="form-group">
         <label class="form-label" for="latest-date">Date</label>
-        <input id="latest-date" class="form-input" type="date">
+        <input id="latest-date" class="form-input" type="date" readonly>
       </div>
     </div>
     <div class="action-row action-row-split">
       <button id="latest-run" class="btn btn-primary" type="button">Master Correl</button>
-      <button id="latest-open" class="btn btn-secondary" type="button">Open latest correl file</button>
-      <button id="latest-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="latest-status" class="status" role="status"></p>
     <div id="latest-result" class="result-area"></div>
@@ -108,6 +107,8 @@
 <script src="js/core/master-open-latest.js"></script>
 <script src="js/core/correl-export-config.js"></script>
 <script src="js/core/correl-export.js"></script>
+<script src="js/core/repeatability-sync-config.js"></script>
+<script src="js/core/repeatability-sync.js"></script>
 <script src="js/core/master-compare-config.js"></script>
 <script src="js/core/master-compare.js"></script>
 <script src="js/core/master-compare-export.js"></script>

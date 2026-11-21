@@ -5,6 +5,7 @@
  * DEPENDS : js/core/preview-tab.js, js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v8.12 | 2026-11-21 | Master Repeatability sa tile: LEAD PC (renderLead: attachToItems, buildMachineTile) at Sender (ownRepeatability sa readOwnCorrel at renderSender); ang tile at Preview ay nasa js/core/repeatability-tile.js
  * VERSION : v8.10 | 2026-11-21 | LEAD PC: may Preview na rin ang worst slider sa tile ng machine; binabasa ang Master Compare Excel sa <Server path>\\master-compare\\<machine> (loadCompareDetails ay may LEAD PC branch)
  * VERSION : v8.9 | 2026-11-21 | Preview ay bagong tab (previewTab.open) na nagpapakita ng buod, chart at laman ng Excel; inalis ang popup, handleExplorerClick, buildCorrelTable, buildCompareTable, fillPreviewBody, fillCompareBody; dagdag na buildCorrelPage, buildComparePage
  * VERSION : v8.8 | 2026-11-21 | Preview: malaking panel na may chart (Master Correl) at Preview ng worst slider ng sariling machine (Compare); panel ay galing na sa preview-panel.js; inalis ang closePreviewPanel at buildPreviewTable
@@ -426,7 +427,7 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, buildCorrelBlock(item.correl, nowMs));
+    tile.append(head, buildCorrelBlock(item.correl, nowMs), root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false));
     if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs, item.machineName));
 
     const presenceRow = createElementWith('p', 'dm-presence');
@@ -489,6 +490,7 @@
       item.correl = correlMap.get(item.machineName.toLowerCase()) || null;
     });
     const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
+    await root.repeatabilityTile.attachToItems(snapshot.handle, snapshot.machineItemList);
     if (!query(SEL.section)) return;
     renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
@@ -528,7 +530,7 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence.active);
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs));
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true));
     // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
     if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs, settings.machineName));
     const isRunning = monitorState.state === MONITOR.STATE.running;
@@ -605,6 +607,7 @@
   // Ang nabasa ay inilalagay sa ownCorrel (ipinapakita ng renderSender) at ipinapadala sa Server path. Tahimik kung walang Saving path, walang permission, walang folder o walang file (walang popup).
   let ownCorrel = null;
   let ownCompare = null;
+  let ownRepeatability = null;
   let isOwnReading = false;
   async function readOwnCorrel(settings) {
     if (isOwnReading) return;
@@ -612,15 +615,17 @@
     isOwnReading = true;
     try {
       const machineName = typeof settings.machineName === 'string' ? settings.machineName.trim() : '';
-      if (!machineName) { ownCorrel = null; ownCompare = null; return; }
+      if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; return; }
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
-      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; return; }
+      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; return; }
       const dayName = root.csv.formatDateInput(new Date());
       ownCorrel = await root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName);
       ownCompare = await root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName);
+      ownRepeatability = await root.repeatabilityReader.readInSavingPath(rootHandle, dayName);
     } catch (error) {
       ownCorrel = null;
       ownCompare = null;
+      ownRepeatability = null;
     } finally {
       isOwnReading = false;
     }
