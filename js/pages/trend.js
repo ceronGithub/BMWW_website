@@ -1,7 +1,8 @@
 /*
  * FILE    : js/pages/trend.js
  * PURPOSE : Trend page: binabasa ang master CSV ng Data source 1, 6 na chart (Mean Offset, Stdev, CV, Slope, Intercept, R2) na may UCL, CL, LCL, marker ng pagpalit ng cantilever, at listahan ng record ng napiling araw na may Set / Reset
- * DEPENDS : js/core/config.js, storage.js, csv-reader.js, trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js
+ * DEPENDS : js/core/config.js, storage.js, csv-reader.js, trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-export-config.js, trend-export.js
+ * VERSION : v9.4 | 2026-11-22 | Export to Excel (onExport): Excel sa Saving path, picture sa Saving path at Server path; ito lang ang nagpapadala ng Trend sa Dashboard
  * VERSION : v9.3 | 2026-11-22 | bagong file
  */
 (function () {
@@ -12,6 +13,7 @@
   const TREND = root.trendConfig;
   const SEL = TREND.SELECTOR;
   const TEXT = TREND.TEXT;
+  const EXPORT = root.trendExportConfig;
   const { storage, csv, trendLimits, trendOverrides, trendReader, trendChart } = root;
 
   let sourceHandle = null;
@@ -254,6 +256,7 @@
   // Iginuguhit ang buod, pagpalit ng cantilever, chart at listahan ng araw.
   function renderAll() {
     query('resetButton').disabled = !saved.run;
+    setExportDisabled(!saved.run);
     if (!saved.run) return;
     const limitMap = trendLimits.getLimits(storage.readLocalSettings());
     const pointList = getPointList();
@@ -284,6 +287,13 @@
     isBusy = nextBusy;
     query('runButton').disabled = nextBusy;
     query('resetButton').disabled = nextBusy || !saved.run;
+    setExportDisabled(nextBusy || !saved.run);
+  }
+
+  // Button ng Export to Excel: nakasara habang walang resulta o abala.
+  function setExportDisabled(isDisabled) {
+    const exportButton = document.querySelector(EXPORT.SELECTOR.exportButton);
+    if (exportButton) exportButton.disabled = isDisabled;
   }
 
   // Run Trend: binabasa ang mga file at iginuguhit ang resulta.
@@ -303,6 +313,27 @@
       renderAll();
     } catch (error) {
       setStatusOf(statusElement, getErrorMessage(error), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Export to Excel: Excel sa Saving path lang; picture ng 6 chart sa Saving path at Server path (para sa Dashboard ng LEAD PC at ng sarili).
+  async function onExport() {
+    if (isBusy) return;
+    const statusElement = document.querySelector(EXPORT.SELECTOR.exportStatus);
+    if (!saved.run) { setStatusOf(statusElement, EXPORT.TEXT.noRun, 'error'); return; }
+    setBusy(true);
+    setStatusOf(statusElement, EXPORT.TEXT.exporting, 'info');
+    try {
+      const settings = storage.readLocalSettings();
+      const pointList = getPointList();
+      const result = await root.trendExport.exportAll({
+        run: saved.run, pointList, limitMap: trendLimits.getLimits(settings), changeList: trendReader.findCantileverChanges(pointList), machineName: settings.machineName, settings
+      });
+      setStatusOf(statusElement, result.message, result.kind);
+    } catch (error) {
+      setStatusOf(statusElement, root.trendExport.getErrorMessage(error), 'error');
     } finally {
       setBusy(false);
     }
@@ -335,6 +366,9 @@
     setDefaultDates();
     query('runButton').addEventListener('click', onRun);
     query('resetButton').addEventListener('click', onResetAll);
+    const exportButton = document.querySelector(EXPORT.SELECTOR.exportButton);
+    if (exportButton) exportButton.addEventListener('click', onExport);
+    setExportDisabled(!saved.run);
     query('dayDate').addEventListener('change', renderDay);
     query('dayResult').addEventListener('click', onDayClick);
     if (saved.run) {

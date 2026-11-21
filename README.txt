@@ -1,3 +1,4 @@
+v9.4 | 2026-11-22 | Trend: Export to Excel at Trend sa Dashboard. Sa Trend page, pagkatapos ng Run Trend, ang button na Export to Excel ang gumagawa ng (1) Excel (Summary, Points at 6 na sheet na may line chart at UCL/CL/LCL) sa <Saving path>\trend\<petsa>\ LANG (walang Excel sa Server), (2) picture (PNG) ng 6 chart sa <Saving path>\trend\trend_latest.png para sa sariling Dashboard, at (3) kopya ng picture at trend_latest.json sa <Server path>\trend\<machine name>\ para sa LEAD PC. Ang Dashboard (tile ng sariling machine at ng bawat machine sa LEAD PC) ay may TREND block: thumbnail, badge na UPDATED kapag may bagong export na hindi pa nakikita ng browser na ito, at Preview (picture sa bagong tab; nawawala ang UPDATED pagkapindot). Walang nagbabago sa Dashboard hangga't walang nag-click ng Export. Bago: js/core/trend-export-config.js, trend-image.js, trend-sync.js, trend-export.js, trend-tile.js, css/pages/trend-tile.css. Binago (may permission mo, 'sige'): pages/trend.html, js/templates/trend.template.js, js/pages/trend.js, pages/dashboard.html, js/templates/dashboard.template.js, js/pages/dashboard-machines.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa trend-config.js, trend-chart.js, trend-reader.js, xlsx-writer.js at config.js.
 v9.3 | 2026-11-22 | Trend: bagong page sa sidebar (Trend). Binabasa ang master CSV (15 headers) ng Data source 1 at kinukuha ang Mean Offset, Stdev, CV, Slope, Intercept, R2 ng bawat record. Sa bawat petsa, dalawang point: Day shift 7:30 AM-6:30 PM at Night shift 7:30 PM-6:30 AM ng kinabukasan (default: pinakahuling record ng shift; gamit ang masterShift.getShiftOf). 6 na chart na may UCL, CL, LCL (itinatakda sa Settings > Trend limits, iisa para sa lahat ng cantilever), pulang point kapag labas sa limit, at marker (patayong linya at pangalan) kapag nagpalit ng cantilever. Pumili ng petsa para makita ang mga record at file ng araw na iyon kasama ang 6 na value; Set = papalitan ang point ng shift sa chart ng napiling record, Reset = ibalik sa pinakahuli (naka-save ang Set sa localStorage bmww.trendOverrides). Bago: js/core/trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-settings.js, js/pages/trend.js, js/templates/trend.template.js, pages/trend.html, css/pages/trend.css, css/pages/trend-settings.css. Binago (may permission mo, 'sige'): components/sidebar.html, js/templates/sidebar.template.js, js/core/config.js (PAGE_LIST at LEAD_BLOCKED_PAGES), index.html (1 script ng trend template), pages/settings.html, js/templates/settings.template.js, js/pages/settings.js (3 hook), README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa Master, Calibration, master-shift.js, master-analysis.js at Dashboard.
 v9.2 | 2026-11-22 | Calibration: bagong card na Calibration Repeatability (kopya ng Master Repeatability). Binabasa ang lahat ng calibration CSV ("Calibration Status List") ng Data source 1 na ang petsa (last modified) ay nasa pagitan ng Start date at End date (default 7 araw); Actual = After at Master = Master group ng CSV. Mode: All data points (flat) o Latest per shift (Morning 7:30 AM-6:30 PM, Night 7:30 PM-6:30 AM). Lumalabas ang badge PASS/WARNING/FAIL, Repeatability %, Avg diff, Worst slider, Max diff, table kada barcode, line chart (isang linya kada record, may MASTER) na may file panel (i-uncheck ang file para alisin ang linya). Kusang Excel pagkatapos ng run: <Saving path>\calibration-repeatability\<petsa>\ (bagong file) at kopya (overwrite) sa <Server path>\calibration-repeatability\<machine name>\<petsa ngayon>\calibration-repeatability_latest.xlsx. Bago: js/core/calibration-repeatability-config.js, calibration-repeatability.js, calibration-repeatability-export.js, calibration-repeatability-ui.js, css/pages/calibration-repeatability.css. Binago (may permission mo, 'ok na'): pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa Master, config.js, master-analysis.js, calibration-analysis.js at Dashboard.
 v9.1 | 2026-11-22 | Calibration: bagong card na Compare sliders (Compare vs previous), kopya ng sa Master. Ihahambing ang Calibration Correl ngayon laban sa pinakabagong calibration record BAGO ang Date (hanggang 7 araw pabalik, COMPARE.LOOKBACK_DAYS). Hindi kusang tumatakbo; pindutin ang button. Kung walang worst slider (lahat green) walang compare. Kusang Excel pagkatapos: <Saving path>\calibration-compare\<petsa>\ (bagong file) at kopya (overwrite) sa <Server path>\calibration-compare\<machine name>\<petsa>\calibration-compare_latest.xlsx. Bago: js/core/calibration-compare-config.js, calibration-compare.js, calibration-compare-export.js, calibration-compare-ui.js, css/pages/calibration-compare.css. Binago (may permission): pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa Master, config.js, calibration-analysis.js at Dashboard.
@@ -955,4 +956,100 @@ PAGE: trend [v9.3] | INPUT: CSV ng Data source 1 (master, 15 headers), Start dat
   2026-11-22 | [v9.3] Ang record na labas sa Day (7:30 AM-6:30 PM) at Night (7:30 PM-6:30 AM), hal. 6:31-7:29, ay hindi isinasama sa chart; makikita sa listahan ng araw na may markang 'Labas sa shift' at walang Set.
   2026-11-22 | [v9.3] Ang Set ay naka-save sa localStorage ng browser na ito (hindi kasama sa <machine>.json). Hanggang MAX_DAYS 62 araw ang saklaw at MAX_FILES 300 ang file.
   2026-11-22 | [v9.3] Ang UCL, CL, LCL ay iisa para sa lahat ng cantilever; ang pagpalit ng cantilever ay marker lang. Kapag walang naka-set na limit, walang limit line at may paalala sa Trend page.
-  2026-11-22 | [v9.3] Walang Excel export o Dashboard tile ng Trend (hindi hiningi). Hindi pa nasubukan sa totoong Chrome/Edge; nasubukan sa Node at jsdom (CSV mo + gawa-gawang pangalawang file) at na-render ang chart sa PNG.
+  2026-11-22 | [AYOS v9.4] [v9.3] Walang Excel export o Dashboard tile ng Trend (hindi hiningi). Hindi pa nasubukan sa totoong Chrome/Edge; nasubukan sa Node at jsdom (CSV mo + gawa-gawang pangalawang file) at na-render ang chart sa PNG.
+
+=== [v9.4] TREND EXPORT (OVERVIEW) ===
+A. FILES
+js/core/trend-export-config.js | window.BMWW.trendExportConfig: lugar ng file, meta, SEEN, XLSX, IMAGE, CLASS, SELECTOR, TEXT
+js/core/trend-image.js         | window.BMWW.trendImage: PNG ng 6 chart sa canvas (walang library)
+js/core/trend-sync.js          | window.BMWW.trendSync: sulat (Saving path, Server path) at basa ng picture at meta
+js/core/trend-export.js        | window.BMWW.trendExport: Excel at ang buong Export to Excel
+js/core/trend-tile.js          | window.BMWW.trendTile: Trend block sa tile ng Dashboard, UPDATED, Preview
+css/pages/trend-tile.css       | style ng Trend block (naka-scope sa .page-dashboard)
+
+B. FUNCTIONS
+trend-image.js:
+formatTick(value) / shorten(text) / buildTicks(min, max) / getValueRange(valueList, limit) | helper ng chart (kapareho ng trend-chart.js) | drawChart
+makeFont(size, isBold) / drawText(context, text, x, y, options) / drawLine(...) / drawCircle(...) | helper ng canvas | drawChart, drawHeader
+drawXLabels(context, area, pointList, xAt) | ->void | label ng X axis (bawat MAX_X_LABELS lang kapag marami) | drawChart
+drawChart(context, area, metric, pointList, limit, changeList) | ->void | isang chart: axis, limit line, marker ng cantilever, linya, pulang point, ring ng Set | buildBlob
+drawHeader(context, width, options) | ->void | pangalan ng machine, range, bilang ng point at labas sa limit, legend | buildBlob
+countOutAll(pointList, limitMap) | ->number | bilang ng point na labas sa limit sa lahat ng value | drawHeader, trend-export.js (buildSummarySheet, buildMeta)
+toBlob(canvas) | ->Promise<Blob> | error 'imageFail' kapag pumalya | buildBlob
+buildBlob({machineName, run, pointList, limitMap, changeList}) | ->Promise<Blob> (image/png) | ulo at 6 na chart, COLUMNS kada row | trend-export.js (exportAll)
+
+trend-sync.js:
+getMachineFolderName(machineName) | ->string | bawal na character ay _, walang pangalan = no-machine-name | sendToServer, findOnServer
+writeFile(folderHandle, fileName, content) | ->Promise | sulat ng Blob o text; abort kapag pumalya | saveToSavingPath, sendToServer
+openFolders(startHandle, nameList) | ->Promise<handle> | ginagawa ang sunud-sunod na folder | saveToSavingPath, sendToServer
+saveToSavingPath(rootHandle, {dateFolderName, excelFileName, excelBlob, imageBlob, metaText}) | ->Promise<string> | Excel sa trend\<petsa>\; picture at meta sa trend\ (meta ang huling sinusulat) | trendExport.exportAll
+sendToServer(serverFound, machineName, {imageBlob, metaText}, basePath) | ->Promise<{ok,path}|{ok:false,message}> | picture at meta lang sa <Server path>\trend\<machine>\; hindi nagtatapon ng error | trendExport.exportAll
+cleanText(value) / cleanCount(value) / normalizeMeta(raw) | linis ng nabasang meta; null kung walang tamang updatedAt | readLatest
+readLatest(folderHandle) | ->Promise<{meta, modifiedMs, imageHandle}|null> | basa ng trend_latest.json (limit META.FILE_MAX_BYTES) at hawak ng PNG | findInSavingPath, findOnServer
+findInSavingPath(rootHandle) / findOnServer(serverHandle, machineName) | ->Promise<latest|null> | sariling Dashboard / LEAD PC | trendTile.readOwn, trendTile.attachToItems
+
+trend-export.js:
+padTwo / formatDateTime(date) / numberCell(value, style) / computeColumnWidths(rows) / isOutOfLimit(value, limit) | helper | sheet builders
+buildSummarySheet(context, exportedAt, sourceText) | ->sheet | buod at limit ng bawat value | buildBlob
+buildPointsSheet(context) | ->sheet | lahat ng point; pula ang labas sa limit; hanay na Labas sa limit | buildBlob
+getAxisRange(valueList) | ->{yMin,yMax}|null | saklaw ng y-axis ng chart ng Excel | buildMetricSheet
+buildMetricSheet(context, metric) | ->sheet | row ng value at UCL/CL/LCL (ang naka-set lang) at line chart sa ilalim ng table | buildBlob
+buildBlob(context, exportedAt, sourceText) | ->Blob | Summary, Points, 6 na sheet ng value | exportAll
+buildFileName(run, exportedAt) | ->string | trend_<start>_to_<end>_<yyyymmdd-hhmmss>.xlsx (hindi nao-overwrite) | exportAll
+buildMeta(context, exportedAt, excelFileName) | ->object | laman ng trend_latest.json | exportAll
+findServer() | ->Promise<{handle,state}> | queue.findServerHandle(true); hindi nagtatapon ng error | exportAll
+exportAll(context) | ->Promise<{message,kind}> | permission muna (Saving path, Server path) habang sariwa ang click, saka Excel at picture, saka sulat | trend.js (onExport)
+getErrorMessage(error) | ->string | friendly na mensahe | trend.js (onExport)
+
+trend-tile.js:
+createElementWith(tagName, className, text) | ->element | textContent lang | lahat ng builder
+getKey(machineName, isSender) | ->string | '@own' para sa Sender, pangalan ng machine (maliit na letra) para sa LEAD PC | readOwn, attachToItems, buildInfo
+readSeenMap() / markSeen(key, updatedAt) | localStorage bmww.trendSeen; hanggang SEEN.MAX | buildInfo, openPreview
+loadImageUrl(key, latest) | ->Promise<string> | binabasa ang PNG isang beses kada updatedAt (imageCache); binubura ang lumang URL | buildInfo
+buildInfo(latest, key) | ->Promise<{meta, modifiedMs, imageUrl, key, isUpdated}|null> | isUpdated = ibang updatedAt sa huling nakita | readOwn, attachToItems
+readOwn(rootHandle) | ->Promise<info|null> | Sender: <Saving path>\trend\ | dashboard-machines.js (readOwnCorrel)
+attachToItems(serverHandle, machineItemList) | ->Promise<void> | LEAD PC: item.trend ng bawat machine (null kung wala) | dashboard-machines.js (renderLead)
+showMessage(message) | mensahe sa #dm-preview-status (nawawala sa DM.TEXT.preview.clearMs) | openPreview
+openPreview(info, box) | itinatala ang nakita (nawawala ang UPDATED), window.open ng picture; mensahe kung hinarang o hindi mabasa | click ng Preview at thumbnail
+buildPreviewButton / buildThumbnail | ->element | button na may aria-label | buildBlock
+buildBlock(info, machineName) | ->element | TREND, UPDATED (icon at text), Preview, thumbnail, Range, Mga point, Labas sa limit, Exported; walang export = "Wala pang Trend export" | dashboard-machines.js (buildTrendBlock)
+
+BINAGO:
+trend.js: onExport() | click ng #trend-export; setExportDisabled(isDisabled) | disabled habang walang run o abala; tinatawag ng renderAll, setBusy, init
+dashboard-machines.js: buildTrendBlock(trendInfo, machineName) | tinatawag ng buildMachineTile (item.trend) at renderSender (ownTrend); let ownTrend (module) = huling nabasa sa Saving path, null kapag walang permission o machine name
+
+C. VARIABLES / CONSTANTS
+trendExportConfig: SUBFOLDER 'trend', FILE_PREFIX, FILE_EXTENSION, IMAGE_NAME 'trend_latest.png', META_NAME 'trend_latest.json', PATH_SEPARATOR, NO_MACHINE_FOLDER, UNSAFE_NAME, TRIM_NAME, ERROR_BY_NAME, META (VERSION, FILE_MAX_BYTES 262144, IMAGE_MAX_BYTES 31457280, TEXT_MAX), SEEN (KEY 'bmww.trendSeen', MAX 200, OWN_KEY '@own'), SELECTOR (exportButton, exportStatus), XLSX (COLOR, AUTOFIT, SHEET, CHART, LABEL), IMAGE (COLUMNS 2, CHART_WIDTH 760, CHART_HEIGHT 310, MAX_X_LABELS 12, COLOR, LEGEND ...), CLASS, TEXT
+imageCache (const Map, trend-tile.js) | key -> {updatedAt, url} | previewClearId (let, trend-tile.js) | timer ng mensahe
+
+D. EVENTS (listener)
+click | #trend-export | trend.js | onExport
+click | .dm-preview-button (Trend block) at .dm-trend-thumb | trend-tile.js | openPreview
+
+E. STORAGE / API
+<Saving path>\trend\<yyyy-mm-dd>\trend_<start>_to_<end>_<stamp>.xlsx | trend-export.js | Excel (Saving path LANG) | para sa user
+<Saving path>\trend\trend_latest.png at trend_latest.json | trend-sync.js | huling picture at meta | sariling Dashboard (Sender)
+<Server path>\trend\<machine name>\trend_latest.png at trend_latest.json | trend-sync.js | kopya ng picture at meta (walang Excel) | Dashboard ng LEAD PC
+trend_latest.json = {version, machineName, updatedAt (ISO), startDate, endDate, pointCount, recordCount, outCount, excelFileName} | ang updatedAt ang tanda ng bagong update
+localStorage bmww.trendSeen = {"<@own | machine name>": "<updatedAt>"} | trend-tile.js | huling nakita ng browser na ito
+
+F. CSS VARIABLES: walang bago (ginagamit ang --color-primary, --color-border, --space-*, --radius-sm)
+
+G. DEPENDENCY MAP
+pages/trend.html scripts: ... trend-chart -> xlsx-writer -> trend-export-config -> trend-sync -> trend-image -> trend-export -> js/pages/trend.js
+trend.js (onExport) -> trendExport.exportAll -> storage.loadHandle, queue.findServerHandle, trendImage.buildBlob, trendExport.buildBlob, trendSync.saveToSavingPath, trendSync.sendToServer
+pages/dashboard.html scripts: ... repeatability-tile -> trend-export-config -> trend-sync -> trend-tile -> dashboard-machines.js
+dashboard-machines.js -> trendTile.readOwn (Sender) / trendTile.attachToItems (LEAD PC) / trendTile.buildBlock
+
+PAGE: trend [v9.4 dagdag] | INPUT: resulta ng Run Trend (saved.run), mga Set ng user, trendLimits, machineName, Saving path at Server path (Settings) | OUTPUT: Excel sa Saving path; picture at meta sa Saving path at Server path; mensahe sa #trend-export-status
+  HTML ID dagdag: trend-export, trend-export-status (nasa trendExportConfig.SELECTOR)
+  DEPENDS dagdag: trendExport.exportAll, getErrorMessage
+PAGE: dashboard [v9.4 dagdag] | INPUT: <Saving path>\trend\ (Sender) o <Server path>\trend\<machine>\ (LEAD PC), localStorage bmww.trendSeen | OUTPUT: TREND block sa tile (thumbnail, UPDATED, Preview) | DEPENDS: trendTile, trendSync, trendExportConfig
+
+=== [v9.4] KNOWN ISSUES / TODO ===
+  2026-11-22 | [v9.4] Mangyayari lang ang update ng Dashboard kapag nag-click ng Export to Excel; hindi awtomatiko ang pagpapadala ng Trend.
+  2026-11-22 | [v9.4] Hindi nasubukan sa totoong Chrome/Edge at totoong Server path; nasubukan sa Node at jsdom (gawa-gawang folder handle, canvas ng node-canvas); nabuksan ang .xlsx sa openpyxl at LibreOffice (8 sheet, 6 chart).
+  2026-11-22 | [v9.4] Ang UPDATED ay batay sa huling nakita ng BAWAT browser (localStorage); ibang browser o nilinis na site data = lalabas ulit ang UPDATED.
+  2026-11-22 | [v9.4] Ang Preview ay picture lang sa bagong tab (walang buod o table). Kailangan i-allow ang pop-ups kapag hinarang.
+  2026-11-22 | [v9.4] Iisang picture lang ang itinatabi sa Server (trend_latest.png, ino-overwrite); ang Excel ay nasa Saving path lang.
+  2026-11-22 | [v9.4] Isang chart lang kada sheet ang kaya ng xlsx-writer.js, kaya may sheet ang bawat value (Mean Offset, Stdev, CV, Slope, Intercept, R2).

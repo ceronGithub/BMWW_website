@@ -1,0 +1,36 @@
+/*
+ * FILE    : css/pages/trend-tile.css
+ * PURPOSE : Style ng Trend block sa tile ng Dashboard (thumbnail, badge na UPDATED). Naka-scope sa .page-dashboard; ang ibang class ay galing sa dashboard-machines.css
+ * DEPENDS : css/base.css, css/pages/dashboard-machines.css
+ * VERSION : v9.4 | 2026-11-22 | bagong file
+ */
+.page-dashboard .dm-trend.is-updated { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); }
+.page-dashboard .dm-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.125rem var(--space-3);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+.page-dashboard .dm-trend-thumb {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color 150ms ease;
+}
+.page-dashboard .dm-trend-thumb:hover { border-color: var(--color-primary); }
+.page-dashboard .dm-trend-thumb:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.page-dashboard .dm-trend-image { display: block; width: 100%; height: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .page-dashboard .dm-trend-thumb { transition: none; }
+}

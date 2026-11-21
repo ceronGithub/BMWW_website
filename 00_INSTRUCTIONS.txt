@@ -1,3 +1,22 @@
+INSTRUCTIONS v9.4 (Trend: Export to Excel at Trend sa Dashboard)
+1. Backup muna ng buong website folder. Ilagay ang 6 BAGONG file: js/core/trend-export-config.js, trend-image.js, trend-sync.js, trend-export.js, trend-tile.js, css/pages/trend-tile.css. Palitan ang 6 na binagong file: pages/trend.html, js/templates/trend.template.js, js/pages/trend.js, pages/dashboard.html, js/templates/dashboard.template.js, js/pages/dashboard-machines.js (kasama ang README.txt at 00_INSTRUCTIONS.txt).
+2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge. I-refresh nang Ctrl+F5. Kailangan na naka-set ang Saving path (BMWW) at Server path sa Settings, at ang Data source 1.
+3. TEST STEPS v9.4 (gawin sa MACHINE / not-LEAD PC):
+   - Trend page: DAPAT may bagong button na "Export to Excel" sa tabi ng Run Trend; disabled hangga't walang Run Trend.
+   - Patakbuhin ang Run Trend, saka pindutin ang Export to Excel (kung hihingi ng permission sa Saving path o Server path, pindutin ang Allow). DAPAT berdeng mensahe: "Na-save ang Excel: <Saving path>\trend\<petsa>\trend_... .xlsx. Naipadala ang picture sa Server: <Server path>\trend\<machine name>\trend_latest.png".
+   - Saving path: DAPAT may trend\<petsa>\trend_<start>_to_<end>_<oras>.xlsx, trend\trend_latest.png at trend\trend_latest.json. Buksan ang Excel: DAPAT 8 sheet (Summary, Points, Mean Offset, Stdev, CV, Slope, Intercept, R2); ang bawat sheet ng value ay may line chart, may UCL/CL/LCL kung naka-set; pula ang value na labas sa limit.
+   - Server path: DAPAT trend\<machine name>\trend_latest.png at trend_latest.json LANG. DAPAT HINDI may Excel sa Server.
+   - Buksan ang picture: DAPAT 6 na chart (2 x 3) na may UCL/CL/LCL, pulang point sa labas ng limit, at marker ng cantilever.
+   - Dashboard ng machine (sariling): DAPAT may TREND block sa tile na may thumbnail ng picture, badge na "UPDATED", at Preview. Pindutin ang Preview o ang thumbnail: DAPAT bumukas ang picture sa bagong tab at DAPAT mawala ang UPDATED.
+   - Dashboard ng LEAD PC: DAPAT may TREND block sa tile ng machine na may thumbnail at "UPDATED". Pindutin ang Preview: DAPAT bumukas ang picture at mawala ang UPDATED. Ang machine na hindi pa nag-export: DAPAT "Wala pang Trend export".
+   - Mag-export ulit sa machine: DAPAT lumabas ulit ang UPDATED sa loob ng ilang segundo (nagre-refresh ang Dashboard kada 5 segundo) sa sarili at sa LEAD PC.
+   - Ang Run Trend lang (walang Export): DAPAT HINDI magbago ang Dashboard at HINDI lumabas ang UPDATED.
+   - Walang Server path o walang permission: DAPAT may Excel pa rin sa Saving path at pulang mensahe na hindi naipadala sa Server.
+   - Hinarang ang bagong tab: DAPAT mensahe sa ilalim ng mga tile na i-allow ang pop-ups.
+   - Master, Calibration, Settings at ibang bahagi ng Dashboard: DAPAT gumagana pa rin at walang pagbabago.
+   - Nasubukan sa Node at jsdom (gawa-gawang folder handle at canvas); nabuksan ang .xlsx sa openpyxl at LibreOffice. Hindi pa sa totoong Chrome/Edge; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.3) ---
 INSTRUCTIONS v9.3 (Trend: bagong page, Trend limits sa Settings)
 1. Backup muna ng buong website folder. Ilagay ang 11 BAGONG file: js/core/trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-settings.js, js/pages/trend.js, js/templates/trend.template.js, pages/trend.html, css/pages/trend.css, css/pages/trend-settings.css. Ipalit ang 9 binagong file: components/sidebar.html, js/templates/sidebar.template.js, js/core/config.js, index.html, pages/settings.html, js/templates/settings.template.js, js/pages/settings.js, README.txt, 00_INSTRUCTIONS.txt.
 2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge. I-refresh nang Ctrl+F5.

@@ -2,6 +2,7 @@
  * FILE    : js/templates/trend.template.js
  * PURPOSE : Kopya ng pages/trend.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v9.4 | 2026-11-22 | kasabay ng pages/trend.html (Export to Excel at 5 bagong script)
  * VERSION : v9.3 | 2026-11-22 | bagong file (kasabay ng pages/trend.html)
  */
 (function () {
@@ -40,8 +41,10 @@
     <div class="action-row">
       <button id="trend-run" class="btn btn-primary" type="button">Run Trend</button>
       <button id="trend-reset-all" class="btn btn-secondary" type="button" disabled>Reset lahat ng Set</button>
+      <button id="trend-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="trend-status" class="status" role="status"></p>
+    <p id="trend-export-status" class="status" role="status"></p>
     <div id="trend-summary" class="result-area"></div>
     <div id="trend-changes"></div>
     <div id="trend-charts" class="trend-chart-grid"></div>
@@ -69,6 +72,11 @@
 <script src="js/core/trend-overrides.js"></script>
 <script src="js/core/trend-reader.js"></script>
 <script src="js/core/trend-chart.js"></script>
+<script src="js/core/xlsx-writer.js"></script>
+<script src="js/core/trend-export-config.js"></script>
+<script src="js/core/trend-sync.js"></script>
+<script src="js/core/trend-image.js"></script>
+<script src="js/core/trend-export.js"></script>
 <script src="js/pages/trend.js"></script>
 `);
 })();

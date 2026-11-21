@@ -2,9 +2,10 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/preview-tab.js, js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
+ * DEPENDS : js/core/preview-tab.js, js/core/trend-tile.js (kung naka-load), js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v9.4 | 2026-11-22 | Trend block sa tile (buildTrendBlock; LEAD PC: item.trend galing sa Server path; Sender: ownTrend galing sa Saving path); ang tile at Preview ay nasa js/core/trend-tile.js
  * VERSION : v8.13 | 2026-11-21 | FAIL ng Master Repeatability: naka-highlight ang tile (dm-tile-alert), chip na Repeatability fail sa buod, at nauuna sa pagkakasunod (hasRepeatabilityFail)
  * VERSION : v8.12 | 2026-11-21 | Master Repeatability sa tile: LEAD PC (renderLead: attachToItems, buildMachineTile) at Sender (ownRepeatability sa readOwnCorrel at renderSender); ang tile at Preview ay nasa js/core/repeatability-tile.js
  * VERSION : v8.10 | 2026-11-21 | LEAD PC: may Preview na rin ang worst slider sa tile ng machine; binabasa ang Master Compare Excel sa <Server path>\\master-compare\\<machine> (loadCompareDetails ay may LEAD PC branch)
@@ -429,12 +430,17 @@
     return box;
   }
 
+  // Block ng Trend (picture, UPDATED, Preview) sa tile; ang gawa ay nasa js/core/trend-tile.js. Walang laman na block kung hindi nai-load ang module.
+  function buildTrendBlock(trendInfo, machineName) {
+    return root.trendTile ? root.trendTile.buildBlock(trendInfo, machineName) : document.createDocumentFragment();
+  }
+
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, buildCorrelBlock(item.correl, nowMs), root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false));
+    tile.append(head, buildCorrelBlock(item.correl, nowMs), root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false), buildTrendBlock(item.trend || null, item.machineName));
     if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs, item.machineName));
 
     const presenceRow = createElementWith('p', 'dm-presence');
@@ -498,6 +504,7 @@
     });
     const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
     await root.repeatabilityTile.attachToItems(snapshot.handle, snapshot.machineItemList);
+    if (root.trendTile) await root.trendTile.attachToItems(snapshot.handle, snapshot.machineItemList);
     if (!query(SEL.section)) return;
     renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length, snapshot.machineItemList.filter(hasRepeatabilityFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
@@ -537,7 +544,7 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence.active);
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true));
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true), buildTrendBlock(ownTrend, settings.machineName));
     // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
     if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs, settings.machineName));
     const isRunning = monitorState.state === MONITOR.STATE.running;
@@ -615,6 +622,7 @@
   let ownCorrel = null;
   let ownCompare = null;
   let ownRepeatability = null;
+  let ownTrend = null;
   let isOwnReading = false;
   async function readOwnCorrel(settings) {
     if (isOwnReading) return;
@@ -622,17 +630,19 @@
     isOwnReading = true;
     try {
       const machineName = typeof settings.machineName === 'string' ? settings.machineName.trim() : '';
-      if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; return; }
+      if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
-      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; return; }
+      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
       const dayName = root.csv.formatDateInput(new Date());
       ownCorrel = await root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName);
       ownCompare = await root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName);
       ownRepeatability = await root.repeatabilityReader.readInSavingPath(rootHandle, dayName);
+      ownTrend = root.trendTile ? await root.trendTile.readOwn(rootHandle) : null;
     } catch (error) {
       ownCorrel = null;
       ownCompare = null;
       ownRepeatability = null;
+      ownTrend = null;
     } finally {
       isOwnReading = false;
     }
