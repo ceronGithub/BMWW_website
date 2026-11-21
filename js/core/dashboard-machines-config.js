@@ -3,6 +3,7 @@
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file (hiwalay sa config.js para hindi magalaw ang existing)
+ * VERSION : v7 | 2026-11-21 | COMPARE (worst slider mula sa <Server path>\compare), RANK.alert, text at class ng alert
  */
 (function () {
   'use strict';
@@ -18,7 +19,9 @@
       unset: { key: 'unset', label: 'NOT SET', note: '', icon: '\u25CB' }
     },
     // Pagkakasunod ng tile: mas mababa ang numero, mas nauuna.
-    RANK: { ongoing: 0, done: 1, idle: 2, stale: 3, noStatus: 4 },
+    RANK: { alert: -1, ongoing: 0, done: 1, idle: 2, stale: 3, noStatus: 4 },
+    // Worst slider galing sa Master Correl ng machine: luma na kapag lampas dito ang edad ng file (ms).
+    COMPARE: { STALE_MS: 86400000, DIGITS: 3, LEVEL_CLASS: { 'level-red': 'dm-alert-red', 'level-yellow': 'dm-alert-yellow' }, LEVEL_TEXT: { 'level-red': 'RED', 'level-yellow': 'YELLOW' } },
     LABEL: {
       presence: { active: 'ACTIVE', stale: 'STALE', noStatus: 'NO STATUS' },
       state: { ongoing: 'ONGOING', done: 'DONE', idle: 'IDLE' },
@@ -58,7 +61,19 @@
       emptyGrid: 'Wala pang naka-register na machine.',
       noFile: 'Walang file pa',
       lastSent: 'Huling naipadala: ',
-      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status' },
+      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider' },
+      compare: {
+        title: 'WORST SLIDER: {barcode}',
+        today: 'Today: Actual {actual} | Master {master} | Diff {diff}',
+        previous: 'Previous: Actual {actual} | Master {master} | Diff {diff} ({change})',
+        noPrevious: 'Walang previous na mapaghahambing.',
+        record: 'Record: ',
+        sent: 'Compare: ',
+        stale: 'LUMA',
+        detailsSummary: 'Mga slider na kailangang tingnan ({n})',
+        columns: ['Barcode', 'Actual (prev > today)', 'Master (prev > today)', 'Diff today', 'Trend'],
+        arrow: ' > '
+      },
       connection: {
         ok: '',
         noFolder: 'Wala pang Server path. Itakda sa Settings.',

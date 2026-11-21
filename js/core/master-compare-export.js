@@ -3,6 +3,7 @@
  * PURPOSE : Ginagawang Excel (.xlsx) ang Compare vs previous at sine-save sa <Saving path>\master-compare\<petsa ng export>\
  * DEPENDS : js/core/config.js, master-export-config.js, master-compare-config.js, xlsx-writer.js, csv-reader.js
  * VERSION : v3.5 | 2026-11-21 | bagong file (sheet Compare: buod at table; sheet Chart: line chart ng diff, Previous at Today)
+ * VERSION : v7 | 2026-11-21 | table ng Compare ay may Actual, Master at Diff ng Previous at Today; dagdag na linya ng Worst slider (level)
  */
 (function () {
   'use strict';
@@ -83,11 +84,15 @@
       [label(text.exportedAt), formatDayTime(exportedAt)],
       []
     ];
-    rows.push([text.columnBarcode, text.columnPrevious, text.columnToday, text.columnChange, text.columnTrend].map((header) => ({ v: header, s: STYLE.header })));
+    rows.push([text.columnBarcode, text.previousActual, text.previousMaster, text.previousDiff, text.todayActual, text.todayMaster, text.todayDiff, text.columnChange, text.columnTrend].map((header) => ({ v: header, s: STYLE.header })));
     sliderList.forEach((slider) => {
       rows.push([
         slider.barcode,
+        numberCell(slider.previousActual),
+        numberCell(slider.previousMaster),
         numberCell(slider.previousDifference, getLevelStyle(slider.previousLevel)),
+        numberCell(slider.currentActual),
+        numberCell(slider.currentMaster),
         numberCell(slider.currentDifference, getLevelStyle(slider.currentLevel)),
         numberCell(slider.change, getChangeStyle(slider.trend)),
         COMPARE.TREND_TEXT[slider.trend]

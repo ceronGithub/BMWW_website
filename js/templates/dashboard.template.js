@@ -5,6 +5,7 @@
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v3 | 2026-11-20 | kopya na ng bagong pages/dashboard.html (Date at oras, kalendaryo, Events)
  * VERSION : v6 | 2026-11-21 | Task 1D: kopya ng bagong pages/dashboard.html (role badge at machine view)
+ * VERSION : v7 | 2026-11-21 | dagdag na script ng master-compare-config at compare-sync
  */
 (function () {
   'use strict';
@@ -73,6 +74,8 @@
 </section>
 <script src="js/pages/dashboard.js"></script>
 <script src="js/pages/dashboard-events.js"></script>
+<script src="js/core/master-compare-config.js"></script>
+<script src="js/core/compare-sync.js"></script>
 <script src="js/core/dashboard-machines-config.js"></script>
 <script src="js/pages/dashboard-machines.js"></script>
 `);

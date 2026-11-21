@@ -22,6 +22,7 @@ v3.1 | 2026-11-21 | tools/file-watcher: script sa Windows na kusang nagbubukas n
 v3.0 | 2026-11-21 | Search Files: Preview kada file sa Result (text, CSV, larawan, PDF)
 v2.9 | 2026-11-21 | Search Files: tanong kung papalitan ang kapangalan (overwrite), send log sa <Saving path>\logs\send-log.txt, alaala ng huling manual destination
 v2.8 | 2026-11-20 | Search Files page: hanap sa CLO1A/CLO1A1 (by name, by range date, latest), resulta na may scroll, Send to (Path o manual input)
+v7 | 2026-11-21 | Compare vs previous: gumagawa lang kapag may na-detect na worst slider (yellow o red; green lahat = walang compare), kusa pagkatapos ng Run Latest Master; mas malinis na screen (banner ng worst slider, table ng Actual/Master/Diff ng Previous at Today, default na kailangang tingnan lang, buod na maikli); Excel ay may Actual at Master; sulat ng <Server path>\compare\<machine name>.json at alert/listahan ng slider sa tile ng machine sa Dashboard ng LEAD PC. Bago: js/core/compare-sync.js. Binago: master-compare-config/-ui/-export, master-compare.js, master-compare.css, master.html at template, dashboard.html at template, dashboard-machines(.js/-config/.css), README
 v6 | 2026-11-21 | Task 1D: Dashboard machine view. Role badge (LEAD PC = MONITOR ONLY, MACHINE = SENDER); sa LEAD PC: naka-pin na tile ng LEAD PC, chips, at tile ng bawat machine na may dot (ACTIVE/STALE/NO STATUS), state (ONGOING/DONE/IDLE), mode, lot at oras; sa machine: sariling status lang. Bagong dashboard-machines-config.js, dashboard-machines.js, dashboard-machines.css; binago: dashboard.html, dashboard.template.js, dashboard.js, README
 v5.2 | 2026-11-21 | Task 1C: monitor ng Data source 1, 2, 3 sa not-LEAD PC (Calibration/Master, Online/Offline; ONGOING at DONE) at sulat ng status sa <Server path>\queue. Bagong js/core/monitor.js; sinisimulan ng app.js. Wala pang UI (1D)
 v5.1 | 2026-11-21 | Task 1B: queue sa Server path (<Server path>\queue\<machine name>.json): sulat ng status ng sariling machine, basa ng lahat, listahan ng machine mula sa server settings. Bagong js/core/queue.js; wala pang UI at wala pang tumatawag (1C monitor, 1D Dashboard)
@@ -71,6 +72,8 @@ js/core/master-shift.js | [v2.12] pinipili ang record ayon sa mode (window.BMWW.
 js/core/xlsx-writer.js  | [v2.10] gumagawa ng .xlsx nang walang library (ZIP store + XML) sa window.BMWW.xlsx
 js/core/correl-export-config.js, js/core/correl-export.js | [v2.16] Export to Excel ng Master Correl (window.BMWW.correlConfig, correlExport)
 js/core/master-compare-config.js, master-compare.js, master-compare-export.js, master-compare-ui.js, css/pages/master-compare.css | [v3.5] Compare vs previous ng Master Correl (window.BMWW.compareConfig, masterCompare, compareExport, compareUi)
+js/core/compare-sync.js | [v7] sulat at basa ng <Server path>\compare\<machine name>.json (worst slider para sa LEAD PC) | window.BMWW.compareSync
+js/core/master-compare-config.js, master-compare.js, master-compare-export.js, master-compare-ui.js, css/pages/master-compare.css, pages/master.html, js/templates/master.template.js | [v7] BINAGO: detect ng worst slider, kusang compare, actual/master, banner, filter, sync; dagdag na script ng compare-sync
 js/core/master-open-latest.js | [v2.14] hinahanap at binubuksan ang pinakabagong na-export na Repeatability .xlsx (window.BMWW.masterOpenLatest)
 js/core/master-export.js| [v2.10] bumubuo ng Excel mula sa resulta ng Master Repeatability at sine-save sa subfolder ng Saving path (window.BMWW.masterExport)
 
@@ -336,6 +339,20 @@ stopTimer()           | dashboard-machines.js | pinipigil ang interval | init, r
 handleGrantClick()    | dashboard-machines.js | ->Promise | humihingi ng permission: LEAD PC = Server folder; machine = monitor.start(true) | click #dm-grant
 init()                | dashboard-machines.js | simula ng view at timer | dashboard.js (init)
 
+[v7] masterCompare.detectWorst(result) | master-compare.js | ->{barcode,index,actual,master,difference,level}|null | worst slider ng run; null kapag walang kumpletong pares o green ang level (mas mababa sa DETECT.MIN_LEVEL) | compareUi.refresh, processRun
+[v7] masterCompare.compareRecords: dagdag sa bawat slider: currentActual, currentMaster, previousActual, previousMaster, masterChanged (magkaiba ang Master ng dalawang record), isAttention (hindi green ngayon o lumalala)
+[v7] compare-sync.js (window.BMWW.compareSync). Sulat ng machine, basa ng LEAD PC:
+toNumber / toText / toIso / pickFrom | compare-sync.js | helper | linis ng numero, text, petsa, at pili sa listahan | normalizeSlider, normalizeStatus
+normalizeSlider(raw) | compare-sync.js | ->object|null | nililinis ang isang slider (barcode, level, trend, actual, master, diff, change) | normalizeStatus
+normalizeStatus(raw) | compare-sync.js | ->object|null | nililinis ang buong status; null kung walang machine name; limit ng slider = SLIDER_MAX | buildPayload, writeCompareStatus, readCompareList
+buildPayload(identity, run, detection, comparison, nowMs) | compare-sync.js | ->status | detection null = detected false (clear); comparison null = walang previous | compareUi.syncToServer
+writeCompareStatus(serverHandle, status) | compare-sync.js | ->Promise<status> | sulat sa <Server path>\compare\<machine name>.json (gawa ng subfolder); itinatapon ang error kapag invalid | sendStatus
+readCompareList(serverHandle) | compare-sync.js | ->Promise<[{status,fileName,modifiedMs}]> | basa ng lahat; walang folder = []; sira o masyadong malaki ay nilalaktawan | dashboard-machines.js (readCompareMap)
+sendStatus(status, shouldRequest) | compare-sync.js | ->Promise<ok|noFolder|noPermission|unsupported|error> | server handle mula sa queue.findServerHandle, tapos sulat; hindi nagtatapon ng error | compareUi.syncToServer
+[v7] master-compare-ui.js: BAGONG function: makeTableBody(rowList) | getSyncText(view) | buildSyncLine(view) | updateSyncLine() | buildBanner(view) | buildNoWorst(view) | buildWorstTable(view) [Actual, Master, Diff ng Previous at Today] | buildStats(comparison) | makeCompareTable(sliderList, worstSlider) [naka-group na Previous/Today] | buildTableSection(view) [filter, default: kailangang tingnan lang] | buildChart(comparison) | renderView() | syncToServer(view, shouldRequest) | finishSync(view, shouldRequest) | processRun(run, shouldRequest) [detect, compare, sync] | onCompare | refresh (kusang nagpoproseso ng bagong run) | init
+[v7] [LUMA] master-compare-ui.js: renderComparison -> pinalitan ng renderView at mga build function; formatSlider (hindi na ginagamit); makeTable ay ginagamit pa sa buildWorstTable
+[v7] dashboard-machines.js dagdag: formatReading(value) | formatSignedReading(value) | readCompareMap(serverHandle) | buildSliderTable(sliderList) | buildAlertBlock(compareItem, nowMs) | hasAlert(item) | getRank: alert muna | renderSummary(summary, alertCount)
+
 C. VARIABLES / CONSTANTS
 CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
@@ -377,6 +394,10 @@ lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nas
 [v6] window.BMWW.dashboardMachinesConfig (js/core/dashboard-machines-config.js): POLL_MS 5000 | ROLE {lead: LEAD PC / MONITOR ONLY, sender: MACHINE / SENDER, unset} | RANK {ongoing 0, done 1, idle 2, stale 3, noStatus 4} (pagkakasunod ng tile) | LABEL {presence, state, mode, source} | CLASS | SELECTOR (lahat ng #dm-*) | TEXT (lahat ng mensahe)
 [v6] Variables sa dashboard-machines.js (let, nasa loob ng IIFE): timerId (interval ng refresh), isBusy (iwas overlap)
 
+[v7] CompareConfig (master-compare-config.js) dagdag: DETECT {MIN_LEVEL 'level-yellow'}, LEVEL_TEXT, SYNC {SUBFOLDER 'compare', FILE_VERSION 1, SLIDER_MAX 200, TEXT_MAX 60, FILE_MAX_BYTES 262144, MAX_FILES 200}, CLASS {banner, sync, filter, tableBox, worstRow, masterChanged, groupStart, ok}, LABEL (columnActual, columnMaster, columnDiff, groupPrevious, groupToday, previousActual, previousMaster, previousDiff, todayActual, todayMaster, todayDiff, worstSlider, rowActual, rowMaster, rowDiff), TEXT (banner, bannerLine, bannerNoPrevious, noWorstTitle, noWorstNote, stat*, showAll, attentionNote, allNote, masterChangedNote, noPreviousNote, sync{pending, ok, cleared, skippedLead, noName, noFolder, noPermission, unsupported, error})
+[v7] DashboardMachinesConfig dagdag: RANK.alert (-1), COMPARE {STALE_MS 86400000, DIGITS 3, LEVEL_CLASS, LEVEL_TEXT}, TEXT.summary.worstSlider, TEXT.compare
+[v7] Variables sa master-compare-ui.js (let, nasa loob ng IIFE): hooks, view ({run, detection, comparison, noPrevious, showAll, sync}) [LUMA: lastCompare, pinalitan ng view], autoRun (run na naproseso na nang kusa)
+
 D. EVENTS
 click       | #menu-button, #overlay, .sidebar-link | app.js | buksan/isara ang menu
 hashchange  | window | app.js | loadPage
@@ -408,6 +429,8 @@ MutationObserver | #sidebar (childList, subtree, class) | effects.js | scheduleI
 
 [v6] click | #dm-grant | dashboard-machines.js | handleGrantClick
 [v6] setInterval (POLL_MS 5000) | window | dashboard-machines.js | refresh (huminto kapag wala na ang #dm-section)
+
+[v7] change | .compare-filter input (checkbox na Ipakita lahat ng slider) | master-compare-ui.js | draw (loob ng buildTableSection)
 
 E. STORAGE / API
 localStorage "bmww.settings" | settings.js, dashboard.js | {machineMode, machineName, [BINURA v2.4: machineNameLocked], [v2.4] folderPaths{server,root,source1,source2,source3}, rootFolderName, sourceFolderName (para sa Dashboard), folderNames{server,root,source1,source2,source3}, savedAt} | cache
@@ -446,6 +469,9 @@ Walang backend/API sa v1 (api/ ay walang laman).
 
 [v6] Walang bagong localStorage key o API. Binabasa lang ng dashboard-machines.js ang "bmww.settings", ang <Server path>\queue at \settings (basa lang), at ang monitor.getState.
 
+[v7] FILE: <Server path>\compare\<machine name>.json | compare-sync.js (writeCompareStatus; sulat ng machine, basa ng LEAD PC) | {version, machineName, machineMode, updatedAt, detected, recordDate, previousDate, todayFile, previousFile, hasPrevious, worst{barcode, level, trend, currentActual, currentMaster, currentDifference, previousActual, previousMaster, previousDifference, change}, summary{worseCount, betterCount, sameCount, unknownCount, rSquaredToday, rSquaredPrevious}, sliderList[hanggang SLIDER_MAX (200); mga slider na hindi green o lumalala]} | detected false = walang worst slider (clear)
+[v7] Walang bagong localStorage key. Binago ang Excel ng Compare: table ay may Prev Actual, Prev Master, Prev Diff, Today Actual, Today Master, Today Diff, Change, Trend.
+
 F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --level-red, --level-yellow-text, --master-warning, --chart-1..8] (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
   --space-1/2/3/4/6/8, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --sidebar-width, --content-max, --touch-size, --font-size-label, --font-main
@@ -454,6 +480,8 @@ F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --le
 [v2.10] master.js -> master-export.js -> xlsx-writer.js, master-export-config.js (ang apat ay naka-link sa pages/master.html at template; walang binago sa index.html)
 
 [v6] css/pages/dashboard-machines.css (naka-scope sa .page-dashboard): --dm-warning (amber ng STALE) | class: dm-role-badge/-lead/-sender/-unset, dm-tile, dm-tile-lead, dm-tile-sender, dm-presence-*, dm-state-*, dm-dot, dm-chip*, dm-grid
+
+[v7] css/pages/master-compare.css (.page-master): .compare-banner (level-red/yellow), .compare-ok, .compare-sync, .compare-filter, .compare-table, .group-start, tr.is-worst, td.master-changed | css/pages/dashboard-machines.css: .dm-alert (+ .dm-alert-red/.dm-alert-yellow), .dm-tile-alert, .dm-chip-alert, .dm-details, .dm-table
 
 G. DEPENDENCY MAP (v2: classic scripts, ayos ng <script defer> sa index.html ang mahalaga)
 index.html -> config.js -> registry.js -> security.js -> storage.js -> router.js -> js/templates/*.js -> app.js
@@ -468,16 +496,19 @@ settings.js -> config, security, storage | dashboard.js -> config, storage (laha
 [v5.1] queue.js -> config, security, storage (toMachineFileName, loadHandle, hasPermission, isFolderAccessSupported) | ayos sa index.html: ... events-store.js, queue.js ... | walang tumatawag pa (1C monitor, 1D Dashboard)
 [v5.2] monitor.js -> config, security, storage, queue, csv | app.js -> monitor.start(false) | ayos sa index.html: ... queue.js, csv-reader.js, master-analysis.js, chart-draw.js, monitor.js, router.js ... app.js
 [v6] dashboard-machines.js -> dashboard-machines-config, config, storage, queue, monitor | dashboard.js -> dashboardMachines.init | dashboard.template.js at pages/dashboard.html ang naglo-load ng dashboard-machines-config.js at dashboard-machines.js (kaya walang binago sa index.html)
+[v7] compare-sync.js -> config, compareConfig, security, storage, queue (findServerHandle) | master-compare-ui.js -> compareSync, masterCompare.detectWorst | dashboard-machines.js -> compareSync.readCompareList | ayos: master-compare-config.js, compare-sync.js ay dapat bago ang master-compare-ui.js (Master page) at bago ang dashboard-machines-config.js (Dashboard); hindi nagbago ang index.html
 [v3.5] master.js -> compareUi (init, refresh) | master-compare-ui.js -> config, storage, csv-reader, chart-draw, master-compare, master-compare-export, master-compare-config, master-export-config | master-compare.js -> csv-reader, master-analysis (analyzeLatest, classifyDeviation, findWorstSlider), master-compare-config | master-compare-export.js -> config, master-export-config, master-compare-config, xlsx-writer, csv-reader | ayos sa pages/master.html at template: ... correl-export.js, master-compare-config.js, master-compare.js, master-compare-export.js, master-compare-ui.js, pages/master.js (walang binago sa index.html)
 
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
 [v6] PAGE: dashboard (machine view) | INPUT: localStorage "bmww.settings" (machineMode, machineName); LEAD PC: <Server path>\queue at \settings via queue.loadSnapshot; machine: monitor.getState | OUTPUT: role badge (#dm-role), tile ng LEAD PC at mga machine (#dm-pinned, #dm-grid), chips (#dm-summary), mensahe (#dm-message) | HTML ID: dm-section, dm-title, dm-updated, dm-summary, dm-pinned, dm-grid, dm-message, dm-grant, dm-role | DEPENDS: dashboardMachinesConfig, storage.readLocalSettings, queue.loadSnapshot, monitor.getState, monitor.start
+[v7] PAGE: dashboard dagdag (worst slider ng machine) | INPUT: <Server path>\compare\*.json via compareSync.readCompareList | OUTPUT: .dm-alert sa tile (WORST SLIDER, actual at master previous/today, listahan ng slider), chip Worst slider, alert tile ang nauuna | DEPENDS: compareSync.readCompareList, compareConfig (TREND_SYMBOL, TREND_TEXT)
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
 PAGE: calibration | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
 PAGE: master [v2.6, v2.10: #range-export; Range Master = Master Repeatability] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
   HTML ID: [v2.10] range-export, [v2.12] range-mode (radio: all / shift), master-source, latest-start, latest-end, latest-run, latest-status, latest-result, range-start, range-end, range-run, range-status, range-result | DEPENDS: storage.loadHandle, hasPermission, readLocalSettings, csv.*, masterAnalysis.*, chart.*, masterExport.* [v2.10: OUTPUT din: .xlsx sa <Saving path>\master-repeatability]
   [v3.5] PAGE: master dagdag (Compare vs previous) | INPUT: huling resulta ng Master Correl (lastLatestRun) at Data source 1 | OUTPUT: table at chart ng previous vs today, .xlsx sa <Saving path>\master-compare | HTML ID: compare-run, compare-export, compare-status, compare-result | DEPENDS: masterCompare.*, compareExport.*, compareUi.*, storage.loadHandle, hasPermission
+  [v7] PAGE: master dagdag | INPUT: lastLatestRun (kusa), worst slider (masterCompare.detectWorst) | OUTPUT: banner, table ng worst slider, buod, table na may filter, chart, linya ng sync, .xlsx, at <Server path>\compare\<machine name>.json | HTML ID: (walang bago) compare-run, compare-export, compare-status, compare-result | DEPENDS: masterCompare.*, compareSync.buildPayload/sendStatus, compareExport.*, storage.readLocalSettings
 PAGE: settings | INPUT: radio, #machine-name, folder picker, full path input (type/paste, [v2.4]), settings.json | OUTPUT: settings.json sa BMWW\settings, localStorage [v5 dagdag] OUTPUT: <Saving path>\settings\<machine name>.json at <Server path>\settings\<machine name>.json | DEPENDS dagdag: storage.toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
   HTML ID: machine-note, machine-name, path-list, save-settings, settings-status (ang row ng bawat path ay gawa ng JS mula sa CONFIG.PATH_LIST)
   DEPENDS: sanitizeInput, pickFolder, hasPermission, saveHandle, loadHandle, writeSettingsFile, readSettingsFile
@@ -576,6 +607,14 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
 2026-11-21 | [v6] Ang tile ng machine na naka-register pero walang queue file ay NO STATUS (hindi pa nagpapadala); ang lampas 2 minutong walang update (CONFIG.QUEUE.STALE_MS) ay STALE.
 2026-11-21 | [v6] Hindi pa ginagamit ng UI ang removeQueueStatus (button na burahin ang lumang machine na HINDI NAKA-REGISTER). TODO kung kailangan.
 2026-11-21 | [v6] Ang Barcode ay wala pa sa tile (blangko pa sa queue; tingnan ang v5.2 issue).
+2026-11-21 | [v7] ASSUMPTION: "na-detect ang worst slider" = ang slider na may pinakamalaking |actual - master| ay yellow o red (diff higit sa 1.5). Kapag green lahat, walang compare. Palitan sa CompareConfig.DETECT.MIN_LEVEL (js/core/master-compare-config.js).
+2026-11-21 | [v7] Kusang tumatakbo ang Compare pagkatapos ng Run Latest Master (Correl). Kapag Run Range lang ang pinindot, walang compare. Ang button na Compare vs previous ay bukas lang kapag may worst slider.
+2026-11-21 | [v7] Ang file sa <Server path>\compare\<machine name>.json ay sinusulat lang ng machine (hindi ng LEAD PC). Kapag nag-Run Latest Master ulit at green na lahat, sinusulat ang detected: false para mabura ang alert sa LEAD PC.
+2026-11-21 | [v7] Ang alert sa LEAD PC ay mananatili hanggang mag-Run Latest Master ulit ang machine. Pagkalipas ng 24 oras (DashboardMachinesConfig.COMPARE.STALE_MS) may tag na LUMA.
+2026-11-21 | [v7] Awtomatikong sulat ay walang hinihinging permission (walang click). Kung walang permission sa Server folder, lalabas ang "LEAD PC: hindi na-update" at pindutin ang Compare vs previous para makahingi ng permission.
+2026-11-21 | [v7] Ang table ay default na "kailangang tingnan" lang (hindi green o lumalala). Ang lahat ng slider ay nasa checkbox at sa Excel. Ang chart ay lahat ng slider.
+2026-11-21 | [v7] Hindi pa nasubukan sa totoong Chrome/Edge at totoong server; jsdom at fake folder handle lang (5 scenario sa Master, 1 sa Dashboard). Ang unang test ay sa device mo.
+2026-11-21 | [v7] Hindi pa ginawa: slider na NEW o MISSING (nasa previous pero wala na ngayon), signed diff (direksyon), at compare vs ilang naunang record.
 
 === [v2.8] SEARCH FILES ===
 FILES: pages/file-search.html (+ kopya js/templates/file-search.template.js) | css/pages/file-search.css | js/pages/file-search.js | js/core/file-scanner.js | js/core/file-sender.js

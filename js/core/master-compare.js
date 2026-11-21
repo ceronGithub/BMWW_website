@@ -3,10 +3,12 @@
  * PURPOSE : Kalkulasyon ng Compare vs previous: hinahanap ang naunang Master Correl record at kinukumpara kada slider (barcode)
  * DEPENDS : js/core/csv-reader.js, master-analysis.js, master-compare-config.js
  * VERSION : v3.5 | 2026-11-21 | bagong file
+ * VERSION : v7 | 2026-11-21 | detectWorst (worst slider na yellow o red lang); may actual at master ang bawat slider; masterChanged at isAttention
  */
 (function () {
   'use strict';
   const root = window.BMWW;
+  const CONFIG = root.CONFIG;
   const COMPARE = root.compareConfig;
   const { csv, masterAnalysis } = root;
 
@@ -40,6 +42,24 @@
     }
   }
 
+  // Hinahanap ang worst slider ng run at tinitingnan kung na-detect: ang level nito ay yellow o red (COMPARE.DETECT.MIN_LEVEL).
+  // Ibinibigay { barcode, index, actual, master, difference, level } o null kung walang worst slider o green lahat.
+  function detectWorst(result) {
+    if (!result || !result.barcodeList) return null;
+    let worst = null;
+    result.barcodeList.forEach((barcode, index) => {
+      const actual = result.actualList[index];
+      const master = result.masterList[index];
+      const difference = getDifference(actual, master);
+      if (difference === null) return;
+      if (!worst || difference > worst.difference) worst = { barcode, index, actual, master, difference };
+    });
+    if (!worst) return null;
+    worst.level = masterAnalysis.classifyDeviation(worst.actual, worst.master);
+    const rank = COMPARE.LEVEL_RANK[worst.level];
+    return rank !== undefined && rank >= COMPARE.LEVEL_RANK[COMPARE.DETECT.MIN_LEVEL] ? worst : null;
+  }
+
   // Trend ng isang slider: lumalala, gumaganda, pareho o walang previous.
   function getTrend(change, currentLevel, previousLevel) {
     if (change === null) return COMPARE.TREND.unknown;
@@ -64,7 +84,14 @@
       const currentLevel = masterAnalysis.classifyDeviation(current.actualList[index], current.masterList[index]);
       const previousLevel = masterAnalysis.classifyDeviation(previousActual, previousMaster);
       const change = currentDifference !== null && previousDifference !== null ? roundValue(currentDifference - previousDifference) : null;
-      return { barcode, currentDifference, previousDifference, change, currentLevel, previousLevel, trend: getTrend(change, currentLevel, previousLevel) };
+      const currentActual = current.actualList[index];
+      const currentMaster = current.masterList[index];
+      const trend = getTrend(change, currentLevel, previousLevel);
+      const greenLevel = CONFIG.MASTER.DEVIATION.LEVEL.green;
+      // masterChanged: magkaiba ang Master ng dalawang record. isAttention: hindi green ngayon o lumalala (para sa malinis na table).
+      const masterChanged = previousMaster !== null && currentMaster !== null && roundValue(Math.abs(currentMaster - previousMaster)) > 0;
+      const isAttention = trend === COMPARE.TREND.worse || (currentLevel !== '' && currentLevel !== greenLevel);
+      return { barcode, currentActual, currentMaster, previousActual, previousMaster, currentDifference, previousDifference, change, currentLevel, previousLevel, trend, masterChanged, isAttention };
     });
     const countOf = (trend) => sliderList.filter((slider) => slider.trend === trend).length;
     let biggestIncrease = null;
@@ -82,5 +109,5 @@
     return { current, previous, sliderList, summary };
   }
 
-  root.masterCompare = Object.freeze({ findPrevious, compareRecords, getTrend });
+  root.masterCompare = Object.freeze({ findPrevious, compareRecords, getTrend, detectWorst });
 })();

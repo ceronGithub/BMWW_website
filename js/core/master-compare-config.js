@@ -3,6 +3,7 @@
  * PURPOSE : Constants ng Compare vs previous (Master Correl ngayon laban sa nakaraan): lookback, threshold, subfolder, selector, kulay, text
  * DEPENDS : js/core/config.js, js/core/master-export-config.js
  * VERSION : v3.5 | 2026-11-21 | bagong file
+ * VERSION : v7 | 2026-11-21 | detect ng worst slider (DETECT), sync sa Server path (SYNC), CLASS, bagong LABEL at TEXT (mas malinis na screen)
  */
 (function () {
   'use strict';
@@ -17,6 +18,13 @@
     DISPLAY_DIGITS: 3,
     // Ranggo ng level; mas mataas = mas malala.
     LEVEL_RANK: { 'level-green': 0, 'level-yellow': 1, 'level-red': 2 },
+    // Worst slider ay "na-detect" kapag ang level nito ay ganito o mas malala (yellow o red). Green lahat = walang compare.
+    DETECT: { MIN_LEVEL: 'level-yellow' },
+    LEVEL_TEXT: { 'level-green': 'GREEN', 'level-yellow': 'YELLOW', 'level-red': 'RED' },
+    // File sa Server path para sa LEAD PC: <Server path>\compare\<machine name>.json (isang file kada machine).
+    SYNC: { SUBFOLDER: 'compare', FILE_VERSION: 1, SLIDER_MAX: 200, TEXT_MAX: 60, FILE_MAX_BYTES: 262144, MAX_FILES: 200 },
+    // Class ng mga elementong ginagawa ng code (hindi id).
+    CLASS: { banner: 'compare-banner', sync: 'compare-sync', filter: 'compare-filter', tableBox: 'compare-table-box', worstRow: 'is-worst', masterChanged: 'master-changed', groupStart: 'group-start', ok: 'compare-ok' },
     TREND: { worse: 'worse', better: 'better', same: 'same', unknown: 'unknown' },
     TREND_CLASS: { worse: 'trend-worse', better: 'trend-better', same: 'trend-same', unknown: 'trend-unknown' },
     TREND_SYMBOL: { worse: '\u25B2', better: '\u25BC', same: '=', unknown: '-' },
@@ -38,11 +46,36 @@
       statusToday: 'Status (today)', statusPrevious: 'Status (previous)', worstToday: 'Worst slider (today)', worstPrevious: 'Worst slider (previous)',
       biggestIncrease: 'Biggest increase', worseCount: 'Lumalala', betterCount: 'Gumaganda', sameCount: 'Pareho', unknownCount: 'Walang previous',
       status: 'Status', dataSource: 'Data source', exportedAt: 'Exported', rule: 'Rule',
-      columnBarcode: 'Barcode', columnPrevious: 'Previous diff', columnToday: 'Today diff', columnChange: 'Change', columnTrend: 'Trend'
+      columnBarcode: 'Barcode', columnPrevious: 'Previous diff', columnToday: 'Today diff', columnChange: 'Change', columnTrend: 'Trend',
+      columnActual: 'Actual', columnMaster: 'Master', columnDiff: 'Diff', groupPrevious: 'Previous', groupToday: 'Today',
+      previousActual: 'Prev Actual', previousMaster: 'Prev Master', previousDiff: 'Prev Diff', todayActual: 'Today Actual', todayMaster: 'Today Master', todayDiff: 'Today Diff',
+      worstSlider: 'Worst slider', level: 'Level', rowActual: 'Actual', rowMaster: 'Master', rowDiff: 'Diff (|Actual - Master|)'
     },
     TREND_TEXT: { worse: 'Lumalala', better: 'Gumaganda', same: 'Pareho', unknown: 'Walang previous' },
     TEXT: {
       working: 'Hinahanap ang nakaraang record...',
+      banner: 'WORST SLIDER: {barcode}',
+      bannerLine: 'Diff ngayon {today} ({level}). Previous: {previous}. {trend}',
+      bannerNoPrevious: 'Diff ngayon {today} ({level}). Walang previous na mapaghahambing.',
+      noWorstTitle: 'Walang worst slider na na-detect',
+      noWorstNote: 'Lahat ng slider ay green (diff {max} o mas mababa), kaya hindi na gagawa ng Compare vs previous.',
+      statRSquared: 'R Square', statStatus: 'Status', statCounts: 'Lumalala / Gumaganda / Pareho', statPrevious: 'Previous record',
+      showAll: 'Ipakita lahat ng slider ({total})',
+      attentionNote: 'Ipinapakita ang {shown} sa {total} slider: hindi green o lumalala.',
+      allNote: 'Ipinapakita ang lahat ng {total} slider.',
+      masterChangedNote: '* Nagbago ang Master mula sa previous record, kaya ang Diff ay laban sa sarili nitong Master.',
+      noPreviousNote: 'Walang naunang record na mapaghahambing, kaya ang worst slider lang ngayon ang ipinapakita.',
+      sync: {
+        pending: 'LEAD PC: ina-update...',
+        ok: 'LEAD PC: na-update ({time})',
+        cleared: 'LEAD PC: na-update, walang worst slider ({time})',
+        skippedLead: 'LEAD PC: hindi isinulat sa Server (ito mismo ang LEAD PC).',
+        noName: 'LEAD PC: hindi na-update, walang machine name sa Settings.',
+        noFolder: 'LEAD PC: hindi na-update, wala pang Server path sa Settings.',
+        noPermission: 'LEAD PC: hindi na-update, kailangan ng pahintulot sa Server folder. Pindutin ang Compare vs previous para subukan ulit.',
+        unsupported: 'LEAD PC: hindi na-update, hindi suportado ng browser ang folder access (gamitin ang Chrome o Edge).',
+        error: 'LEAD PC: hindi na-update. Pindutin ang Compare vs previous para subukan ulit.'
+      },
       progress: 'Binabasa: ',
       resultTitle: 'Compare vs previous',
       chartTitle: 'Diff vs Master: Previous at Today',

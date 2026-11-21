@@ -1,8 +1,9 @@
 /*
  * FILE    : js/core/master-compare-ui.js
- * PURPOSE : Screen ng Compare vs previous sa Master page: button, table, chart at Export to Excel (window.BMWW.compareUi)
- * DEPENDS : js/core/config.js, storage.js, csv-reader.js, chart-draw.js, master-compare.js, master-compare-export.js, master-compare-config.js
+ * PURPOSE : Screen ng Compare vs previous sa Master page: kusang gumagawa kapag may worst slider (yellow o red), table na may actual at master, chart, Export to Excel, at sulat ng status sa Server path para sa LEAD PC (window.BMWW.compareUi)
+ * DEPENDS : js/core/config.js, storage.js, csv-reader.js, chart-draw.js, master-compare.js, master-compare-export.js, master-compare-config.js, compare-sync.js
  * VERSION : v3.5 | 2026-11-21 | bagong file; tinatawag ng js/pages/master.js (init at refresh)
+ * VERSION : v7 | 2026-11-21 | kusang compare kapag may worst slider lang; banner, Previous vs Today table ng actual/master/diff, filter (kailangang tingnan lang), sync sa Server path
  */
 (function () {
   'use strict';
@@ -10,14 +11,17 @@
   const CONFIG = root.CONFIG;
   const MASTER = CONFIG.MASTER;
   const COMPARE = root.compareConfig;
+  const CLASS = COMPARE.CLASS;
   const EXPORT = root.exportConfig;
   const TEXT = CONFIG.TEXT.master;
-  const { storage, csv, chart, masterCompare, compareExport } = root;
+  const { storage, csv, chart, masterCompare, compareExport, compareSync } = root;
 
   // hooks galing sa master.js: getLatestRun, isBusy, setBusy, getReadyHandle, getReadErrorMessage, getMachineName
   let hooks = null;
-  // Huling compare { run, comparison }; nananatili habang bukas ang website (para sa pagbalik sa Master page).
-  let lastCompare = null;
+  // Huling view { run, detection, comparison, noPrevious, showAll, sync }; nananatili habang bukas ang website (para sa pagbalik sa Master page).
+  let view = null;
+  // Ang run na sinimulan nang iproseso nang kusa (para hindi maulit).
+  let autoRun = null;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -69,11 +73,6 @@
     return (value > 0 ? '+' : '') + value.toFixed(COMPARE.DISPLAY_DIGITS);
   }
 
-  // Text ng slider: <barcode> (<diff>) o '-'.
-  function formatSlider(slider) {
-    return slider ? slider.barcode + ' (' + formatNumber(slider.difference) + ')' : '-';
-  }
-
   // Listahan ng label at value.
   function makeStatList(entryList) {
     const list = makeElement('div', 'stat-list');
@@ -93,18 +92,25 @@
     const headRow = document.createElement('tr');
     headerList.forEach((header) => headRow.append(makeElement('th', '', header)));
     head.append(headRow);
+    table.append(head, makeTableBody(rowList));
+    wrap.append(table);
+    return wrap;
+  }
+
+  // Body ng table mula sa listahan ng row. Ang row ay listahan ng cell, o { cells, className }.
+  function makeTableBody(rowList) {
     const body = document.createElement('tbody');
-    rowList.forEach((cellList) => {
+    rowList.forEach((rowItem) => {
+      const cellList = Array.isArray(rowItem) ? rowItem : rowItem.cells;
       const row = document.createElement('tr');
+      if (!Array.isArray(rowItem) && rowItem.className) row.className = rowItem.className;
       cellList.forEach((cell) => {
         const isObject = typeof cell === 'object';
         row.append(makeElement('td', isObject ? cell.className : '', isObject ? cell.text : cell));
       });
       body.append(row);
     });
-    table.append(head, body);
-    wrap.append(table);
-    return wrap;
+    return body;
   }
 
   // Ilang araw ang pagitan ng dalawang petsa (ayon sa kalendaryo).
@@ -114,41 +120,155 @@
     return Math.round((later - earlier) / 86400000);
   }
 
-  // Nagre-render ng resulta ng compare.
-  function renderComparison(comparison) {
+  // Text ng sync sa LEAD PC ayon sa lagay.
+  function getSyncText(current) {
+    const sync = current.sync;
+    const text = COMPARE.TEXT.sync;
+    if (!sync || sync.key === 'pending') return text.pending;
+    if (sync.key === 'ok') return (current.detection ? text.ok : text.cleared).replace('{time}', sync.time);
+    return text[sync.key] || text.error;
+  }
+
+  // Linya ng sync sa LEAD PC (ina-update pagkatapos ng sulat sa server).
+  function buildSyncLine(current) {
+    return makeElement('p', 'result-note ' + CLASS.sync, getSyncText(current));
+  }
+
+  function updateSyncLine() {
     const area = query('result');
-    const { current, previous, sliderList, summary } = comparison;
+    const line = area ? area.querySelector('.' + CLASS.sync) : null;
+    if (line && view) line.textContent = getSyncText(view);
+  }
+
+  // Banner ng worst slider: malaki at may kulay ng level.
+  function buildBanner(current) {
+    const detection = current.detection;
     const text = COMPARE.TEXT;
-    const label = COMPARE.LABEL;
-    const hasWorse = summary.worseCount > 0;
-    const head = makeElement('div', 'result-head');
-    head.append(makeElement('span', 'status-badge ' + (hasWorse ? 'is-fail' : 'is-pass'), hasWorse ? text.verdictWorse.replace('{n}', String(summary.worseCount)) : text.verdictOk));
-    const biggest = summary.biggestIncrease;
-    area.replaceChildren(makeElement('h3', 'compare-title', text.resultTitle), head, makeStatList([
-      [label.todayDate, csv.formatDateTime(current.recordDate, true)],
-      [label.previousDate, csv.formatDateTime(previous.recordDate, true)],
-      [TEXT.rSquared, previous.regression.rSquared.toFixed(4) + COMPARE.TEXT.arrow + current.regression.rSquared.toFixed(4)],
-      [label.rSquaredChange, (summary.rSquaredChange > 0 ? '+' : '') + summary.rSquaredChange.toFixed(4)],
-      [label.status, previous.status + text.arrow + current.status],
-      [label.worstToday, formatSlider(summary.currentWorst)],
-      [label.worstPrevious, formatSlider(summary.previousWorst)],
-      [label.biggestIncrease, biggest ? biggest.barcode + ' (' + formatSigned(biggest.change) + ')' : text.noBiggest],
-      [label.worseCount + ' / ' + label.betterCount + ' / ' + label.sameCount, summary.worseCount + ' / ' + summary.betterCount + ' / ' + summary.sameCount],
-      [label.previousFile, previous.fileName]
-    ]));
-    if (getDayGap(current.recordDate, previous.recordDate) > 1) {
-      area.append(makeElement('p', 'result-note', text.gapNote.replace('{date}', csv.formatDateInput(previous.recordDate))));
+    const banner = makeElement('div', CLASS.banner + ' ' + detection.level);
+    banner.append(makeElement('h3', 'compare-banner-title', text.banner.replace('{barcode}', detection.barcode)));
+    const slider = current.comparison ? current.comparison.sliderList[detection.index] : null;
+    const levelText = COMPARE.LEVEL_TEXT[detection.level] || '';
+    if (slider && slider.previousDifference !== null) {
+      const change = slider.change === null ? '' : ' (' + formatSigned(slider.change) + ')';
+      const trend = slider.trend === COMPARE.TREND.unknown ? '' : COMPARE.TREND_SYMBOL[slider.trend] + ' ' + COMPARE.TREND_TEXT[slider.trend];
+      banner.append(makeElement('p', 'compare-banner-line', text.bannerLine.replace('{today}', formatNumber(detection.difference)).replace('{level}', levelText).replace('{previous}', formatNumber(slider.previousDifference) + change).replace('{trend}', trend)));
+    } else {
+      banner.append(makeElement('p', 'compare-banner-line', text.bannerNoPrevious.replace('{today}', formatNumber(detection.difference)).replace('{level}', levelText)));
     }
-    const table = makeTable([label.columnBarcode, label.columnPrevious, label.columnToday, label.columnChange, label.columnTrend], sliderList.map((slider) => [
-      slider.barcode,
-      { text: formatNumber(slider.previousDifference), className: slider.previousLevel },
-      { text: formatNumber(slider.currentDifference), className: slider.currentLevel },
-      { text: formatSigned(slider.change), className: COMPARE.TREND_CLASS[slider.trend] },
-      { text: COMPARE.TREND_SYMBOL[slider.trend] + ' ' + COMPARE.TREND_TEXT[slider.trend], className: COMPARE.TREND_CLASS[slider.trend] }
-    ]));
-    area.append(table);
+    return banner;
+  }
+
+  // Card na walang worst slider (lahat green).
+  function buildNoWorst(current) {
+    const box = makeElement('div', CLASS.ok);
+    box.append(makeElement('h3', 'compare-banner-title', COMPARE.TEXT.noWorstTitle));
+    box.append(makeElement('p', 'compare-banner-line', COMPARE.TEXT.noWorstNote.replace('{max}', String(MASTER.DEVIATION.GREEN_MAX))));
+    box.append(buildSyncLine(current));
+    return box;
+  }
+
+  // Maliit na table ng worst slider: Actual, Master at Diff ng Previous at Today.
+  function buildWorstTable(current) {
+    const { comparison, detection } = current;
+    const label = COMPARE.LABEL;
+    const slider = comparison.sliderList[detection.index];
+    const masterMark = slider.masterChanged ? ' *' : '';
+    return makeTable(
+      [label.worstSlider + ': ' + detection.barcode, label.groupPrevious + ' (' + csv.formatDateInput(comparison.previous.recordDate) + ')', label.groupToday + ' (' + csv.formatDateInput(comparison.current.recordDate) + ')'],
+      [
+        [label.rowActual, formatNumber(slider.previousActual), formatNumber(slider.currentActual)],
+        [label.rowMaster, formatNumber(slider.previousMaster), formatNumber(slider.currentMaster) + masterMark],
+        [label.rowDiff, { text: formatNumber(slider.previousDifference), className: slider.previousLevel }, { text: formatNumber(slider.currentDifference), className: slider.currentLevel }]
+      ]
+    );
+  }
+
+  // Maikling buod: R Square, Status, bilang ng trend at previous record.
+  function buildStats(comparison) {
+    const { current, previous, summary } = comparison;
+    const text = COMPARE.TEXT;
+    const rSquaredChange = (summary.rSquaredChange > 0 ? '+' : '') + summary.rSquaredChange.toFixed(4);
+    return makeStatList([
+      [text.statRSquared, previous.regression.rSquared.toFixed(4) + text.arrow + current.regression.rSquared.toFixed(4) + ' (' + rSquaredChange + ')'],
+      [text.statStatus, previous.status + text.arrow + current.status],
+      [text.statCounts, summary.worseCount + ' / ' + summary.betterCount + ' / ' + summary.sameCount],
+      [text.statPrevious, csv.formatDateTime(previous.recordDate, true) + ' | ' + previous.fileName]
+    ]);
+  }
+
+  // Table ng mga slider: Previous (Actual, Master, Diff) at Today (Actual, Master, Diff), Change, Trend.
+  function makeCompareTable(sliderList, worstSlider) {
+    const label = COMPARE.LABEL;
+    const wrap = makeElement('div', 'table-wrap');
+    const table = makeElement('table', 'result-table compare-table');
+    const head = document.createElement('thead');
+    const topRow = document.createElement('tr');
+    const subRow = document.createElement('tr');
+    const spanHeader = (text, rows, columns, className) => {
+      const cell = makeElement('th', className || '', text);
+      if (rows) cell.setAttribute('rowspan', String(rows));
+      if (columns) cell.setAttribute('colspan', String(columns));
+      return cell;
+    };
+    topRow.append(spanHeader(label.columnBarcode, 2, 0), spanHeader(label.groupPrevious, 0, 3, CLASS.groupStart), spanHeader(label.groupToday, 0, 3, CLASS.groupStart), spanHeader(label.columnChange, 2, 0, CLASS.groupStart), spanHeader(label.columnTrend, 2, 0));
+    [label.columnActual, label.columnMaster, label.columnDiff, label.columnActual, label.columnMaster, label.columnDiff].forEach((text, index) => {
+      subRow.append(makeElement('th', index % 3 === 0 ? CLASS.groupStart : '', text));
+    });
+    head.append(topRow, subRow);
+    const rowList = sliderList.map((slider) => {
+      const trendClass = COMPARE.TREND_CLASS[slider.trend];
+      const masterClass = slider.masterChanged ? CLASS.masterChanged : '';
+      return {
+        className: slider === worstSlider ? CLASS.worstRow : '',
+        cells: [
+          slider.barcode,
+          { text: formatNumber(slider.previousActual), className: CLASS.groupStart },
+          formatNumber(slider.previousMaster),
+          { text: formatNumber(slider.previousDifference), className: slider.previousLevel },
+          { text: formatNumber(slider.currentActual), className: CLASS.groupStart },
+          { text: formatNumber(slider.currentMaster) + (slider.masterChanged ? ' *' : ''), className: masterClass },
+          { text: formatNumber(slider.currentDifference), className: slider.currentLevel },
+          { text: formatSigned(slider.change), className: trendClass + ' ' + CLASS.groupStart },
+          { text: COMPARE.TREND_SYMBOL[slider.trend] + ' ' + COMPARE.TREND_TEXT[slider.trend], className: trendClass }
+        ]
+      };
+    });
+    table.append(head, makeTableBody(rowList));
+    wrap.append(table);
+    return wrap;
+  }
+
+  // Filter at table: default ay ang kailangang tingnan lang (hindi green o lumalala), pinakamalaki ang diff sa taas.
+  function buildTableSection(current) {
+    const { comparison, detection } = current;
+    const text = COMPARE.TEXT;
+    const sliderList = comparison.sliderList;
+    const worstSlider = sliderList[detection.index];
+    const box = makeElement('div', CLASS.tableBox);
+    const filter = makeElement('label', CLASS.filter);
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = Boolean(current.showAll);
+    filter.append(checkbox, makeElement('span', '', text.showAll.replace('{total}', String(sliderList.length))));
+    const tableArea = makeElement('div', '');
+    const draw = () => {
+      const showAll = checkbox.checked;
+      current.showAll = showAll;
+      const shown = showAll ? sliderList : sliderList.filter((slider) => slider.isAttention).sort((first, second) => (second.currentDifference || 0) - (first.currentDifference || 0));
+      const note = showAll ? text.allNote.replace('{total}', String(sliderList.length)) : text.attentionNote.replace('{shown}', String(shown.length)).replace('{total}', String(sliderList.length));
+      tableArea.replaceChildren(makeCompareTable(shown, worstSlider), makeElement('p', 'result-note', note));
+    };
+    checkbox.addEventListener('change', draw);
+    draw();
+    box.append(filter, tableArea);
+    return box;
+  }
+
+  // Chart ng Previous at Today (diff ng lahat ng slider).
+  function buildChart(comparison) {
+    const { current, previous, sliderList } = comparison;
+    const text = COMPARE.TEXT;
     const chartBox = makeElement('div', 'chart-box chart-box-wide');
-    area.append(chartBox);
     const machineName = hooks.getMachineName();
     chart.drawLines(chartBox, {
       title: (machineName ? machineName + ' ' : '') + text.chartTitle,
@@ -159,55 +279,121 @@
       ],
       hideLegend: false
     });
-    area.append(makeElement('p', 'result-note', text.ruleNote.replace('{min}', String(COMPARE.WORSEN_MIN))));
+    return chartBox;
   }
 
-  // Ina-update ang button: bukas ang Compare kapag may Master Correl na resulta; bukas ang Export kapag may compare. Nililinis ang lumang compare kapag nagbago ang Master Correl.
+  // Ina-draw ang kasalukuyang view sa result area.
+  function renderView() {
+    const area = query('result');
+    if (!area) return;
+    if (!view) { area.replaceChildren(); return; }
+    if (!view.detection) { area.replaceChildren(buildNoWorst(view)); return; }
+    const nodeList = [buildBanner(view), buildSyncLine(view)];
+    if (view.comparison) {
+      const { comparison } = view;
+      nodeList.push(buildWorstTable(view), buildStats(comparison));
+      if (getDayGap(comparison.current.recordDate, comparison.previous.recordDate) > 1) {
+        nodeList.push(makeElement('p', 'result-note', COMPARE.TEXT.gapNote.replace('{date}', csv.formatDateInput(comparison.previous.recordDate))));
+      }
+      nodeList.push(buildTableSection(view), buildChart(comparison));
+      if (comparison.sliderList.some((slider) => slider.masterChanged)) nodeList.push(makeElement('p', 'result-note', COMPARE.TEXT.masterChangedNote));
+      nodeList.push(makeElement('p', 'result-note', COMPARE.TEXT.ruleNote.replace('{min}', String(COMPARE.WORSEN_MIN))));
+    } else if (view.noPrevious) {
+      nodeList.push(makeElement('p', 'result-note', COMPARE.TEXT.noPreviousNote));
+    }
+    area.replaceChildren(...nodeList);
+  }
+
+  // Sumusulat sa Server path para ma-update ang LEAD PC. Ibinibigay { key, time }.
+  async function syncToServer(current, shouldRequest) {
+    const settings = storage.readLocalSettings();
+    const machineName = hooks.getMachineName();
+    if (settings.machineMode === CONFIG.MACHINE_MODE.LEAD_PC) return { key: 'skippedLead', time: '' };
+    if (!machineName) return { key: 'noName', time: '' };
+    const identity = { machineName, machineMode: settings.machineMode };
+    const payload = compareSync.buildPayload(identity, current.run, current.detection, current.comparison, Date.now());
+    const key = await compareSync.sendStatus(payload, shouldRequest);
+    return { key, time: new Date().toLocaleTimeString() };
+  }
+
+  // Sync pagkatapos ng compare; ina-update ang linya kung ito pa rin ang view.
+  async function finishSync(current, shouldRequest) {
+    current.sync = await syncToServer(current, shouldRequest);
+    if (view === current) updateSyncLine();
+  }
+
+  // Pinoproseso ang run: tinitingnan ang worst slider; kung meron, gumagawa ng compare; sinusulat ang status sa Server path.
+  // shouldRequest true lang kapag galing sa click (para makahingi ng permission sa Server folder).
+  async function processRun(run, shouldRequest) {
+    const detection = masterCompare.detectWorst(run.result);
+    const current = { run, detection, comparison: null, noPrevious: false, showAll: false, sync: { key: 'pending', time: '' } };
+    view = current;
+    if (!detection) {
+      setStatus('', '');
+      renderView();
+      await finishSync(current, shouldRequest);
+      return;
+    }
+    hooks.setBusy(true);
+    try {
+      setStatus(COMPARE.TEXT.working, 'info');
+      try {
+        const handle = await hooks.getReadyHandle();
+        const previous = await masterCompare.findPrevious(handle, run.range.startDate, (index, total, name) => setStatus(COMPARE.TEXT.progress + index + '/' + total + ' ' + name, 'info'));
+        current.comparison = masterCompare.compareRecords(run.result, previous);
+        setStatus('', '');
+      } catch (error) {
+        current.comparison = null;
+        current.noPrevious = Boolean(error) && error.code === 'noPreviousRecord';
+        setStatus(getReadMessage(error), 'error');
+      }
+      if (view === current) renderView();
+      await finishSync(current, shouldRequest);
+      const resultArea = query('result');
+      if (resultArea && resultArea.scrollIntoView) resultArea.scrollIntoView({ block: 'nearest' });
+    } finally {
+      hooks.setBusy(false);
+    }
+  }
+
+  // Ina-update ang button: bukas ang Compare kapag may worst slider; bukas ang Export kapag may compare. Kusang pinoproseso ang bagong Master Correl run.
   function refresh() {
     if (!hooks) return;
     const runButton = query('runButton');
     const exportButton = query('exportButton');
     if (!runButton || !exportButton) return;
     const run = hooks.getLatestRun();
-    if (lastCompare && lastCompare.run !== run) {
-      lastCompare = null;
-      query('result').replaceChildren();
+    if (view && view.run !== run) {
+      view = null;
+      renderView();
       setStatus('', '');
     }
-    runButton.disabled = hooks.isBusy() || !run;
-    exportButton.disabled = hooks.isBusy() || !lastCompare;
+    const detection = run ? masterCompare.detectWorst(run.result) : null;
+    runButton.disabled = hooks.isBusy() || !detection;
+    exportButton.disabled = hooks.isBusy() || !(view && view.comparison);
+    if (run && autoRun !== run && !hooks.isBusy()) {
+      autoRun = run;
+      processRun(run, false).catch(() => setStatus(COMPARE.TEXT.error.exportFail, 'error'));
+    }
   }
 
-  // Click ng Compare vs previous.
+  // Click ng Compare vs previous (ulitin; may click kaya puwedeng humingi ng permission).
   async function onCompare() {
     if (hooks.isBusy()) return;
     const run = hooks.getLatestRun();
     if (!run) { setStatus(COMPARE.TEXT.error.noCurrent, 'error'); return; }
-    hooks.setBusy(true);
+    autoRun = run;
     try {
-      setStatus(COMPARE.TEXT.working, 'info');
-      const handle = await hooks.getReadyHandle();
-      const previous = await masterCompare.findPrevious(handle, run.range.startDate, (index, total, name) => setStatus(COMPARE.TEXT.progress + index + '/' + total + ' ' + name, 'info'));
-      const comparison = masterCompare.compareRecords(run.result, previous);
-      lastCompare = { run, comparison };
-      renderComparison(comparison);
-      setStatus('', '');
-      const resultArea = query('result');
-      if (resultArea && resultArea.scrollIntoView) resultArea.scrollIntoView({ block: 'nearest' });
+      await processRun(run, true);
     } catch (error) {
-      lastCompare = null;
-      const resultArea = query('result');
-      if (resultArea) resultArea.replaceChildren();
       setStatus(getReadMessage(error), 'error');
-    } finally {
-      hooks.setBusy(false);
     }
   }
 
   // Click ng Export compare to Excel: sine-save sa <Saving path>/master-compare/<petsa>/.
   async function onExport() {
     if (hooks.isBusy()) return;
-    if (!lastCompare) { setStatus(COMPARE.TEXT.error.noResult, 'error'); return; }
+    if (!view || !view.comparison) { setStatus(COMPARE.TEXT.error.noResult, 'error'); return; }
     hooks.setBusy(true);
     try {
       setStatus(COMPARE.TEXT.exporting, 'info');
@@ -218,7 +404,7 @@
       const settings = storage.readLocalSettings();
       const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
       const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
-      const saved = await compareExport.exportCompare(lastCompare.comparison, rootHandle, sourceText, hooks.getMachineName());
+      const saved = await compareExport.exportCompare(view.comparison, rootHandle, sourceText, hooks.getMachineName());
       const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
       const separator = EXPORT.PATH_SEPARATOR;
       setStatus(COMPARE.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
@@ -232,10 +418,10 @@
   // Init, tinatawag ng master.js sa bawat bukas ng Master page (bagong DOM kada bukas).
   function init(nextHooks) {
     hooks = nextHooks;
-    if (lastCompare && lastCompare.run === hooks.getLatestRun()) renderComparison(lastCompare.comparison);
-    else lastCompare = null;
+    if (view && view.run !== hooks.getLatestRun()) view = null;
     query('runButton').addEventListener('click', onCompare);
     query('exportButton').addEventListener('click', onExport);
+    renderView();
     refresh();
   }
 

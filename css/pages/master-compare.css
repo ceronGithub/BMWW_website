@@ -3,6 +3,7 @@
  * PURPOSE : Style ng Compare vs previous sa Master page (naka-scope sa .page-master)
  * DEPENDS : css/base.css, css/pages/master.css (variables --level-green, --level-red at iba pa)
  * VERSION : v3.5 | 2026-11-21 | bagong file
+ * VERSION : v7 | 2026-11-21 | banner, filter at table na may Previous at Today
  */
 .page-master .compare-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .page-master .compare-title { margin: 0 0 var(--space-3); font-size: 1.125rem; }
@@ -12,3 +13,20 @@
 .page-master .result-table td.trend-better { background: var(--level-green); color: #fff; font-weight: 700; }
 .page-master .result-table td.trend-same { color: var(--color-text); }
 .page-master .result-table td.trend-unknown { color: var(--color-muted); }
+
+/* v7: banner ng worst slider, filter, table na may Previous at Today */
+.page-master .compare-banner { margin-bottom: var(--space-3); padding: var(--space-4); border-radius: var(--radius); color: #fff; background: var(--level-red); }
+.page-master .compare-banner.level-yellow { color: var(--level-yellow-text); background: var(--level-yellow); }
+.page-master .compare-banner.level-green { background: var(--level-green); }
+.page-master .compare-banner-title { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.page-master .compare-banner-line { margin: var(--space-1) 0 0; font-weight: 600; }
+.page-master .compare-ok { margin-bottom: var(--space-3); padding: var(--space-4); color: #fff; background: var(--level-green); border-radius: var(--radius); }
+.page-master .compare-ok .compare-sync { color: #fff; }
+.page-master .compare-sync { margin: 0 0 var(--space-3); }
+.page-master .compare-filter { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; margin: var(--space-2) 0; cursor: pointer; }
+.page-master .compare-filter input { width: 1.25rem; height: 1.25rem; }
+.page-master .compare-table th, .page-master .compare-table td { text-align: center; }
+.page-master .compare-table th:first-child, .page-master .compare-table td:first-child { text-align: left; }
+.page-master .compare-table .group-start { border-left: 2px solid var(--color-border); }
+.page-master .compare-table tr.is-worst td:first-child { font-weight: 800; box-shadow: inset 4px 0 0 var(--level-red); }
+.page-master .compare-table td.master-changed { text-decoration: underline dotted; }

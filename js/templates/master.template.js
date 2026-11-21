@@ -12,6 +12,7 @@
  * VERSION : v2.15 | 2026-11-21 | Master Correl: editable na ang Start date at End date
  * VERSION : v2.16 | 2026-11-21 | Master Correl: Open latest correl file at Export to Excel; script ng correl-export
  * VERSION : v3.5 | 2026-11-21 | kasabay ng pages/master.html (Compare vs previous)
+ * VERSION : v7 | 2026-11-21 | dagdag na script ng compare-sync (kopya ng bagong pages/master.html)
  */
 (function () {
   'use strict';
@@ -100,6 +101,7 @@
 <script src="js/core/master-compare-config.js"></script>
 <script src="js/core/master-compare.js"></script>
 <script src="js/core/master-compare-export.js"></script>
+<script src="js/core/compare-sync.js"></script>
 <script src="js/core/master-compare-ui.js"></script>
 <script src="js/pages/master.js"></script>
 `);

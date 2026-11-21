@@ -3,6 +3,7 @@
  * PURPOSE : Style ng machine view sa Dashboard (role badge, tile, dot, chips); naka-scope sa .page-dashboard
  * DEPENDS : css/base.css, css/components.css, css/theme.css
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
+ * VERSION : v7 | 2026-11-21 | alert ng worst slider, listahan ng slider
  */
 .page-dashboard {
   --dm-warning: #b45309;
@@ -81,3 +82,21 @@
 
 @media (min-width: 768px) { .page-dashboard .dm-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1280px) { .page-dashboard .dm-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* v7: alert ng worst slider (galing sa Master Correl ng machine) */
+.page-dashboard .dm-chip-alert .dm-chip-count { color: var(--color-danger); }
+.page-dashboard .dm-tile.dm-tile-alert { border-left-color: var(--color-danger); }
+.page-dashboard .dm-alert { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); border-radius: var(--radius-sm); border: 2px solid var(--color-danger); background: var(--color-bg); }
+.page-dashboard .dm-alert.dm-alert-yellow { border-color: var(--dm-warning); }
+.page-dashboard .dm-alert-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; font-weight: 800; color: var(--color-danger); overflow-wrap: anywhere; }
+.page-dashboard .dm-alert-yellow .dm-alert-title { color: var(--dm-warning); }
+.page-dashboard .dm-alert-level { padding: 0.125rem var(--space-2); font-size: var(--font-size-label); border: 1px solid currentColor; border-radius: var(--radius-sm); }
+.page-dashboard .dm-alert-line { margin: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
+.page-dashboard .dm-alert-meta { margin: 0; }
+.page-dashboard .dm-details { margin-top: var(--space-1); }
+.page-dashboard .dm-details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.page-dashboard .dm-table-wrap { overflow-x: auto; }
+.page-dashboard .dm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.page-dashboard .dm-table th, .page-dashboard .dm-table td { padding: var(--space-1) var(--space-2); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--color-border); }
+.page-dashboard .dm-table td.dm-alert-red { color: var(--color-danger); font-weight: 700; }
+.page-dashboard .dm-table td.dm-alert-yellow { color: var(--dm-warning); font-weight: 700; }

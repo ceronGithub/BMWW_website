@@ -2,10 +2,11 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js
+ * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
+ * VERSION : v7 | 2026-11-21 | worst slider ng machine (<Server path>\compare): alert sa tile, chip, at listahan ng slider (actual at master)
  */
 (function () {
   'use strict';
@@ -65,7 +66,7 @@
   }
 
   // Buod ng mga machine sa taas ng listahan.
-  function renderSummary(summary) {
+  function renderSummary(summary, alertCount) {
     const list = createElementWith('ul', 'dm-chip-list');
     const labels = TEXT.summary;
     list.append(
@@ -74,7 +75,8 @@
       buildChip(labels.ongoing, summary.ongoing, 'dm-chip-ongoing'),
       buildChip(labels.done, summary.done),
       buildChip(labels.stale, summary.stale, 'dm-chip-stale'),
-      buildChip(labels.noStatus, summary.noStatus)
+      buildChip(labels.noStatus, summary.noStatus),
+      buildChip(labels.worstSlider, alertCount, 'dm-chip-alert')
     );
     query(SEL.summary).replaceChildren(list);
   }
@@ -88,8 +90,14 @@
     return parts.join(' | ');
   }
 
-  // Ranggo ng machine item para sa pagkakasunod (ongoing muna, no status sa huli).
+  // May na-detect bang worst slider ang machine (galing sa compare file)?
+  function hasAlert(item) {
+    return Boolean(item.compare && item.compare.status.detected && item.compare.status.worst);
+  }
+
+  // Ranggo ng machine item para sa pagkakasunod (alert muna, tapos ongoing; no status sa huli).
   function getRank(item) {
+    if (hasAlert(item)) return DM.RANK.alert;
     if (item.presence === QUEUE.PRESENCE.stale) return DM.RANK.stale;
     if (item.presence === QUEUE.PRESENCE.noStatus || !item.status) return DM.RANK.noStatus;
     return DM.RANK[item.status.state] === undefined ? DM.RANK.idle : DM.RANK[item.status.state];
@@ -104,12 +112,94 @@
     });
   }
 
+  // Numero sa tatlong decimal; '-' kung wala.
+  function formatReading(value) {
+    return typeof value === 'number' ? value.toFixed(DM.COMPARE.DIGITS) : '-';
+  }
+
+  // Numero na may sign (+0.250); '-' kung wala.
+  function formatSignedReading(value) {
+    if (typeof value !== 'number') return '-';
+    return (value > 0 ? '+' : '') + value.toFixed(DM.COMPARE.DIGITS);
+  }
+
+  // Basa ng compare status ng lahat ng machine mula sa Server path; walang laman na Map kung pumalya.
+  async function readCompareMap(serverHandle) {
+    const compareMap = new Map();
+    if (!root.compareSync || !serverHandle) return compareMap;
+    try {
+      const list = await root.compareSync.readCompareList(serverHandle);
+      list.forEach((item) => compareMap.set(item.status.machineName.toLowerCase(), item));
+    } catch (error) {
+      // hindi mabasa ang compare folder: ituloy ang listahan ng machine nang walang alert
+    }
+    return compareMap;
+  }
+
+  // Maliit na table ng mga slider na kailangang tingnan: Actual at Master (previous > today), Diff, Trend.
+  function buildSliderTable(sliderList) {
+    const text = TEXT.compare;
+    const compareConfig = root.compareConfig;
+    const wrap = createElementWith('div', 'dm-table-wrap');
+    const table = createElementWith('table', 'dm-table');
+    const headRow = document.createElement('tr');
+    text.columns.forEach((column) => headRow.append(createElementWith('th', '', column)));
+    const head = document.createElement('thead');
+    head.append(headRow);
+    const body = document.createElement('tbody');
+    sliderList.forEach((slider) => {
+      const row = document.createElement('tr');
+      const trend = compareConfig ? compareConfig.TREND_SYMBOL[slider.trend] + ' ' + compareConfig.TREND_TEXT[slider.trend] : '';
+      const levelClass = DM.COMPARE.LEVEL_CLASS[slider.level] || '';
+      [
+        slider.barcode,
+        formatReading(slider.previousActual) + text.arrow + formatReading(slider.currentActual),
+        formatReading(slider.previousMaster) + text.arrow + formatReading(slider.currentMaster),
+        formatReading(slider.currentDifference),
+        trend
+      ].forEach((value, index) => row.append(createElementWith('td', index === 3 ? levelClass : '', value)));
+      body.append(row);
+    });
+    table.append(head, body);
+    wrap.append(table);
+    return wrap;
+  }
+
+  // Alert ng worst slider sa tile ng machine: actual at master (previous at today), at listahan ng slider.
+  function buildAlertBlock(compareItem, nowMs) {
+    const text = TEXT.compare;
+    const status = compareItem.status;
+    const worst = status.worst;
+    const box = createElementWith('div', 'dm-alert ' + (DM.COMPARE.LEVEL_CLASS[worst.level] || ''));
+    const title = createElementWith('p', 'dm-alert-title', text.title.replace('{barcode}', worst.barcode));
+    const levelText = DM.COMPARE.LEVEL_TEXT[worst.level];
+    if (levelText) title.append(createElementWith('span', 'dm-alert-level', levelText));
+    const updatedMs = compareItem.modifiedMs || Date.parse(status.updatedAt);
+    if (updatedMs && nowMs - updatedMs > DM.COMPARE.STALE_MS) title.append(createElementWith('span', 'dm-tag', text.stale));
+    box.append(title);
+    box.append(createElementWith('p', 'dm-alert-line', text.today.replace('{actual}', formatReading(worst.currentActual)).replace('{master}', formatReading(worst.currentMaster)).replace('{diff}', formatReading(worst.currentDifference))));
+    if (status.hasPrevious && worst.previousDifference !== null) {
+      box.append(createElementWith('p', 'dm-alert-line', text.previous.replace('{actual}', formatReading(worst.previousActual)).replace('{master}', formatReading(worst.previousMaster)).replace('{diff}', formatReading(worst.previousDifference)).replace('{change}', formatSignedReading(worst.change))));
+    } else {
+      box.append(createElementWith('p', 'dm-alert-line', text.noPrevious));
+    }
+    const recordMs = Date.parse(status.recordDate);
+    box.append(createElementWith('p', 'card-note dm-alert-meta', text.record + (recordMs ? new Date(recordMs).toLocaleDateString() : '-') + ' | ' + text.sent + formatAgo(updatedMs, nowMs)));
+    if (status.sliderList.length > 0) {
+      const details = createElementWith('details', 'dm-details');
+      details.append(createElementWith('summary', '', text.detailsSummary.replace('{n}', String(status.sliderList.length))), buildSliderTable(status.sliderList));
+      box.append(details);
+    }
+    return box;
+  }
+
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
-    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence]);
+    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
     tile.append(head);
+    if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs));
 
     const presenceRow = createElementWith('p', 'dm-presence');
     presenceRow.append(createElementWith('span', 'dm-dot'), createElementWith('span', 'dm-presence-label', DM.LABEL.presence[item.presence]));
@@ -161,7 +251,10 @@
       setMessage(TEXT.connection[snapshot.state] || TEXT.connection.error, snapshot.state === QUEUE.CONNECTION.noPermission);
       return;
     }
-    renderSummary(snapshot.summary);
+    const compareMap = await readCompareMap(snapshot.handle);
+    if (!query(SEL.section)) return;
+    snapshot.machineItemList.forEach((item) => { item.compare = compareMap.get(item.machineName.toLowerCase()) || null; });
+    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length);
     const sortedList = sortItems(snapshot.machineItemList);
     grid.replaceChildren(...sortedList.map((item) => buildMachineTile(item, nowMs)));
     setMessage(sortedList.length === 0 ? TEXT.emptyGrid : '', false);
