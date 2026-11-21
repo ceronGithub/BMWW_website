@@ -2,6 +2,7 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v8.7 | 2026-11-21 | TEXT.preview.panel (maliit na panel ng Preview)
  * VERSION : v7.8 | 2026-11-21 | HIDE_ORPHANS (itinatago ang stale at hindi naka-register na machine, hal. lumang pangalan)
  * VERSION : v7.7 | 2026-11-21 | TEXT.excelIssue (dahilan kung bakit hindi nabasa ang Master Correl Excel)
  * VERSION : v7.4 | 2026-11-21 | TEXT.preview at SELECTOR.previewStatus (Preview button ng Master Correl sa tile ng machine)
@@ -115,6 +116,17 @@
         opened: 'Ipinadala ang utos na buksan ang folder: ',
         openedHint: ' | Kung walang bumukas: i-install muna ang tools\\open-handler\\install-open-handler.bat, at sa tanong ng browser piliin ang Open.',
         clearMs: 12000,
+        // Maliit na panel (popout) ng Preview: laman ng pinakabagong Master Correl file.
+        panel: {
+          title: 'Master Correl: ', close: 'Isara', closeAria: 'Isara ang Preview', loading: 'Binabasa ang pinakabagong Master Correl file...',
+          openExplorer: 'Buksan sa File Explorer',
+          stats: { rSquared: 'R Square', record: 'Record', actualAverage: 'Actual AVG', masterAverage: 'Master AVG', worst: 'Worst slider', file: 'File' },
+          columns: ['Barcode', 'Actual', 'Master', 'Diff'],
+          digits: 3,
+          noFileSender: 'Wala pang Master Correl file ngayong araw sa Saving path. Patakbuhin ang Master Correl sa Master page.',
+          noFileLead: 'Wala pang nabasang Master Correl file ng machine na ito sa Server path.',
+          noRoot: 'Kailangan ng pahintulot sa Saving path. Pindutin ulit ang Preview at i-Allow.'
+        },
         error: {
           noFile: 'Wala pang na-export na Master Correl file ng machine na ito sa Server path. Kailangang mag-Export to Excel muna ito sa Master page.',
           noRootPath: 'Ilagay ang FULL PATH ng Server path sa Settings na may drive letter (hal. Z:\\BMWW). Hindi gumagana ang \\\\server na path.',

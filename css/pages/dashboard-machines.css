@@ -6,6 +6,7 @@
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
  * VERSION : v7 | 2026-11-21 | alert ng worst slider, listahan ng slider
  
+ * VERSION : v8.7 | 2026-11-21 | maliit na panel (popout) ng Preview (.dm-preview-*)
  * VERSION : v7.8 | 2026-11-21 | 2 column na lang kada row (inalis ang 3 column sa malaking screen)
 */
 .page-dashboard {
@@ -120,3 +121,19 @@
 
 /* v7.4: Preview button ng Master Correl (binubuksan ang File Explorer sa pinakabagong file ng machine) */
 .page-dashboard .dm-preview-button { margin-left: auto; }
+
+/* v8.7: maliit na panel (popout) ng Preview; nasa body kaya may class na page-dashboard ang overlay */
+.page-dashboard.dm-preview-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--space-4); background: rgba(0, 0, 0, 0.45); }
+.page-dashboard .dm-preview-panel { width: 100%; max-width: 30rem; max-height: 85vh; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-hover, 0 12px 32px rgba(0, 0, 0, 0.25)); }
+.page-dashboard .dm-preview-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.page-dashboard .dm-preview-title { margin: 0; font-size: 1.125rem; overflow-wrap: anywhere; }
+.page-dashboard .dm-preview-close { min-height: 44px; }
+.page-dashboard .dm-preview-body { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-3); }
+.page-dashboard .dm-preview-stats { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; font-size: 0.875rem; }
+.page-dashboard .dm-preview-stats dt { color: var(--color-muted); }
+.page-dashboard .dm-preview-stats dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.page-dashboard .dm-preview-table-wrap { max-height: 16rem; overflow: auto; }
+.page-dashboard .dm-preview-message { margin: 0; font-weight: 600; }
+.page-dashboard .dm-preview-foot { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
+.page-dashboard .dm-preview-foot .btn { min-height: 44px; }
+.page-dashboard .dm-preview-note { margin: 0; overflow-wrap: anywhere; }

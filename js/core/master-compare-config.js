@@ -2,6 +2,7 @@
  * FILE    : js/core/master-compare-config.js
  * PURPOSE : Constants ng Compare vs previous (Master Correl ngayon laban sa nakaraan): lookback, threshold, subfolder, selector, kulay, text
  * DEPENDS : js/core/config.js, js/core/master-export-config.js
+ * VERSION : v8.5 | 2026-11-21 | AUTO_EXPORT, SERVER (kusang Excel ng Compare sa Saving path at Server path), TEXT.serverSaved / serverFailed
  * VERSION : v7.1 | 2026-11-21 | AUTO_RUN (false): hindi na kusang tumatakbo ang compare pagkatapos ng Master Correl; sa card na Compare sliders na ito pinipindot
  * VERSION : v3.5 | 2026-11-21 | bagong file
  * VERSION : v7 | 2026-11-21 | detect ng worst slider (DETECT), sync sa Server path (SYNC), CLASS, bagong LABEL at TEXT (mas malinis na screen)
@@ -35,6 +36,9 @@
     SUBFOLDER: 'master-compare',
     FILE_PREFIX: 'master-compare',
     FILE_EXTENSION: '.xlsx',
+    // Kusang export ng Excel kapag pinindot ang Compare vs previous at may nabuong compare. Saving path: bagong file kada click; Server path: <Server path>\\<SERVER.SUBFOLDER>\\<machine name>\\<petsa>\\<SERVER.FILE_NAME> (iisang file, ino-overwrite).
+    AUTO_EXPORT: true,
+    SERVER: { SUBFOLDER: 'master-compare', FILE_NAME: 'master-compare_latest.xlsx' },
     SELECTOR: { runButton: '#compare-run', exportButton: '#compare-export', status: '#compare-status', result: '#compare-result' },
     SHEET: { compare: 'Compare', chart: 'Chart' },
     // Kulay ng linya: sa screen (colorIndex ng palette sa master.css) at sa Excel (hex, walang #). Magkapareho ang kulay.
@@ -89,6 +93,8 @@
       noBiggest: '-', arrow: ' \u2192 ',
       exporting: 'Sine-save ang Excel file ng Compare...',
       saved: 'Na-save ang Excel file: ',
+      serverSaved: '. Kopya sa Server: ',
+      serverFailed: '. Hindi nakopya sa Server path: ',
       error: {
         noCurrent: 'Patakbuhin muna ang Master Correl bago mag-compare.',
         noPreviousRecord: 'Walang naunang master record sa nakaraang {n} araw bago ang napiling Date.',

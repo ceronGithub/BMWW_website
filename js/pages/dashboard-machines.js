@@ -7,6 +7,12 @@
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
  * VERSION : v7.8 | 2026-11-21 | itinatago ang stale at hindi naka-register na machine (lumang pangalan); buod ay kinukuwenta ulit
  * VERSION : v7.7 | 2026-11-21 | ipinapakita sa #dm-message ang dahilan kung bakit hindi nabasa ang Master Correl Excel ng machine
+ * VERSION : v8.7 | 2026-11-21 | Preview: maliit na panel (popout) na may laman ng pinakabagong Master Correl file (buod at table); Sender = Saving path, LEAD PC = Server path; may button na Buksan sa File Explorer sa loob ng panel
+ * VERSION : v8.6 | 2026-11-21 | Sender: ipinapakita sa sariling tile ang resulta ng Compare sliders (worst slider) mula sa pinakabagong Excel sa <Saving path>\\master-compare\\<petsa ngayon>; binabasa kada refresh (ownCompare)
+ * VERSION : v8.4 | 2026-11-21 | Sender: binabasa ang Saving path kada refresh at BAGO mag-render (readOwnCorrel); hiwalay at hindi hinihintay ang pagpapadala sa Server (publishOwnCorrel); inalis ang rereadOwnCorrel
+ * VERSION : v8.3 | 2026-11-21 | Sender: itinatago ang "Walang Data source folder" kapag nababasa na ang Master Correl sa Saving path (renderSender)
+ * VERSION : v8.2 | 2026-11-21 | Sender: ipinapakita sa sariling tile ang Master Correl (Status, R Square, Record) ng pinakabagong file sa Saving path ngayong araw; binabasa kada refresh
+ * VERSION : v8.1 | 2026-11-21 | rereadOwnCorrel: Sender ay binabasa ang <Saving path>\\master-correl\\<petsa ngayon> (pinakabagong file) sa halip na i-analyze ang Data source 1
  * VERSION : v7.6 | 2026-11-21 | LEAD PC: tuwing refresh, binabasa ang pinakabagong Excel sa <Server path>\master-correl\<machine>\<petsa>\ (Status, R Square, Record) at ito ang ginagamit kapag mas bago kaysa sa correl\<machine>.json
  * VERSION : v7.5 | 2026-11-21 | Tuwing refresh ng page, binabasa ulit ng machine ang pinakabagong Master Correl (source1) at ipinapadala ang status sa Server path
  * VERSION : v7.4 | 2026-11-21 | Preview button sa Master Correl ng tile: binubuksan sa Windows (File Explorer) ang pinakabagong Master Correl file ng machine
@@ -252,19 +258,144 @@
     if (message) previewClearId = window.setTimeout(() => setPreviewStatus('', false), TEXT.preview.clearMs);
   }
 
-  // Click ng Preview: binubuksan sa Windows (File Explorer) ang pinakabagong Master Correl file ng machine. Isa lang ang sabay na tumatakbo.
-  async function handlePreviewClick(machineName) {
+  // ----- Preview: maliit na panel (popout) ng pinakabagong Master Correl file -----
+  let previewOverlay = null;
+  let previewKeyHandler = null;
+
+  // Isinasara ang panel at inaalis ang mga listener.
+  function closePreviewPanel() {
+    if (previewKeyHandler) document.removeEventListener('keydown', previewKeyHandler);
+    if (previewKeyHandler) window.removeEventListener('hashchange', closePreviewPanel);
+    previewKeyHandler = null;
+    if (previewOverlay) previewOverlay.remove();
+    previewOverlay = null;
+  }
+
+  // Table ng Barcode, Actual, Master at Diff (pula / dilaw ang Diff kapag lampas sa limit).
+  function buildPreviewTable(sliderList) {
+    const panelText = TEXT.preview.panel;
+    const wrap = createElementWith('div', 'dm-table-wrap dm-preview-table-wrap');
+    const table = createElementWith('table', 'dm-table');
+    const headRow = document.createElement('tr');
+    panelText.columns.forEach((column) => headRow.append(createElementWith('th', '', column)));
+    const head = document.createElement('thead');
+    head.append(headRow);
+    const body = document.createElement('tbody');
+    sliderList.forEach((slider) => {
+      const row = document.createElement('tr');
+      const diffText = typeof slider.difference === 'number' ? slider.difference.toFixed(panelText.digits) : '-';
+      row.append(
+        createElementWith('td', '', slider.barcode),
+        createElementWith('td', '', typeof slider.actual === 'number' ? slider.actual.toFixed(panelText.digits) : '-'),
+        createElementWith('td', '', typeof slider.master === 'number' ? slider.master.toFixed(panelText.digits) : '-'),
+        createElementWith('td', DM.COMPARE.LEVEL_CLASS[slider.level] || '', diffText)
+      );
+      body.append(row);
+    });
+    table.append(head, body);
+    wrap.append(table);
+    return wrap;
+  }
+
+  // Inilalagay ang laman ng Master Correl (status, buod, table) sa body ng panel.
+  function fillPreviewBody(body, details) {
+    const panelText = TEXT.preview.panel;
+    const stats = panelText.stats;
+    const sync = root.correlSyncConfig;
+    const head = createElementWith('div', 'dm-correl-row ' + ((sync && sync.STATUS_CLASS[details.status]) || ''));
+    const badge = createElementWith('span', 'dm-correl-badge');
+    badge.append(createElementWith('span', 'dm-correl-icon', TEXT.correl.icon[details.status] || ''), createElementWith('span', '', details.status || '-'));
+    head.append(badge);
+    const list = createElementWith('dl', 'dm-preview-stats');
+    [
+      [stats.rSquared, typeof details.rSquared === 'number' ? details.rSquared.toFixed(4) : '-'],
+      [stats.record, details.recordDate || '-'],
+      [stats.actualAverage, details.actualAverage || '-'],
+      [stats.masterAverage, details.masterAverage || '-'],
+      [stats.worst, details.worst || '-'],
+      [stats.file, details.fileName]
+    ].forEach((pair) => list.append(createElementWith('dt', '', pair[0]), createElementWith('dd', '', pair[1])));
+    body.replaceChildren(head, list, buildPreviewTable(details.sliderList));
+  }
+
+  // Kinukuha ang laman ng pinakabagong Master Correl file: Sender = <Saving path> ngayong araw; LEAD PC = <Server path>\\master-correl\\<machine>. Ibinibigay { details } o { message }.
+  async function loadPreviewDetails(machineName) {
+    const panelText = TEXT.preview.panel;
+    if (!root.correlExcelReader || !root.storage.isFolderAccessSupported()) return { message: TEXT.preview.error.unsupported };
+    const settings = root.storage.readLocalSettings();
+    if (getRole(settings).key === DM.ROLE.sender.key) {
+      const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: panelText.noRoot };
+      const details = await root.correlExcelReader.readLatestDetailsInSavingPath(rootHandle, machineName, root.csv.formatDateInput(new Date()));
+      return details ? { details } : { message: panelText.noFileSender };
+    }
+    const found = await root.queue.findServerHandle(true);
+    if (found.state !== QUEUE.CONNECTION.ok) return { message: TEXT.preview.error[found.state] || TEXT.preview.error.error };
+    let correlFolder;
+    try {
+      correlFolder = await found.handle.getDirectoryHandle(root.correlConfig.SERVER.SUBFOLDER);
+    } catch (error) {
+      return { message: panelText.noFileLead };
+    }
+    const details = await root.correlExcelReader.readLatestDetailsForMachine(correlFolder, machineName);
+    return details ? { details } : { message: panelText.noFileLead };
+  }
+
+  // Click ng Buksan sa File Explorer (lumang Preview): mensahe ay lumalabas sa loob ng panel.
+  async function handleExplorerClick(machineName, noteElement) {
     if (isPreviewBusy || !root.correlPreview) return;
     isPreviewBusy = true;
     const text = TEXT.preview;
     try {
-      setPreviewStatus(text.opening + machineName + '...', false);
+      noteElement.textContent = text.opening + machineName + '...';
       const result = await root.correlPreview.previewLatest(machineName, true);
-      if (result.ok) setPreviewStatus(text.opened + result.openedPath + text.openedHint, false);
-      else setPreviewStatus(text.error[result.code] || text.error.error, true);
+      noteElement.textContent = result.ok ? text.opened + result.openedPath + text.openedHint : (text.error[result.code] || text.error.error);
     } finally {
       isPreviewBusy = false;
     }
+  }
+
+  // Click ng Preview: lumalabas ang maliit na panel (popout) na may laman ng pinakabagong Master Correl file.
+  async function handlePreviewClick(machineName) {
+    closePreviewPanel();
+    const panelText = TEXT.preview.panel;
+    const overlay = createElementWith('div', 'page-dashboard dm-preview-overlay');
+    const panel = createElementWith('div', 'dm-preview-panel');
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', panelText.title + machineName);
+    const head = createElementWith('div', 'dm-preview-head');
+    const closeButton = createElementWith('button', 'btn btn-secondary dm-preview-close', panelText.close);
+    closeButton.type = 'button';
+    closeButton.setAttribute('aria-label', panelText.closeAria);
+    head.append(createElementWith('h3', 'dm-preview-title', panelText.title + machineName), closeButton);
+    const body = createElementWith('div', 'dm-preview-body');
+    body.append(createElementWith('p', 'card-note', panelText.loading));
+    const note = createElementWith('p', 'card-note dm-preview-note');
+    const explorerButton = createElementWith('button', 'btn btn-secondary dm-preview-explorer', panelText.openExplorer);
+    explorerButton.type = 'button';
+    const foot = createElementWith('div', 'dm-preview-foot');
+    foot.append(explorerButton, note);
+    panel.append(head, body, foot);
+    overlay.append(panel);
+    document.body.append(overlay);
+    previewOverlay = overlay;
+    previewKeyHandler = (event) => { if (event.key === 'Escape') closePreviewPanel(); };
+    document.addEventListener('keydown', previewKeyHandler);
+    window.addEventListener('hashchange', closePreviewPanel);
+    closeButton.addEventListener('click', closePreviewPanel);
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) closePreviewPanel(); });
+    explorerButton.addEventListener('click', () => handleExplorerClick(machineName, note));
+    closeButton.focus();
+    let loaded;
+    try {
+      loaded = await loadPreviewDetails(machineName);
+    } catch (error) {
+      loaded = { message: TEXT.preview.error.error };
+    }
+    if (previewOverlay !== overlay) return;
+    if (loaded.details) fillPreviewBody(body, loaded.details);
+    else body.replaceChildren(createElementWith('p', 'dm-preview-message', loaded.message));
   }
 
   // Preview button ng Master Correl ng isang machine (text at aria-label, hindi icon lang).
@@ -409,7 +540,9 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence.active);
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote));
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs));
+    // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
+    if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs));
     const isRunning = monitorState.state === MONITOR.STATE.running;
     if (isRunning) {
       const overall = getOwnOverallState(monitorState.sources);
@@ -424,7 +557,9 @@
     query(SEL.pinned).replaceChildren(tile);
     query(SEL.summary).replaceChildren();
     query(SEL.grid).replaceChildren();
-    const message = TEXT.monitor[monitorState.state] || (monitorState.lastError ? TEXT.monitor.error : '');
+    // Kapag nababasa na ang Master Correl sa Saving path, hindi na kailangan ang paalala tungkol sa Data source folder.
+    const hideNoSource = monitorState.state === MONITOR.STATE.noSource && Boolean(ownCorrel);
+    const message = hideNoSource ? '' : (TEXT.monitor[monitorState.state] || (monitorState.lastError ? TEXT.monitor.error : ''));
     setMessage(message, monitorState.state === MONITOR.STATE.noPermission);
   }
 
@@ -451,7 +586,11 @@
       if (roleElement) roleElement.replaceChildren(buildRoleBadge(role));
       query(SEL.title).textContent = role.key === DM.ROLE.sender.key ? TEXT.titleSender : TEXT.titleLead;
       if (role.key === DM.ROLE.lead.key) await renderLead(settings, shouldRequest);
-      else if (role.key === DM.ROLE.sender.key) renderSender(settings, shouldRequest);
+      else if (role.key === DM.ROLE.sender.key) {
+        await readOwnCorrel(settings);
+        renderSender(settings, shouldRequest);
+        publishOwnCorrel(settings);
+      }
       else renderUnset();
       if (query(SEL.updated)) query(SEL.updated).textContent = TEXT.updatedPrefix + new Date().toLocaleTimeString();
     } catch (error) {
@@ -474,33 +613,52 @@
     await refresh(true);
   }
 
-  // Machine lang: binabasa ulit ang pinakabagong Master Correl ng araw na ito (Data source 1) at ipinapadala ang status sa Server path,
-  // para laging bago ang nakikita ng LEAD PC. Tahimik kung walang source, walang permission, o walang record ngayong araw (walang popup).
-  async function rereadOwnCorrel() {
-    const settings = root.storage.readLocalSettings();
-    if (getRole(settings).key !== DM.ROLE.sender.key) return;
-    if (!root.masterAnalysis || !root.correlSync || !root.storage.isFolderAccessSupported()) return;
+  // Machine lang: kada refresh, tinitingnan (Master Correl at Compare) ang <Saving path>\\master-correl\\<petsa ngayon>\\ (o \\<machine>\\<petsa ngayon>\\) at binabasa ang pinakabagong Excel doon.
+  // Ang nabasa ay inilalagay sa ownCorrel (ipinapakita ng renderSender) at ipinapadala sa Server path. Tahimik kung walang Saving path, walang permission, walang folder o walang file (walang popup).
+  let ownCorrel = null;
+  let ownCompare = null;
+  let isOwnReading = false;
+  async function readOwnCorrel(settings) {
+    if (isOwnReading) return;
+    if (!root.correlExcelReader || !root.storage.isFolderAccessSupported()) return;
+    isOwnReading = true;
     try {
-      const sourceHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.MASTER.SOURCE_KEY]);
-      if (!sourceHandle || !(await root.storage.hasPermission(sourceHandle, false))) return;
-      const nowDate = new Date();
-      const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
-      const result = await root.masterAnalysis.analyzeLatest(sourceHandle, today, null, today);
-      await root.correlSync.publishStatus(result, settings, false);
+      const machineName = typeof settings.machineName === 'string' ? settings.machineName.trim() : '';
+      if (!machineName) { ownCorrel = null; ownCompare = null; return; }
+      const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; return; }
+      const dayName = root.csv.formatDateInput(new Date());
+      ownCorrel = await root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName);
+      ownCompare = await root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName);
     } catch (error) {
-      // walang master record ngayon o hindi mabasa ang source: ituloy ang dashboard, susubukan ulit sa susunod na refresh
+      ownCorrel = null;
+      ownCompare = null;
+    } finally {
+      isOwnReading = false;
+    }
+  }
+
+  // Ipinapadala ang nabasang Master Correl (ownCorrel) sa <Server path>\\correl\\<machine>.json para sa LEAD PC. Hindi hinihintay ng render; hindi nagtatapon ng error.
+  async function publishOwnCorrel(settings) {
+    const latest = ownCorrel;
+    if (!latest || !root.correlSync || !root.queue) return;
+    try {
+      const found = await root.queue.findServerHandle(false);
+      if (found.state !== CONFIG.QUEUE.CONNECTION.ok) return;
+      await root.correlSync.writeCorrelStatus(found.handle, Object.assign({}, latest.status, { machineMode: settings.machineMode, updatedAt: new Date(latest.modifiedMs).toISOString() }));
+    } catch (error) {
+      // hindi mabasa ang Server: susubukan ulit sa susunod na refresh
     }
   }
 
   // Init ng page, tinatawag ng dashboard.js.
   function init() {
+    closePreviewPanel();
     stopTimer();
     isBusy = false;
     const grantButton = query(SEL.grant);
     if (grantButton) grantButton.addEventListener('click', handleGrantClick);
     refresh(false);
-    // Sa bawat refresh/pagbukas ng Dashboard: basahin ulit ang pinakabagong Master Correl (hindi hinaharang ang unang render).
-    rereadOwnCorrel();
     timerId = window.setInterval(() => refresh(false), DM.POLL_MS);
   }
 

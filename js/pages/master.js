@@ -2,6 +2,7 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v8.1 | 2026-11-21 | autoExportCorrel: laging nag-e-export kada Run Latest Master (CORREL.AUTO.SKIP_SAME = false)
  * VERSION : v8 | 2026-11-21 | Kusang export ng Master Correl pagkatapos ng Run Latest Master (autoExportCorrel); nilalaktawan kapag pareho pa ang record; ang kopya sa Server ay ino-overwrite
  * VERSION : v7.3 | 2026-11-21 | Master Correl: pagkatapos ng run, ipinapadala ang status (PASS / WARNING / FAIL) sa Server path para sa LEAD PC (sendCorrelToLead)
  * VERSION : v7.2 | 2026-11-21 | Export ng Master Correl: may kopya na rin sa Server path (findServerForCopy, copyCorrelToServer); hindi pumapalya ang Saving path kapag pumalya ang Server
@@ -629,7 +630,7 @@
   // Kusang export pagkatapos ng Run Latest Master. Nilalaktawan kapag ang record ay na-export na (at nakopya na sa Server). Tinatawag habang busy pa ang page.
   async function autoExportCorrel() {
     if (!CORREL.AUTO.ENABLED || !lastLatestRun) return;
-    if (readExportedKey() === getCorrelExportKey(lastLatestRun.result)) {
+    if (CORREL.AUTO.SKIP_SAME && readExportedKey() === getCorrelExportKey(lastLatestRun.result)) {
       setStatus('latestStatus', CORREL.TEXT.autoSkipped, 'info');
       return;
     }

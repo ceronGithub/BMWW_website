@@ -2,8 +2,10 @@
  * FILE    : js/core/master-compare-ui.js
  * PURPOSE : Screen ng Compare vs previous sa Master page: kusang gumagawa kapag may worst slider (yellow o red), table na may actual at master, chart, Export to Excel, at sulat ng status sa Server path para sa LEAD PC (window.BMWW.compareUi)
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, chart-draw.js, master-compare.js, master-compare-export.js, master-compare-config.js, compare-sync.js
+ * VERSION : v8.5 | 2026-11-21 | autoExportCompare: kusang Excel ng Compare sa Saving path at Server path pagkatapos ng Compare vs previous
  * VERSION : v7.1 | 2026-11-21 | refresh: kusang takbo lang kapag COMPARE.AUTO_RUN; bukas ang Compare vs previous kapag may Master Correl run (kahit green lahat, para may sagot)
  * VERSION : v3.5 | 2026-11-21 | bagong file; tinatawag ng js/pages/master.js (init at refresh)
+ * VERSION : v7.9 | 2026-11-21 | inalis ang Export compare to Excel (button, onExport)
  * VERSION : v7 | 2026-11-21 | kusang compare kapag may worst slider lang; banner, Previous vs Today table ng actual/master/diff, filter (kailangang tingnan lang), sync sa Server path
  */
 (function () {
@@ -323,6 +325,43 @@
     if (view === current) updateSyncLine();
   }
 
+  // Kusang export ng Excel ng Compare: bagong file sa <Saving path>\\master-compare\\<petsa> at kopya (overwrite) sa <Server path>\\master-compare\\<machine>\\<petsa>. Hindi nagtatapon ng error; ipinapakita ang resulta sa status line.
+  async function autoExportCompare(current, shouldRequest) {
+    if (!COMPARE.AUTO_EXPORT || !current.comparison) return;
+    try {
+      setStatus(COMPARE.TEXT.exporting, 'info');
+      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
+      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+      if (!rootHandle) throw csv.createError('noRoot');
+      if (!(await storage.hasPermission(rootHandle, shouldRequest))) throw csv.createError('noPermission');
+      const settings = storage.readLocalSettings();
+      const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
+      const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
+      const separator = EXPORT.PATH_SEPARATOR;
+      const saved = await compareExport.exportCompare(current.comparison, rootHandle, sourceText, hooks.getMachineName());
+      const savedText = COMPARE.TEXT.saved + (paths[CONFIG.ROOT_KEY] || rootHandle.name) + separator + saved.folderName + separator + saved.fileName;
+      const serverText = root.correlConfig.TEXT.serverState;
+      let serverFound;
+      try {
+        serverFound = await root.queue.findServerHandle(shouldRequest);
+      } catch (error) {
+        serverFound = { handle: null, state: CONFIG.QUEUE.CONNECTION.error };
+      }
+      if (serverFound.state !== CONFIG.QUEUE.CONNECTION.ok) {
+        setStatus(savedText + COMPARE.TEXT.serverFailed + (serverText[serverFound.state] || serverText.error), 'error');
+        return;
+      }
+      try {
+        const copied = await compareExport.copyToServer(serverFound.handle, saved, hooks.getMachineName());
+        setStatus(savedText + COMPARE.TEXT.serverSaved + (paths[CONFIG.SERVER_KEY] || serverFound.handle.name) + separator + copied.folderName + separator + copied.fileName, 'success');
+      } catch (error) {
+        setStatus(savedText + COMPARE.TEXT.serverFailed + serverText.error, 'error');
+      }
+    } catch (error) {
+      setStatus(getExportMessage(error), 'error');
+    }
+  }
+
   // Pinoproseso ang run: tinitingnan ang worst slider; kung meron, gumagawa ng compare; sinusulat ang status sa Server path.
   // shouldRequest true lang kapag galing sa click (para makahingi ng permission sa Server folder).
   async function processRun(run, shouldRequest) {
@@ -350,6 +389,7 @@
       }
       if (view === current) renderView();
       await finishSync(current, shouldRequest);
+      await autoExportCompare(current, shouldRequest);
       const resultArea = query('result');
       if (resultArea && resultArea.scrollIntoView) resultArea.scrollIntoView({ block: 'nearest' });
     } finally {
@@ -361,8 +401,7 @@
   function refresh() {
     if (!hooks) return;
     const runButton = query('runButton');
-    const exportButton = query('exportButton');
-    if (!runButton || !exportButton) return;
+    if (!runButton) return;
     const run = hooks.getLatestRun();
     if (view && view.run !== run) {
       view = null;
@@ -370,7 +409,6 @@
       setStatus('', '');
     }
     runButton.disabled = hooks.isBusy() || !run;
-    exportButton.disabled = hooks.isBusy() || !(view && view.comparison);
     if (COMPARE.AUTO_RUN && run && autoRun !== run && !hooks.isBusy()) {
       autoRun = run;
       processRun(run, false).catch(() => setStatus(COMPARE.TEXT.error.exportFail, 'error'));
@@ -390,37 +428,11 @@
     }
   }
 
-  // Click ng Export compare to Excel: sine-save sa <Saving path>/master-compare/<petsa>/.
-  async function onExport() {
-    if (hooks.isBusy()) return;
-    if (!view || !view.comparison) { setStatus(COMPARE.TEXT.error.noResult, 'error'); return; }
-    hooks.setBusy(true);
-    try {
-      setStatus(COMPARE.TEXT.exporting, 'info');
-      if (!storage.isFolderAccessSupported()) throw csv.createError('unsupported');
-      const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
-      if (!rootHandle) throw csv.createError('noRoot');
-      if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
-      const settings = storage.readLocalSettings();
-      const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
-      const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
-      const saved = await compareExport.exportCompare(view.comparison, rootHandle, sourceText, hooks.getMachineName());
-      const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
-      const separator = EXPORT.PATH_SEPARATOR;
-      setStatus(COMPARE.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
-    } catch (error) {
-      setStatus(getExportMessage(error), 'error');
-    } finally {
-      hooks.setBusy(false);
-    }
-  }
-
   // Init, tinatawag ng master.js sa bawat bukas ng Master page (bagong DOM kada bukas).
   function init(nextHooks) {
     hooks = nextHooks;
     if (view && view.run !== hooks.getLatestRun()) view = null;
     query('runButton').addEventListener('click', onCompare);
-    query('exportButton').addEventListener('click', onExport);
     renderView();
     refresh();
   }

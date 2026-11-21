@@ -2,6 +2,7 @@
  * FILE    : css/pages/master-compare.css
  * PURPOSE : Style ng Compare vs previous sa Master page (naka-scope sa .page-master)
  * DEPENDS : css/base.css, css/pages/master.css (variables --level-green, --level-red at iba pa)
+ * VERSION : v7.9 | 2026-11-21 | stat-list ng compare: 2 column kada row sa lahat ng laki
  * VERSION : v3.5 | 2026-11-21 | bagong file
  * VERSION : v7 | 2026-11-21 | banner, filter at table na may Previous at Today
  */
@@ -30,3 +31,6 @@
 .page-master .compare-table .group-start { border-left: 2px solid var(--color-border); }
 .page-master .compare-table tr.is-worst td:first-child { font-weight: 800; box-shadow: inset 4px 0 0 var(--level-red); }
 .page-master .compare-table td.master-changed { text-decoration: underline dotted; }
+
+/* v7.9: 2 column kada row (mas mataas ang specificity kaysa sa 3 column ng master.css sa desktop) */
+.page-master #compare-result .stat-list { grid-template-columns: 1fr 1fr; }

@@ -2,6 +2,7 @@
  * FILE    : js/core/master-compare-export.js
  * PURPOSE : Ginagawang Excel (.xlsx) ang Compare vs previous at sine-save sa <Saving path>\master-compare\<petsa ng export>\
  * DEPENDS : js/core/config.js, master-export-config.js, master-compare-config.js, xlsx-writer.js, csv-reader.js
+ * VERSION : v8.5 | 2026-11-21 | writeBlob, copyToServer (kopya sa Server path); exportCompare ay nagbibigay ng blob at dateFolderName
  * VERSION : v3.5 | 2026-11-21 | bagong file (sheet Compare: buod at table; sheet Chart: line chart ng diff, Previous at Today)
  * VERSION : v7 | 2026-11-21 | table ng Compare ay may Actual, Master at Diff ng Previous at Today; dagdag na linya ng Worst slider (level)
  */
@@ -140,14 +141,8 @@
     return xlsx.buildWorkbook([buildCompareSheet(comparison, exportedAt, sourceText), buildChartSheet(comparison, machineName)], EXPORT.COLOR);
   }
 
-  // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa).
-  async function exportCompare(comparison, rootHandle, sourceText, machineName) {
-    const exportedAt = new Date();
-    const blob = buildBlob(comparison, exportedAt, sourceText, machineName);
-    const subfolderHandle = await rootHandle.getDirectoryHandle(COMPARE.SUBFOLDER, { create: true });
-    const dateFolderName = formatDay(exportedAt);
-    const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });
-    const fileName = buildFileName(comparison, exportedAt);
+  // Isinusulat ang Blob bilang file sa folder; kapag pumalya, inaabort ang sulat at ipinapasa ang error.
+  async function writeBlob(folderHandle, fileName, blob) {
     const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
     const writable = await fileHandle.createWritable();
     try {
@@ -157,8 +152,34 @@
       throw error;
     }
     await writable.close();
-    return { folderName: COMPARE.SUBFOLDER + EXPORT.PATH_SEPARATOR + dateFolderName, fileName };
   }
 
-  root.compareExport = Object.freeze({ buildBlob, buildFileName, exportCompare });
+  // Pangalan ng folder ng machine sa Server path (kapareho ng Master Correl).
+  function getMachineFolderName(machineName) {
+    return root.correlExport ? root.correlExport.getMachineFolderName(machineName) : String(machineName || '').trim() || 'no-machine-name';
+  }
+
+  // Kopya sa <Server path>/<SERVER.SUBFOLDER>/<machine name>/<yyyy-mm-dd>/<SERVER.FILE_NAME> (ino-overwrite). saved = ibinalik ng exportCompare.
+  async function copyToServer(serverHandle, saved, machineName) {
+    const subfolderHandle = await serverHandle.getDirectoryHandle(COMPARE.SERVER.SUBFOLDER, { create: true });
+    const machineFolderName = getMachineFolderName(machineName);
+    const machineHandle = await subfolderHandle.getDirectoryHandle(machineFolderName, { create: true });
+    const folderHandle = await machineHandle.getDirectoryHandle(saved.dateFolderName, { create: true });
+    await writeBlob(folderHandle, COMPARE.SERVER.FILE_NAME, saved.blob);
+    return { folderName: [COMPARE.SERVER.SUBFOLDER, machineFolderName, saved.dateFolderName].join(EXPORT.PATH_SEPARATOR), fileName: COMPARE.SERVER.FILE_NAME };
+  }
+
+  // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa). Ibinibigay rin ang blob at dateFolderName para sa kopya sa Server.
+  async function exportCompare(comparison, rootHandle, sourceText, machineName) {
+    const exportedAt = new Date();
+    const blob = buildBlob(comparison, exportedAt, sourceText, machineName);
+    const subfolderHandle = await rootHandle.getDirectoryHandle(COMPARE.SUBFOLDER, { create: true });
+    const dateFolderName = formatDay(exportedAt);
+    const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });
+    const fileName = buildFileName(comparison, exportedAt);
+    await writeBlob(folderHandle, fileName, blob);
+    return { folderName: COMPARE.SUBFOLDER + EXPORT.PATH_SEPARATOR + dateFolderName, fileName, blob, dateFolderName };
+  }
+
+  root.compareExport = Object.freeze({ buildBlob, buildFileName, exportCompare, copyToServer });
 })();
