@@ -1,0 +1,26 @@
+BMWW SETUP PER PC (v1 | 2026-11-21)
+Para sa PC na walang internet. Lahat ay offline; walang kailangang i-install na program (browser at PowerShell ng Windows lang).
+
+A. DALHIN ANG FILES (isang beses kada PC)
+1. Sa PC na may internet: i-download ang ZIP ng repo (branch developerOne), o kopyahin ang buong website folder.
+2. Ilipat sa USB / shared drive. Sa target PC, kopyahin sa lokal na folder, hal. C:\BMWW_App\ (hindi sa network drive, hindi sa Downloads). Huwag ilipat ang folder pagkatapos ng setup.
+3. Kung galing sa ZIP at may "Mark of the Web": right-click ang ZIP > Properties > Unblock, BAGO i-extract.
+
+B. I-INSTALL ANG OPEN HANDLER (para gumana ang Open latest ... file)
+1. Buksan ang <website folder>\tools\open-handler\ at i-double-click ang install-open-handler.bat. DAPAT lumabas ang TAPOS.
+2. Kung naka-block ang .bat o PowerShell (company PC): ipaalam sa IT. Nagsusulat lang ito sa HKCU\Software\Classes\bmww-open (para sa user lang, walang admin).
+
+C. SETTINGS SA WEBSITE
+1. Buksan ang index.html sa Chrome o Edge > Settings.
+2. Machine name: piliin ang uri at ilagay ang pangalan (hal. MWW 1).
+3. Saving path (BMWW): Pumili > piliin ang BMWW folder > ilagay ang FULL PATH nito (isang beses; hindi ito mahuhulaan ng browser).
+4. Data source 1, 2, 3: Pumili ang folder (hal. C:\BM-Logging\Calib). Awtomatikong lalabas ang Full path; tingnan kung tama.
+5. Server path (kung mayroon). Pindutin ang Save settings.
+6. Sa Master page: sa unang pindot ng Open latest ... file, magtatanong ang browser: i-tick ang Always allow at pindutin ang Open.
+
+D. KAPAG MAY BAGONG VERSION
+- Ipalit lang ang mga binagong file (tingnan ang 00_INSTRUCTIONS.txt). Ang open-file.ps1 ay ipapalit lang; hindi kailangang i-install ulit ang handler. Ang naka-save na Settings ay nasa <Saving path>\settings, kaya hindi nawawala.
+
+E. KUNG MAY PROBLEMA
+- Walang bumukas: tools\open-handler\open-handler.log.
+- Hindi pa nasubukan ng gumawa ang Windows part (open-file.ps1); ang unang test ay sa PC mo.

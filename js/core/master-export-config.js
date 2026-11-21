@@ -5,6 +5,7 @@
  * VERSION : v2.8 | 2026-11-20 | bagong file (para hindi galawin ang config.js; puwedeng ilipat doon kapag pinayagan)
  * VERSION : v2.13 | 2026-11-21 | CHART (kulay, kapal, laki, posisyon) para sa chart sa sheet na Readings
  * VERSION : v2.15 | 2026-11-21 | PROTOCOL (bmww-open:) para sa Open latest; bagong text at error (walang download)
+ * VERSION : v2.20 | 2026-11-21 | REVEAL_PREFIX at OPEN_MODE_FOLDER (pagbukas ng folder sa Master Correl)
  * VERSION : v2.14 | 2026-11-21 | puting cell (COLOR.cell, COLOR.border), AUTOFIT ng column, CHART WIDTH/HEIGHT_PIXELS (mas malaki, fixed), button at text ng Open latest file
  */
 (function () {
@@ -18,6 +19,9 @@
     FILE_EXTENSION: '.xlsx',
     // Protocol ng Windows handler (tools/open-handler) na nagbubukas ng Excel.
     PROTOCOL: 'bmww-open:',
+    // Kapag nasa unahan ng path (bmww-open:reveal:<path>), folder ang bubuksan ng handler. OPEN_MODE_FOLDER ang halaga ng OPEN_MODE sa target.
+    REVEAL_PREFIX: 'reveal:',
+    OPEN_MODE_FOLDER: 'folder',
     PATH_SEPARATOR: '\\',
     SELECTOR: { exportButton: '#range-export', openLatestButton: '#range-open-latest' },
     // Kulay ng Excel (hex, walang #). Kapareho ng --level-green / --level-yellow / --level-red sa master.css.

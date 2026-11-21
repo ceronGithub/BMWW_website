@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional)
+ * VERSION : v2.20 | 2026-11-21 | awtomatikong lagay ng full path kapag pumili ng folder (getParentPath, guessFullPath); lumalabas agad sa ilalim ng pangalan ng path
  * VERSION : v2.18 | 2026-11-21 | kailangan na ang full path ng bawat napiling folder; paalala na may hindi pa na-save (isDirty) kapag may binago
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
@@ -98,6 +99,37 @@
   function getLastSegment(fullPath) {
     const parts = fullPath.split(CONFIG.PATH_SEPARATOR).filter(Boolean);
     return parts.length ? parts[parts.length - 1] : '';
+  }
+
+  // Parent ng isang full path (walang huling folder). Drive root ay may \\ sa dulo (hal. C:\\). Blangko kung wala.
+  function getParentPath(fullPath) {
+    const trimmed = fullPath.replace(/[\\/]+$/, '');
+    if (/^[A-Za-z]:$/.test(trimmed)) return trimmed + CONFIG.PATH_SEPARATOR;
+    const cut = trimmed.lastIndexOf(CONFIG.PATH_SEPARATOR);
+    if (cut < 0) return '';
+    const parent = trimmed.slice(0, cut);
+    return /^[A-Za-z]:$/.test(parent) ? parent + CONFIG.PATH_SEPARATOR : parent;
+  }
+
+  // Idinurugtong ang pangalan ng folder sa parent.
+  function joinPath(parent, folderName) {
+    return parent.replace(/[\\/]+$/, '') + CONFIG.PATH_SEPARATOR + folderName;
+  }
+
+  // Hinuhulaan ang full path ng napiling folder: <parent> + <pangalan>. Ibinibigay '' kung tama na ang nasa field o walang mahulaan.
+  // Parent (ayon sa pagkakasunod): parent ng nasa field na; parent ng ibang path sa parehong group; PARENT_BY_KEY sa config.
+  function guessFullPath(key, folderName) {
+    const auto = CONFIG.AUTO_PATH;
+    const current = getInputFullPath(key);
+    if (current && getLastSegment(current).toLowerCase() === folderName.toLowerCase()) return '';
+    let parent = current ? getParentPath(current) : '';
+    if (!parent) {
+      const group = auto.GROUP_LIST.find((keyList) => keyList.includes(key)) || [];
+      const siblingKey = group.find((otherKey) => otherKey !== key && getInputFullPath(otherKey));
+      if (siblingKey) parent = getParentPath(getInputFullPath(siblingKey));
+    }
+    if (!parent) parent = auto.PARENT_BY_KEY[key] || '';
+    return parent ? sanitizeInput(joinPath(parent, folderName), CONFIG.FULL_PATH_MAX) : '';
   }
 
   // Sinusuri ang full path. Ibinibigay ang error message o '' kung ayos (o walang laman).
@@ -265,9 +297,19 @@
       handleMap[key] = handle;
       await storage.saveHandle(CONFIG.HANDLE_KEY[key], handle);
       if (key === CONFIG.ROOT_KEY) clearAttention();
+      // Awtomatikong full path (hula): ilalagay agad sa field at lalabas sa ilalim ng pangalan ng path (renderPaths).
+      const guessedPath = guessFullPath(key, handle.name);
+      if (guessedPath) {
+        rowMap[key].inputElement.value = guessedPath;
+        rowMap[key].inputElement.classList.remove(INPUT.error);
+      }
       renderPaths();
       setDirty(true);
-      setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
+      if (guessedPath) {
+        setStatus(TEXT.fullPathAutoFilled + guessedPath + TEXT.fullPathAutoHint, false);
+      } else {
+        setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
+      }
       if (!getInputFullPath(key)) rowMap[key].inputElement.focus();
     } catch (error) {
       if (error && error.name === 'AbortError') return;

@@ -2,6 +2,8 @@
  * FILE    : js/core/correl-export.js
  * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Correl (isang record) at sine-save sa <Saving path>\master-correl\<petsa ng export>\
  * DEPENDS : js/core/config.js, master-export-config.js, correl-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
+ * VERSION : v2.22 | 2026-11-21 | Worst slider sa buod ng sheet
+ * VERSION : v2.21 | 2026-11-21 | walang legend sa chart ng Excel (CORREL.CHART.SHOW_LEGEND = false); isang series na lang na may kulay kada point
  * VERSION : v2.19 | 2026-11-21 | table: Barcode, Actual, Master (dating Master, Actual, Barcode); legend ng chart: kulay + Actual / Master kada point; pamagat ng chart: <machine name> Master Correl
  * VERSION : v2.16 | 2026-11-21 | bagong file
  */
@@ -79,7 +81,7 @@
     const columns = CORREL.COLUMN;
     // Legend: isang entry kada point (kulay + Actual / Master), ayon sa ayos ng table.
     const pointSeriesList = [];
-    pairList.forEach((pair, index) => {
+    if (setting.SHOW_LEGEND) pairList.forEach((pair, index) => {
       if (pair.x === null || pair.y === null) return;
       pointSeriesList.push({
         name: pair.y.toFixed(setting.LEGEND_DIGITS) + setting.LEGEND_SEPARATOR + pair.x.toFixed(setting.LEGEND_DIGITS),
@@ -88,7 +90,7 @@
     });
     return {
       kind: 'scatter', title: (machineName ? machineName + ' ' : '') + TEXT.scatterTitle, xTitle: TEXT.scatterX, yTitle: TEXT.scatterY,
-      nameRef: { column: columns.actual, row: headerRow, text: TEXT.actual }, pointSeriesList,
+      nameRef: { column: columns.actual, row: headerRow, text: TEXT.actual }, pointSeriesList: setting.SHOW_LEGEND ? pointSeriesList : null, hideLegend: !setting.SHOW_LEGEND,
       xRange: { column: columns.master, firstRow: firstDataRow, lastRow: lastDataRow }, yRange: { column: columns.actual, firstRow: firstDataRow, lastRow: lastDataRow },
       xValues: pairList.map((pair) => pair.x), yValues: pairList.map((pair) => pair.y),
       pointColorList: pairList.map((pair) => getLevelColor(pair.level)), pointColor: setting.POINT_COLOR, markerSize: setting.MARKER_SIZE,
@@ -96,6 +98,12 @@
       xMin: xLimits.min, xMax: xLimits.max, yMin: yLimits.min, yMax: yLimits.max,
       anchor: { column: columnCount + setting.GAP_COLUMNS, row: 0, widthPixels: setting.WIDTH_PIXELS, heightPixels: setting.HEIGHT_PIXELS }
     };
+  }
+
+  // Text ng Worst slider: <barcode> (<diff>) o '-' kung wala.
+  function getWorstSliderText(result) {
+    const worst = masterAnalysis.findWorstSlider(result.barcodeList, result.actualList, result.masterList);
+    return worst ? worst.barcode + ' (' + worst.difference.toFixed(CORREL.CHART.LEGEND_DIGITS) + ')' : '-';
   }
 
   // Sheet: buod sa taas, table ng barcode / actual / master sa ibaba, chart sa kanan.
@@ -111,6 +119,7 @@
       [label(TEXT.fileName), result.fileName],
       [label(TEXT.actualAverage), numberCell(result.actualAverage)],
       [label(TEXT.masterAverage), numberCell(result.masterAverage)],
+      [label(TEXT.worstBarcode), getWorstSliderText(result)],
       [label(CORREL.LABEL.dateRange), formatDay(range.startDate) + ' - ' + formatDay(range.endDate)],
       [label(CORREL.LABEL.dataSource), sourceText],
       [label(CORREL.LABEL.exportedAt), formatDayTime(exportedAt)],

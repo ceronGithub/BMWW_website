@@ -13,6 +13,9 @@
  * VERSION : v2.12 | 2026-11-21 | Mode ng Master Repeatability: All data points (flat) o Latest per shift (Morning / Night kada petsa)
  * VERSION : v2.10 | 2026-11-20 | Master Repeatability: chart sa scroll box (x/y), legend = petsa ng napiling file; Export to Excel sa Saving path
  * VERSION : v2.16 | 2026-11-21 | Master Correl: Export to Excel (master-correl) at Open latest correl file
+ * VERSION : v2.22 | 2026-11-21 | Latest (Correl): Worst slider sa stat list (formatWorstSlider)
+ * VERSION : v2.21 | 2026-11-21 | pindutin ang barcode sa table (o sa chart) para laki-an ang point ng barcode na iyon sa Correl at Repeatability (bindBarcodeSelect)
+ * VERSION : v2.20 | 2026-11-21 | Open latest correl file: folder ang binubuksan (opened.openedPath)
  * VERSION : v2.15 | 2026-11-21 | Open latest: walang download; full path ng Saving path ang ipinapasa sa masterOpenLatest
  * VERSION : v2.15 | 2026-11-21 | Master Correl: editable ang Start date at End date (may validation), hindi na ino-overwrite ng ngayong araw
  * VERSION : v2.14 | 2026-11-21 | Open latest repeatability file (kaliwa ng Export to Excel): binubuksan ang pinakabagong na-export na Excel
@@ -191,6 +194,40 @@
     return wrap;
   }
 
+  // Pinipili ang barcode: nilalakihan ang point nito sa chart at hina-highlight ang row sa table.
+  // Pindutin ang barcode sa table (o ang point / label sa chart); pindutin ulit para i-unselect.
+  // Ibinibigay ang apply() na tatawagin pagkatapos i-redraw ang chart (para hindi mawala ang napili).
+  function bindBarcodeSelect(tableWrap, chartBoxList) {
+    let selectedBarcode = '';
+    const rowList = Array.from(tableWrap.querySelectorAll('tbody tr'));
+    const apply = () => {
+      rowList.forEach((row) => row.classList.toggle('is-selected', selectedBarcode !== '' && row.firstElementChild.textContent === selectedBarcode));
+      chartBoxList.forEach((box) => chart.highlight(box, selectedBarcode));
+    };
+    const toggle = (barcode) => {
+      selectedBarcode = selectedBarcode === barcode ? '' : barcode;
+      apply();
+    };
+    rowList.forEach((row) => {
+      const cell = row.firstElementChild;
+      cell.classList.add('barcode-link');
+      cell.tabIndex = 0;
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('aria-label', TEXT.barcodeSelectAria + cell.textContent);
+      cell.addEventListener('click', () => toggle(cell.textContent));
+      cell.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        toggle(cell.textContent);
+      });
+    });
+    chartBoxList.forEach((box) => box.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-barcode]');
+      if (target) toggle(target.getAttribute('data-barcode'));
+    }));
+    return apply;
+  }
+
   // Kulay ng reading ayon sa actual vs master.
   function levelOf(actualValue, masterValue) {
     return masterAnalysis.classifyDeviation(actualValue, masterValue);
@@ -229,6 +266,12 @@
     return value === null || value === undefined ? '-' : value.toFixed(digits === undefined ? 3 : digits);
   }
 
+  // Text ng Worst slider ng Correl: <barcode> (<diff>) o '-' kung wala.
+  function formatWorstSlider(result) {
+    const worst = masterAnalysis.findWorstSlider(result.barcodeList, result.actualList, result.masterList);
+    return worst ? worst.barcode + ' (' + formatNumber(worst.difference, 3) + ')' : '-';
+  }
+
   // Nagre-render ng resulta ng Latest Master.
   function renderLatest(result) {
     const area = query('latestResult');
@@ -239,16 +282,19 @@
       [TEXT.recordDate, csv.formatDateTime(result.recordDate, true)],
       [TEXT.actualAverage, formatNumber(result.actualAverage, 6)],
       [TEXT.masterAverage, formatNumber(result.masterAverage, 6)],
+      [TEXT.worstBarcode, formatWorstSlider(result)],
       [TEXT.fileName, result.fileName]
     ]));
-    area.append(makeTable([TEXT.barcode, TEXT.actual, TEXT.master], result.barcodeList.map((barcode, index) => [barcode, { text: formatNumber(result.actualList[index], 3), level: levelOf(result.actualList[index], result.masterList[index]) }, formatNumber(result.masterList[index], 3)])));
+    const latestTable = makeTable([TEXT.barcode, TEXT.actual, TEXT.master], result.barcodeList.map((barcode, index) => [barcode, { text: formatNumber(result.actualList[index], 3), level: levelOf(result.actualList[index], result.masterList[index]) }, formatNumber(result.masterList[index], 3)]));
+    area.append(latestTable);
     const chartGrid = makeElement('div', 'chart-grid');
     const scatterBox = makeElement('div', 'chart-box');
     const barBox = makeElement('div', 'chart-box');
     chartGrid.append(scatterBox, barBox);
     area.append(makeLevelLegend(), chartGrid);
     const pointList = [];
-    result.masterList.forEach((masterValue, index) => { if (masterValue !== null && result.actualList[index] !== null) pointList.push({ x: masterValue, y: result.actualList[index], level: levelOf(result.actualList[index], masterValue) }); });
+    result.masterList.forEach((masterValue, index) => { if (masterValue !== null && result.actualList[index] !== null) pointList.push({ x: masterValue, y: result.actualList[index], level: levelOf(result.actualList[index], masterValue), barcode: result.barcodeList[index] }); });
+    bindBarcodeSelect(latestTable, [scatterBox]);
     chart.drawScatter(scatterBox, { title: buildChartTitle(TEXT.scatterTitle), xTitle: TEXT.scatterX, yTitle: TEXT.scatterY, pointList, trend: result.regression });
     chart.drawBars(barBox, { title: TEXT.barTitle, itemList: [{ label: TEXT.actualAverage, value: result.actualAverage || 0 }, { label: TEXT.masterAverage, value: result.masterAverage || 0 }] });
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
@@ -341,8 +387,9 @@
       [TEXT.range, csv.formatDateTime(result.startDate, false).slice(0, 10) + ' - ' + csv.formatDateTime(result.endDate, false).slice(0, 10)],
       [SHIFT.TEXT.modeLabel, SHIFT.TEXT.modeName[result.mode]]
     ]));
-    area.append(makeTable([TEXT.barcode, TEXT.master, TEXT.actualAverageShort, TEXT.averageDifference, TEXT.maxDifference],
-      stats.perBarcodeList.map((entry) => [entry.barcode, formatNumber(entry.master), { text: formatNumber(entry.actualAverage), level: levelOf(entry.actualAverage, entry.master) }, formatNumber(entry.averageDifference), { text: formatNumber(entry.maxDifference), level: entry.maxDifference === null ? '' : levelOf(entry.maxDifference, 0) }])));
+    const rangeTable = makeTable([TEXT.barcode, TEXT.master, TEXT.actualAverageShort, TEXT.averageDifference, TEXT.maxDifference],
+      stats.perBarcodeList.map((entry) => [entry.barcode, formatNumber(entry.master), { text: formatNumber(entry.actualAverage), level: levelOf(entry.actualAverage, entry.master) }, formatNumber(entry.averageDifference), { text: formatNumber(entry.maxDifference), level: entry.maxDifference === null ? '' : levelOf(entry.maxDifference, 0) }]));
+    area.append(rangeTable);
     const chartBlock = makeElement('div', 'chart-block');
     const scrollBox = makeElement('div', 'chart-scroll');
     scrollBox.tabIndex = 0;
@@ -356,7 +403,9 @@
     const { groupList, groupMap } = groupByFile(shownList);
     const selectedNameSet = new Set(groupList.map((group) => group.name).filter((name) => !initialNameSet || initialNameSet.has(name)));
     saved.selectedNameSet = selectedNameSet;
-    const redraw = () => drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet);
+    const applyBarcodeSelect = bindBarcodeSelect(rangeTable, [lineBox]);
+    // Pagkatapos i-redraw ang chart (hal. may na-uncheck na file), ibinabalik ang laki ng napiling barcode.
+    const redraw = () => { drawRangeLines(lineBox, legendHost, result, shownList, groupMap, selectedNameSet); applyBarcodeSelect(); };
     const layout = makeElement('div', 'range-chart-layout');
     layout.append(chartBlock, makeFilePanel(groupList, selectedNameSet, redraw));
     area.append(makeLevelLegend(), layout);
@@ -518,7 +567,7 @@
       if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
       const paths = storage.readLocalSettings()[CONFIG.FOLDER_PATHS_FIELD] || {};
       const opened = await masterOpenLatest.openLatest(rootHandle, paths[CONFIG.ROOT_KEY], CORREL);
-      setStatus('latestStatus', CORREL.TEXT.openedLatest + opened.fullPath + EXPORT.TEXT.openedHint, 'success');
+      setStatus('latestStatus', CORREL.TEXT.openedLatest + opened.openedPath + EXPORT.TEXT.openedHint, 'success');
     } catch (error) {
       setStatus('latestStatus', getCorrelErrorMessage(error, 'openFail'), 'error');
     } finally {

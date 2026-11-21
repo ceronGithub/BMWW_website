@@ -1,3 +1,36 @@
+INSTRUCTIONS v2.22 (Worst slider sa Correl at Repeatability)
+1. Backup muna. Ipalit: js/core/master-analysis.js, js/pages/master.js, js/core/correl-export.js, js/core/config.js (kasama ang mga file ng v2.20 at v2.21). Ctrl+F5.
+2. TEST STEPS v2.22:
+   - Master Correl: DAPAT may "Worst slider" sa listahan ng stats (hal. B-3 (0.200)) = barcode na may pinakamalaking diff ng Actual at Master; sa tabi ng pangalan ang diff. Kung walang kumpletong pares: "-".
+   - Export to Excel (Correl): DAPAT may "Worst slider" na linya sa buod sa taas (pagitan ng Master average at Date range); nandoon pa rin ang table at chart.
+   - Master Repeatability: DAPAT "Worst slider" na ang label (dating "Worst barcode"); pareho pa rin ang laman. Sa Excel ng Repeatability: DAPAT "Worst slider" din.
+   - Nasubukan sa jsdom (screen at laman ng .xlsx). Hindi pa sa totoong Chrome/Edge at Excel.
+
+--- LUMANG INSTRUCTIONS (v2.21) ---
+INSTRUCTIONS v2.21 (pindutin ang barcode para laki-an ang point; walang legend sa Excel ng Correl)
+1. Backup muna. Ipalit ang mga binagong file ng v2.21: js/core/chart-draw.js, js/pages/master.js, css/pages/master.css, js/core/config.js, js/core/xlsx-writer.js, js/core/correl-export.js, js/core/correl-export-config.js (kasama ang mga file ng v2.20). Ctrl+F5 sa index.html.
+2. TEST STEPS v2.21:
+   - Master > Master Correl (petsa na may record): pindutin ang isang barcode sa table (may tuldok-tuldok na underline): DAPAT lumaki ang point ng barcode na iyon sa scatter chart (may itim na outline) at ma-highlight ang row. Pindutin ang ibang barcode: lilipat. Pindutin ulit ang parehong barcode: babalik sa dating laki.
+   - Master Repeatability: pindutin ang barcode sa table, o ang label ng barcode sa ilalim ng chart (o ang point mismo): DAPAT lumaki ang lahat ng point ng barcode na iyon sa lahat ng linya at maging bold ang label. I-uncheck ang isang file sa gilid: DAPAT nandoon pa rin ang laki ng napiling barcode.
+   - Keyboard: Tab sa barcode sa table, tapos Enter o Space: DAPAT gumana.
+   - Export to Excel sa Master Correl, buksan ang .xlsx: DAPAT WALANG legend sa kanan ng chart. DAPAT nandoon pa rin ang dashed trendline, equation, R squared, at ang green / yellow / red ng bawat point.
+   - Hindi nagbago: Excel ng Repeatability (may legend pa rin ang ayon sa dati nitong ayos).
+   - Nasubukan sa jsdom (pindot ng barcode sa table at chart sa Correl at Repeatability, redraw, at laman ng chart XML ng .xlsx). Hindi pa nasubukan sa totoong Chrome/Edge at Excel; ang unang test ay sa PC mo.
+
+--- LUMANG INSTRUCTIONS (v2.20) ---
+INSTRUCTIONS v2.20 (Open latest correl file = buksan ang FOLDER; awtomatikong Full path sa Settings)
+1. Backup muna ng buong website folder. Ipalit ang 8 file: tools/open-handler/open-file.ps1, js/core/master-open-latest.js, js/core/master-export-config.js, js/core/correl-export-config.js, js/pages/master.js, js/core/config.js, js/pages/settings.js, at README.txt / 00_INSTRUCTIONS.txt. Bagong file: tools/SETUP-PER-PC.txt. Ctrl+F5 sa index.html (Chrome o Edge).
+2. HINDI kailangang i-install ulit ang open handler; ang open-file.ps1 lang ang ipalit (kung naka-install na ito sa PC).
+3. TEST STEPS v2.20:
+   - Master page > Master Correl (petsa na may record) > Export to Excel. Pindutin ang Open latest correl file: DAPAT bumukas ang File Explorer sa <Saving path>\master-correl\<petsa>, naka-highlight ang pinakabagong .xlsx, at HINDI bumukas ang Excel. Ang mensahe: "Ipinadala ang utos na buksan ang folder: <folder>".
+   - Open latest repeatability file: DAPAT Excel pa rin ang bumubukas (hindi nagbago).
+   - Kung walang bumukas: tingnan ang tools\open-handler\open-handler.log. Dapat may linyang "Binuksan ang folder: ...". Kung walang log, hindi pa naka-install ang handler (SETUP-PER-PC.txt).
+   - Settings > Data source 2 > Pumili/Palitan > piliin ang CLO1A: DAPAT kusang mapuno ang Full path ng C:\BM-Logging\CLO1A (o ayon sa parent ng Data source 1), lumabas sa ilalim ng pangalan ng path, at may mensaheng "Awtomatikong inilagay ang full path...". Tingnan kung tama, tapos Save settings.
+   - Palitan ang Data source 2 sa ibang folder: DAPAT ang parent ng dating path ang ginagamit + ang bagong pangalan. Kapag pareho ang pangalan ng folder at ng huling bahagi ng path: DAPAT walang ibabago.
+   - Saving path (BMWW) o Server path na wala pang full path: WALANG hula (walang mapagkukunan ng parent); i-type o i-paste ang full path nang isang beses.
+   - Nasubukan sa jsdom (hula ng full path, URL ng folder / file). Hindi napatakbo ang open-file.ps1 (walang PowerShell sa pinagsubukan); ang unang test ng Explorer ay sa PC mo.
+
+--- LUMANG INSTRUCTIONS (v2.19) ---
 INSTRUCTIONS v2.19 (Excel ng Master Correl: Barcode / Actual / Master, legend na may kulay at Actual / Master, pamagat na may machine name; kasama ang v2.17 hanggang v2.18)
 1. Backup muna ng buong website folder. Ipalit ang 13 binagong file: js/core/xlsx-writer.js, js/core/correl-export.js, js/core/correl-export-config.js, js/core/config.js, js/core/chart-draw.js, js/pages/master.js, css/pages/master.css, pages/master.html, js/templates/master.template.js, js/pages/settings.js, css/pages/settings.css, pages/settings.html, js/templates/settings.template.js (at ang README.txt at 00_INSTRUCTIONS.txt). Walang bagong file. Ctrl+F5 sa index.html (Chrome o Edge).
 2. TEST STEPS v2.19 (Excel ng Master Correl):

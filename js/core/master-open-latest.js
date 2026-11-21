@@ -5,6 +5,7 @@
  * VERSION : v2.14 | 2026-11-21 | bagong file (Open latest repeatability file)
  * VERSION : v2.15 | 2026-11-21 | walang download na; ang Windows handler na bmww-open: (tools/open-handler) ang nagbubukas ng file sa Excel
  * VERSION : v2.16 | 2026-11-21 | may optional na target (SUBFOLDER, FILE_PREFIX, FILE_EXTENSION, NO_FILE_CODE) para magamit din ng Master Correl; default ay Repeatability
+ * VERSION : v2.20 | 2026-11-21 | target.OPEN_MODE = 'folder': binubuksan ang FOLDER (File Explorer, naka-highlight ang file) imbes na ang Excel; ibinabalik ang openedPath
  * NOTE    : Hindi kayang patakbuhin ng browser ang Excel nang direkta, kaya nagpapadala ito ng link na bmww-open:<full path> sa Windows handler.
  */
 (function () {
@@ -43,9 +44,10 @@
   }
 
   // Ipinapadala sa Windows handler (bmww-open:<full path na naka-encode>) sa pamamagitan ng link na kinlick ng code.
-  function launchHandler(fullPath) {
+  // isReveal = true: folder ang bubuksan (bmww-open:reveal:<path>), hindi ang Excel.
+  function launchHandler(fullPath, isReveal) {
     const link = document.createElement('a');
-    link.href = EXPORT.PROTOCOL + encodeURIComponent(fullPath);
+    link.href = EXPORT.PROTOCOL + (isReveal ? EXPORT.REVEAL_PREFIX : '') + encodeURIComponent(fullPath);
     link.rel = 'noopener';
     document.body.append(link);
     link.click();
@@ -60,8 +62,11 @@
     const latest = await findLatestFile(rootHandle, target || EXPORT);
     const separator = EXPORT.PATH_SEPARATOR;
     const fullPath = rootPath.replace(/[\\/]+$/, '') + separator + latest.folderName + separator + latest.fileName;
-    launchHandler(fullPath);
-    return { folderName: latest.folderName, fileName: latest.fileName, fullPath };
+    const isReveal = (target || EXPORT).OPEN_MODE === EXPORT.OPEN_MODE_FOLDER;
+    launchHandler(fullPath, isReveal);
+    // openedPath = ang ipapakita sa user: folder kung folder mode, file kung hindi.
+    const folderPath = rootPath.replace(/[\\/]+$/, '') + separator + latest.folderName;
+    return { folderName: latest.folderName, fileName: latest.fileName, fullPath, folderPath, openedPath: isReveal ? folderPath : fullPath };
   }
 
   root.masterOpenLatest = Object.freeze({ findLatestFile, openLatest });

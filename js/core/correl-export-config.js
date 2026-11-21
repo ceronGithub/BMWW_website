@@ -2,6 +2,8 @@
  * FILE    : js/core/correl-export-config.js
  * PURPOSE : Constants ng Master Correl export (Excel): subfolder, file name, selector, kulay ng chart, text
  * DEPENDS : js/core/master-export-config.js (kulay, autofit, separator at protocol ay galing doon)
+ * VERSION : v2.21 | 2026-11-21 | CHART.SHOW_LEGEND = false (walang legend sa Excel chart)
+ * VERSION : v2.20 | 2026-11-21 | OPEN_MODE: 'folder'; openedLatest ay para sa folder
  * VERSION : v2.19 | 2026-11-21 | COLUMN (ayos ng table), CHART.LEGEND_DIGITS at LEGEND_SEPARATOR
  * VERSION : v2.16 | 2026-11-21 | bagong file
  */
@@ -15,6 +17,8 @@
     FILE_PREFIX: 'master-correl',
     FILE_EXTENSION: '.xlsx',
     NO_FILE_CODE: 'noLatestCorrelFile',
+    // 'folder' = ang Open latest correl file ay nagbubukas ng FOLDER (naka-highlight ang pinakabagong file). Alisin ito para Excel ang bumukas.
+    OPEN_MODE: 'folder',
     SELECTOR: { exportButton: '#latest-export', openLatestButton: '#latest-open' },
     SHEET: 'Correl',
     // Chart (scatter, x = master, y = actual). Kulay ng point ay green / yellow / red ayon sa level, kapareho ng screen.
@@ -22,7 +26,8 @@
       POINT_COLOR: '2563EB', TREND_COLOR: 'DC2626', TREND_WIDTH: 25400, MARKER_SIZE: 8,
       GAP_COLUMNS: 1, WIDTH_PIXELS: 760, HEIGHT_PIXELS: 560,
       // Text ng legend kada point: <Actual> / <Master>
-      LEGEND_DIGITS: 3, LEGEND_SEPARATOR: ' / '
+      // SHOW_LEGEND: false = walang legend sa chart ng Excel. Gawing true para bumalik ang legend (kulay + Actual / Master kada point).
+      SHOW_LEGEND: false, LEGEND_DIGITS: 3, LEGEND_SEPARATOR: ' / '
     },
     // Ayos ng column ng table sa sheet (0 = A): Barcode, Actual, Master
     COLUMN: { barcode: 0, actual: 1, master: 2 },
@@ -31,7 +36,7 @@
       exporting: 'Sine-save ang Excel file ng Master Correl...',
       saved: 'Na-save ang Excel file: ',
       openingLatest: 'Hinahanap ang pinakabagong Correl file...',
-      openedLatest: 'Ipinadala ang utos na buksan: ',
+      openedLatest: 'Ipinadala ang utos na buksan ang folder: ',
       error: {
         noResult: 'Patakbuhin muna ang Master Correl bago mag-export.',
         noLatestCorrelFile: 'Wala pang na-export na Correl file. Pindutin muna ang Export to Excel.',

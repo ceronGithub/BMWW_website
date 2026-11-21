@@ -2,6 +2,7 @@
  * FILE    : css/pages/master.css
  * PURPOSE : Style ng master page (naka-scope): date row, result, status badge, table, chart
  * DEPENDS : css/components.css
+ * VERSION : v2.21 | 2026-11-21 | barcode-link, is-selected (row, point, label) para sa pagpili ng barcode
  * VERSION : v2.17 | 2026-11-21 | ayos: itim na text ng chart (ang class na chart-grid ng container ay nagmamana ng stroke sa text); line.chart-grid at div.chart-grid na lang
  * VERSION : v2.3 | 2026-11-20 | bagong file
  * VERSION : v2.9 | 2026-11-20 | mas maliit na font ng file panel; legend ng napiling file
@@ -124,3 +125,15 @@
   .page-master div.chart-grid .chart-box { max-width: none; margin-bottom: 0; }
   .page-master .range-chart-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
 }
+
+/* v2.21: pindutin ang barcode (table o chart) para laki-an ang point nito */
+.page-master .barcode-link { cursor: pointer; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 3px; }
+.page-master .barcode-link:hover { color: var(--color-primary); }
+.page-master .barcode-link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.page-master .result-table tr.is-selected td { box-shadow: inset 0 0 0 9999px rgba(37, 99, 235, 0.12); }
+.page-master .result-table tr.is-selected td.barcode-link { color: var(--color-primary); text-decoration-style: solid; }
+.page-master circle[data-barcode] { cursor: pointer; }
+.page-master circle[data-barcode].is-selected { stroke: var(--color-text); stroke-width: 2.5; fill-opacity: 1; }
+.page-master .chart-label-link { cursor: pointer; }
+.page-master .chart-label-link:hover { text-decoration: underline; }
+.page-master .chart-label-link.is-selected { font-weight: 700; }

@@ -4,6 +4,7 @@
  * DEPENDS : wala (window.BMWW lang)
  * VERSION : v2.8 | 2026-11-20 | bagong file (para sa Export to Excel ng Master Repeatability)
  * VERSION : v2.13 | 2026-11-21 | line chart sa worksheet (sheet.chart): drawing at chart XML
+ * VERSION : v2.21 | 2026-11-21 | scatter: opsyonal na chart.hideLegend (walang legend sa chart)
  * VERSION : v2.19 | 2026-11-21 | scatter: opsyonal na chart.pointSeriesList (isang series kada point, may sariling legend entry: kulay + text); tinatanggal ang legend entry ng trendline
  * VERSION : v2.16 | 2026-11-21 | scatter chart na may trendline (chart.kind = 'scatter', kulay kada point), STYLE.precise (4 decimal) at computeColumnWidths (autofit, galing sa master-export.js)
  * VERSION : v2.14 | 2026-11-21 | puting background ng lahat ng cell (may manipis na border), walang gridlines (sheet.showGridLines), chart na fixed ang laki (oneCellAnchor, hindi lumiliit kapag nag-autofit), puting chart area
@@ -204,7 +205,7 @@
       + '<c:yVal><c:numRef><c:f>' + columnRangeText(sheetRef, chart.yRange.column, chart.yRange.firstRow, chart.yRange.lastRow) + '</c:f>' + buildNumberCache(chart.yValues) + '</c:numRef></c:yVal>'
       + '<c:smooth val="0"/></c:ser>';
     // Legend: sa per-point mode, tinatanggal ang entry ng base series (pang-trendline lang) at ng trendline.
-    const legendXml = pointSeriesList
+    const legendXml = chart.hideLegend ? '' : pointSeriesList
       ? '<c:legend><c:legendPos val="r"/><c:legendEntry><c:idx val="' + pointCount + '"/><c:delete val="1"/></c:legendEntry><c:legendEntry><c:idx val="' + (pointCount + 1) + '"/><c:delete val="1"/></c:legendEntry><c:overlay val="0"/></c:legend>'
       : '<c:legend><c:legendPos val="r"/><c:overlay val="0"/></c:legend>';
     return XML_HEADER + '<c:chartSpace xmlns:c="' + CHART_NS + '" xmlns:a="' + DRAWINGML_NS + '" xmlns:r="' + REL_NS + '"><c:roundedCorners val="0"/><c:chart>' + buildChartTitleXml(chart.title) + '<c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>'

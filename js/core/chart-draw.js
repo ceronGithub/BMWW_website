@@ -7,6 +7,7 @@
  * VERSION : v2.17 | 2026-11-21 | ayos: hindi na naputol ang nakahilig na label ng barcode sa line chart (dagdag na taas ayon sa pinakamahabang label)
  * VERSION : v2.17 | 2026-11-21 | mas malinaw na text: pamagat ng axis (chart-axis-title), equation (chart-equation, may halo), ayos ng sign ng intercept, ayos ng posisyon ng label
  * VERSION : v2.8 | 2026-11-20 | drawLines: series.colorIndex (matatag na kulay kapag may na-unselect) at options.hideLegend
+ * VERSION : v2.21 | 2026-11-21 | data-barcode sa point at label; highlight(container, barcode): nilalakihan ang point ng napiling barcode (scatter at line)
  */
 (function () {
   'use strict';
@@ -82,9 +83,12 @@
     });
     xTickList.forEach((tick) => {
       const xPosition = xScale(tick.value);
-      svg.append(svgElement('text', tick.rotate
+      const labelAttributes = tick.rotate
         ? { x: xPosition, y: PLOT.top + PLOT.height + 18, class: 'chart-text', 'text-anchor': 'end', transform: 'rotate(-40 ' + xPosition + ' ' + (PLOT.top + PLOT.height + 18) + ')' }
-        : { x: xPosition, y: PLOT.top + PLOT.height + 22, class: 'chart-text', 'text-anchor': 'middle' }, tick.label));
+        : { x: xPosition, y: PLOT.top + PLOT.height + 22, class: 'chart-text', 'text-anchor': 'middle' };
+      // Kapag may barcode ang tick (line chart), puwedeng pindutin ang label para laki-an ang point.
+      if (tick.barcode !== undefined) { labelAttributes['data-barcode'] = tick.barcode; labelAttributes.class = 'chart-text chart-label-link'; }
+      svg.append(svgElement('text', labelAttributes, tick.label));
     });
     svg.append(svgElement('line', { x1: PLOT.left, x2: PLOT.left + PLOT.width, y1: PLOT.top + PLOT.height, y2: PLOT.top + PLOT.height, class: 'chart-axis' }));
     svg.append(svgElement('line', { x1: PLOT.left, x2: PLOT.left, y1: PLOT.top, y2: PLOT.top + PLOT.height, class: 'chart-axis' }));
@@ -121,7 +125,11 @@
       svg.append(svgElement('text', { x: PLOT.left + 10, y: PLOT.top + 20, class: 'chart-text chart-equation' },
         'y = ' + trend.slope.toFixed(4) + 'x ' + (trend.intercept < 0 ? '- ' : '+ ') + Math.abs(trend.intercept).toFixed(4) + '   R\u00b2 = ' + trend.rSquared.toFixed(4)));
     }
-    pointList.forEach((point) => svg.append(svgElement('circle', { cx: xScale(point.x), cy: yScale(point.y), r: 4, class: point.level ? 'chart-point ' + point.level : 'chart-point' })));
+    pointList.forEach((point) => {
+      const attributes = { cx: xScale(point.x), cy: yScale(point.y), r: 4, 'data-radius': 4, class: point.level ? 'chart-point ' + point.level : 'chart-point' };
+      if (point.barcode !== undefined) attributes['data-barcode'] = point.barcode;
+      svg.append(svgElement('circle', attributes));
+    });
   }
 
   // Index ng kulay: colorIndex ng series kung meron (hindi gumagalaw ang kulay kapag may na-unselect), kung wala ay ang posisyon.
@@ -139,7 +147,7 @@
     const categoryCount = options.categoryList.length;
     const xScale = (index) => PLOT.left + (categoryCount > 1 ? (index / (categoryCount - 1)) * PLOT.width : PLOT.width / 2);
     const yScale = (value) => PLOT.top + PLOT.height - ((value - yTicks.minimum) / (yTicks.maximum - yTicks.minimum)) * PLOT.height;
-    drawAxes(svg, xScale, yScale, options.categoryList.map((label, index) => ({ value: index, label, rotate: true })), yTicks.tickList, '', '');
+    drawAxes(svg, xScale, yScale, options.categoryList.map((label, index) => ({ value: index, label, rotate: true, barcode: label })), yTicks.tickList, '', '');
     options.seriesList.forEach((series, seriesIndex) => {
       const group = svgElement('g', { class: series.isMaster ? 'chart-series chart-master' : 'chart-series chart-series-' + getColorIndex(series, seriesIndex) });
       let segment = [];
@@ -151,7 +159,8 @@
         if (value === null) { flushSegment(); return; }
         segment.push(xScale(index).toFixed(1) + ',' + yScale(value).toFixed(1));
         const level = series.levelList && series.levelList[index] ? ' ' + series.levelList[index] : '';
-        group.append(svgElement('circle', { cx: xScale(index), cy: yScale(value), r: series.isMaster ? 4 : 3, class: 'chart-dot' + level }));
+        const dotRadius = series.isMaster ? 4 : 3;
+        group.append(svgElement('circle', { cx: xScale(index), cy: yScale(value), r: dotRadius, 'data-radius': dotRadius, 'data-barcode': options.categoryList[index], class: 'chart-dot' + level }));
       });
       flushSegment();
       svg.append(group);
@@ -198,5 +207,18 @@
     });
   }
 
-  root.chart = Object.freeze({ drawScatter, drawLines, drawBars });
+  // Nilalakihan ang point (at binobold ang label) ng napiling barcode; ibinabalik sa dating laki ang iba. barcode '' = walang napili.
+  function highlight(container, barcode) {
+    container.querySelectorAll('[data-barcode]').forEach((element) => {
+      const isSelected = barcode !== '' && element.getAttribute('data-barcode') === barcode;
+      element.classList.toggle('is-selected', isSelected);
+      if (element.tagName.toLowerCase() !== 'circle') return;
+      const baseRadius = Number(element.getAttribute('data-radius'));
+      element.setAttribute('r', isSelected ? baseRadius * CHART.HIGHLIGHT_SCALE : baseRadius);
+      // Sa scatter, inilalapit sa unahan para hindi matakpan ng ibang point.
+      if (isSelected && element.parentNode.tagName.toLowerCase() === 'svg') element.parentNode.append(element);
+    });
+  }
+
+  root.chart = Object.freeze({ drawScatter, drawLines, drawBars, highlight });
 })();

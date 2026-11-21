@@ -5,6 +5,7 @@
  * VERSION : v2.6 | 2026-11-20 | bagong file (para sa Master)
  * VERSION : v2.7 | 2026-11-20 | classifyDeviation (green / yellow / red)
  * VERSION : v2.15 | 2026-11-21 | analyzeLatest: may optional na endDate (pinakabagong record sa pagitan ng start at end date); kapag wala, isang araw lang gaya ng dati
+ * VERSION : v2.22 | 2026-11-21 | findWorstSlider (barcode na may pinakamalaking diff ng actual vs master sa Correl)
  */
 (function () {
   'use strict';
@@ -91,6 +92,17 @@
     if (difference <= MASTER.DEVIATION.GREEN_MAX) return MASTER.DEVIATION.LEVEL.green;
     if (difference <= MASTER.DEVIATION.YELLOW_MAX) return MASTER.DEVIATION.LEVEL.yellow;
     return MASTER.DEVIATION.LEVEL.red;
+  }
+
+  // Worst slider ng Correl: barcode na may pinakamalaking |actual - master|. Ibinibigay { barcode, difference } o null kung walang kumpletong pares.
+  function findWorstSlider(barcodeList, actualList, masterList) {
+    let worst = null;
+    barcodeList.forEach((barcode, index) => {
+      if (actualList[index] === null || masterList[index] === null) return;
+      const difference = Math.abs(actualList[index] - masterList[index]);
+      if (!worst || difference > worst.difference) worst = { barcode, difference };
+    });
+    return worst;
   }
 
   // Repeatability: actual (bawat petsa) laban sa master, kada barcode at kabuuan.
@@ -235,5 +247,5 @@
     };
   }
 
-  root.masterAnalysis = Object.freeze({ computeRegression, classifyDeviation, classifyLatest, classifyRange, computeRepeatability, analyzeLatest, analyzeRange });
+  root.masterAnalysis = Object.freeze({ computeRegression, classifyDeviation, classifyLatest, classifyRange, computeRepeatability, findWorstSlider, analyzeLatest, analyzeRange });
 })();

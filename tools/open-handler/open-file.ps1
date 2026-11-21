@@ -6,6 +6,7 @@
            master-repeatability\<petsa>\ o master-correl\<petsa>\ (magkapareho ang pangalan ng folder at ng simula ng file). Ang iba (exe, bat, folder, UNC path, "..") ay HINDI bubuksan.
  VERSION : v1 | 2026-11-21 | bagong file
  VERSION : v1.1 | 2026-11-21 | pinapayagan din ang master-correl (Master Correl export)
+ VERSION : v1.2 | 2026-11-21 | bagong mode na bmww-open:reveal:<path>: binubuksan ang FOLDER sa File Explorer at naka-highlight ang file (hindi binubuksan ang Excel). Parehong safety check.
 #>
 param(
     [Parameter(Position = 0)][string]$Url = '',
@@ -17,6 +18,7 @@ $logPath = Join-Path $scriptDir 'open-handler.log'
 $allowedNameList = @('master-repeatability', 'master-correl')
 $requiredExtension = '.xlsx'
 $protocolPrefix = 'bmww-open:'
+$revealPrefix = 'reveal:'
 
 # Sumusulat sa log (para malaman kung bakit hindi nabuksan).
 function Write-Log([string]$message) {
@@ -27,7 +29,16 @@ function Write-Log([string]$message) {
 function Get-PathFromUrl([string]$text) {
     if (-not $text.StartsWith($protocolPrefix, [StringComparison]::OrdinalIgnoreCase)) { return $null }
     $encoded = $text.Substring($protocolPrefix.Length).TrimStart('/').TrimEnd('/')
+    # Kung nagsisimula sa reveal: ibig sabihin buksan ang folder (hindi ang file). Hindi ito sinasama sa path.
+    if ($encoded.StartsWith($revealPrefix, [StringComparison]::OrdinalIgnoreCase)) { $encoded = $encoded.Substring($revealPrefix.Length) }
     try { return [Uri]::UnescapeDataString($encoded) } catch { return $null }
+}
+
+# Reveal mode ba ang URL? (bmww-open:reveal:<path>)
+function Test-RevealUrl([string]$text) {
+    if (-not $text.StartsWith($protocolPrefix, [StringComparison]::OrdinalIgnoreCase)) { return $false }
+    $encoded = $text.Substring($protocolPrefix.Length).TrimStart('/')
+    return $encoded.StartsWith($revealPrefix, [StringComparison]::OrdinalIgnoreCase)
 }
 
 # Tama ba ang path (tingnan ang SAFETY sa taas)? Ibinabalik ang dahilan kung hindi; blangko kung tama.
@@ -53,6 +64,13 @@ $targetPath = Get-PathFromUrl $Url
 if ($null -eq $targetPath) { Write-Log ('Hindi tamang URL: ' + $Url); exit 1 }
 $reason = Test-AllowedPath $targetPath
 if ($reason) { Write-Log ('Hindi binuksan (' + $reason + '): ' + $targetPath); exit 1 }
-if ($DryRun) { Write-Output ('OK: ' + $targetPath); exit 0 }
-Start-Process -FilePath $targetPath
-Write-Log ('Binuksan: ' + $targetPath)
+$isReveal = Test-RevealUrl $Url
+if ($DryRun) { $okLabel = if ($isReveal) { 'OK (folder): ' } else { 'OK: ' }; Write-Output ($okLabel + $targetPath); exit 0 }
+if ($isReveal) {
+    # File Explorer: bubukas ang folder at naka-highlight ang file.
+    Start-Process -FilePath 'explorer.exe' -ArgumentList ('/select,"' + $targetPath + '"')
+    Write-Log ('Binuksan ang folder: ' + $targetPath)
+} else {
+    Start-Process -FilePath $targetPath
+    Write-Log ('Binuksan: ' + $targetPath)
+}

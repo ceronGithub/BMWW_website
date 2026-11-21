@@ -11,6 +11,9 @@
  * VERSION : v2.5 | 2026-11-20 | PAGE_LIST (lot-tracking) at CONFIG.LOT (constants, selector, text ng LOT Tracking)
  * VERSION : v2.3 | 2026-11-20 | PAGE_LIST (calibration, master), required/gated sa PATH_LIST, ROW_CLASS, bagong text
  * VERSION : v2.8 | 2026-11-20 | TEXT.master: filePanelTitle, filePanelNote, fileRecords, fileSelected, fileNoneSelected
+ * VERSION : v2.22 | 2026-11-21 | TEXT.master.worstBarcode = 'Worst slider' (Repeatability at Correl, screen at Excel)
+ * VERSION : v2.21 | 2026-11-21 | CHART.HIGHLIGHT_SCALE (laki ng napiling data point)
+ * VERSION : v2.20 | 2026-11-21 | AUTO_PATH (hula ng full path kapag pumili ng folder); text na fullPathAutoFilled; bagong text ng folderPicked at fullPathHint
  * VERSION : v2.18 | 2026-11-21 | Settings: SELECTOR.settings.unsavedNote; TEXT: fullPathRequired, unsavedNote; text ng folderPicked, fullPathHint, pathsUnlocked
  * VERSION : v2.17c | 2026-11-21 | SELECTOR.master: latestDate (kapalit ng latestStart at latestEnd)
  * VERSION : v2.17b | 2026-11-21 | CHART.LABEL_CHAR_WIDTH / LABEL_SLANT / LABEL_MARGIN (dagdag na taas ng line chart para sa mahabang label)
@@ -48,6 +51,13 @@
       { key: 'source3', gated: true, label: 'Data source 3', note: 'Pangatlong folder na pagkukunan ng data.' }
     ],
     ROOT_KEY: 'root',
+    // Awtomatikong full path: hindi kayang basahin ng browser ang totoong path, kaya hinuhulaan ito = <parent> + <pangalan ng napiling folder>.
+    // Ang parent ay kinukuha, ayon sa pagkakasunod: (1) parent ng full path na nasa field na (kapag nagpapalit ng folder),
+    // (2) parent ng ibang path sa parehong GROUP na may laman na, (3) PARENT_BY_KEY dito. Walang parent = walang hula (type / paste).
+    AUTO_PATH: {
+      GROUP_LIST: [['source1', 'source2', 'source3']],
+      PARENT_BY_KEY: { source1: 'C:\\BM-Logging', source2: 'C:\\BM-Logging', source3: 'C:\\BM-Logging' }
+    },
     HANDLE_KEY: { root: 'rootFolder', server: 'serverFolder', source1: 'sourceFolder', source2: 'sourceFolder2', source3: 'sourceFolder3' },
     // Lumang field sa settings na binabasa pa ng Dashboard (v2.2: pinananatili).
     LEGACY_NAME_FIELD: { root: 'rootFolderName', source1: 'sourceFolderName' },
@@ -83,7 +93,9 @@
       WIDTH: 640, HEIGHT: 380, PADDING: { top: 44, right: 24, bottom: 78, left: 80 },
       TICK_COUNT: 5, PALETTE_SIZE: 8, LEGEND_MAX: 12, PAD_RATIO: 0.15,
       // Pang-sukat ng nakahilig na label sa ilalim ng line chart (px bawat character, sin ng -40 degrees, margin)
-      LABEL_CHAR_WIDTH: 10, LABEL_SLANT: 0.65, LABEL_MARGIN: 30
+      LABEL_CHAR_WIDTH: 10, LABEL_SLANT: 0.65, LABEL_MARGIN: 30,
+      // Ilang beses lalaki ang point ng napiling barcode (pinindot sa table o sa chart)
+      HIGHLIGHT_SCALE: 2.4
     },
     ROOT_FOLDER_NAME: 'BMWW',
     SETTINGS_SUBFOLDER: 'settings',
@@ -340,9 +352,9 @@
         working: 'Binabasa ang mga file...', progress: 'Binabasa: ',
         sourceNotSet: 'Hindi pa naka-set ang Data source 1. Pumunta sa Settings.',
         recordDate: 'Date', fileName: 'File', rSquared: 'R Square', actualAverage: 'Actual AVG', masterAverage: 'Master AVG',
-        repeatability: 'Repeatability', averageDifference: 'Avg diff', worstBarcode: 'Worst barcode', maxDifference: 'Max diff',
+        repeatability: 'Repeatability', averageDifference: 'Avg diff', worstBarcode: 'Worst slider', maxDifference: 'Max diff',
         difference: 'Difference', records: 'Records', csvFiles: 'CSV files', range: 'Range', masterFiles: 'Master files',
-        barcode: 'Barcode', actual: 'Actual', master: 'Master', actualAverageShort: 'Actual avg',
+        barcode: 'Barcode', barcodeSelectAria: 'Laki-an ang point ng barcode na ', actual: 'Actual', master: 'Master', actualAverageShort: 'Actual avg',
         scatterTitle: 'Master Correl', scatterX: 'Master Reading', scatterY: 'Actual Reading',
         barTitle: 'Actual AVG vs Master AVG', lineTitle: 'Master Repeatability', masterSeries: 'MASTER',
         filePanelTitle: 'Files', filePanelNote: 'I-uncheck ang file para alisin ang linya nito sa chart.',
@@ -374,6 +386,8 @@
       machineMissing: 'Pumili ng uri at maglagay ng machine name.',
       rootMissing: 'Piliin muna ang Saving path (BMWW folder). Kailangan ito bago mag-save.', wrongRoot: 'Ang piliing folder ay dapat na may pangalang BMWW.',
       noPermission: 'Hindi pinayagan ang access sa folder.', folderPicked: 'Napili ang folder. Ilagay ang full path nito, tapos pindutin ang Save settings.',
+      fullPathAutoFilled: 'Awtomatikong inilagay ang full path: ',
+      fullPathAutoHint: ' | Hula ito mula sa napiling folder; tingnan kung tama (baguhin kung mali), tapos pindutin ang Save settings.',
       folderError: 'Hindi mapili ang folder.', saveError: 'Hindi na-save ang settings. Subukan ulit.',
       saved: 'Na-save sa ', loadError: 'Hindi mabasa ang naunang settings.',
       savedBoth: 'Na-save sa Saving path at Server path: ',
@@ -386,7 +400,7 @@
       badgeRequired: 'Required', badgeClosed: 'Hindi pa bukas',
       lockedPathNote: 'Piliin muna ang Saving path (BMWW) para mabuksan ito.',
       fullPathLabel: 'Full path', fullPathPlaceholder: 'Hal. C:\\Users\\Name\\Desktop\\BMWW', fullPathAria: 'Full path ng ',
-      fullPathHint: 'Kailangan ito kapag napili na ang folder. Hindi ito makukuha ng browser; i-type o i-paste ang buong path.', fullPathEmpty: 'Wala pang full path',
+      fullPathHint: 'Kailangan ito kapag napili na ang folder. Awtomatikong nilalagay kapag pumili ng folder (hula lang, dahil hindi mababasa ng browser ang totoong path); baguhin kung mali.', fullPathEmpty: 'Wala pang full path',
       fullPathInvalid: 'Hindi tama ang full path. Dapat nagsisimula sa drive (C:\\) o network (\\\\server).',
       fullPathMismatch: 'Hindi tugma ang dulo ng full path sa napiling folder: ', folderLabel: 'Folder: ',
       fullPathRequired: 'Kailangan ng full path. I-type o i-paste ang buong path ng napiling folder (hal. C:\\BMWW).',
