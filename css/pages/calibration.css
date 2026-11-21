@@ -1,7 +1,96 @@
 /*
  * FILE    : css/pages/calibration.css
- * PURPOSE : Style ng calibration page (naka-scope)
+ * PURPOSE : Style ng calibration page (naka-scope): date row, result, status badge, table, chart (kopya ng master.css para sa Calibration correl)
  * DEPENDS : css/components.css
+ * VERSION : v9.0 | 2026-11-22 | Calibration correl: date row, status badge, stat list, table, chart, level legend, barcode-link (kopya ng master.css; walang range / file panel)
  * VERSION : v2.3 | 2026-11-20 | bagong file
  */
-.page-calibration .empty-state { padding: var(--space-8) var(--space-4); text-align: center; border-style: dashed; }
+.page-calibration {
+  --chart-1: #2563eb; --chart-2: #16a34a; --chart-3: #d97706; --chart-4: #9333ea;
+  --chart-5: #0891b2; --chart-6: #db2777; --chart-7: #65a30d; --chart-8: #ea580c;
+  --calibration-warning: #b45309;
+  --level-green: #16a34a; --level-yellow: #eab308; --level-red: #dc2626;
+  --level-yellow-text: #1f2937;
+  padding-bottom: var(--space-6);
+}
+.page-calibration .source-path { font-weight: 600; overflow-wrap: anywhere; margin-bottom: var(--space-1); }
+.page-calibration .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.page-calibration .date-row .form-input[readonly] { background: var(--color-bg); color: var(--color-muted); cursor: not-allowed; }
+.page-calibration .action-row { margin-top: var(--space-4); }
+.page-calibration .action-row-split { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.page-calibration .status.is-info { color: var(--color-muted); }
+.page-calibration .result-area { margin-top: var(--space-4); }
+.page-calibration .result-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.page-calibration .status-badge { display: inline-block; padding: var(--space-1) var(--space-4); font-weight: 700; color: var(--color-on-primary); border-radius: 999px; }
+.page-calibration .status-badge.is-pass { background: var(--color-success); }
+.page-calibration .status-badge.is-warning { background: var(--calibration-warning); }
+.page-calibration .status-badge.is-fail { background: var(--color-danger); }
+.page-calibration .stat-list { display: grid; grid-template-columns: 1fr; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.page-calibration .stat-item { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-calibration .stat-label { color: var(--color-muted); }
+.page-calibration .stat-value { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.page-calibration .table-wrap { overflow-x: auto; margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-calibration .result-table { width: 100%; border-collapse: collapse; }
+.page-calibration .result-table th, .page-calibration .result-table td { padding: var(--space-2) var(--space-3); text-align: center; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.page-calibration .result-table th { background: var(--color-primary-soft); font-weight: 700; }
+.page-calibration .result-table tr:last-child td { border-bottom: 0; }
+.page-calibration .result-note { color: var(--color-muted); font-size: 0.875rem; margin-bottom: var(--space-3); }
+.page-calibration div.chart-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+.page-calibration .chart-box { width: 100%; max-width: 30rem; margin: 0 auto var(--space-4); padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-calibration .chart-box-wide { max-width: 44rem; }
+.page-calibration .chart-svg { display: block; width: 100%; height: auto; }
+.page-calibration .chart-text { fill: var(--color-text); stroke: none; font-size: 16px; }
+.page-calibration .chart-title { font-size: 21px; font-weight: 700; }
+.page-calibration .chart-axis-title { font-size: 17px; font-weight: 600; }
+.page-calibration .chart-equation { font-size: 16px; font-weight: 700; paint-order: stroke; stroke: var(--color-surface); stroke-width: 4px; stroke-linejoin: round; }
+.page-calibration line.chart-grid { stroke: var(--color-border); stroke-width: 1; }
+.page-calibration .chart-axis { stroke: var(--color-muted); stroke-width: 1.5; }
+.page-calibration .chart-point { fill: var(--chart-1); fill-opacity: 0.95; stroke: var(--color-surface); stroke-width: 1.5; }
+.page-calibration .chart-point.level-green, .page-calibration .chart-dot.level-green { fill: var(--level-green); }
+.page-calibration .chart-point.level-yellow, .page-calibration .chart-dot.level-yellow { fill: var(--level-yellow); }
+.page-calibration .chart-point.level-red, .page-calibration .chart-dot.level-red { fill: var(--level-red); }
+.page-calibration .chart-dot { stroke: var(--color-surface); stroke-width: 1; }
+.page-calibration .chart-trend { stroke: var(--color-danger); stroke-width: 2; stroke-dasharray: 6 4; }
+.page-calibration .chart-line { fill: none; stroke: currentColor; stroke-width: 2; }
+.page-calibration .chart-line-master { stroke-width: 3.5; }
+.page-calibration .chart-dot { fill: currentColor; }
+.page-calibration .chart-bar { fill: currentColor; }
+.page-calibration .chart-master { color: var(--color-text); }
+.page-calibration .chart-series-0 { color: var(--chart-1); }
+.page-calibration .chart-series-1 { color: var(--chart-2); }
+.page-calibration .chart-series-2 { color: var(--chart-3); }
+.page-calibration .chart-series-3 { color: var(--chart-4); }
+.page-calibration .chart-series-4 { color: var(--chart-5); }
+.page-calibration .chart-series-5 { color: var(--chart-6); }
+.page-calibration .chart-series-6 { color: var(--chart-7); }
+.page-calibration .chart-series-7 { color: var(--chart-8); }
+.page-calibration .result-table td.level-green { background: var(--level-green); color: #fff; font-weight: 700; }
+.page-calibration .result-table td.level-yellow { background: var(--level-yellow); color: var(--level-yellow-text); font-weight: 700; }
+.page-calibration .result-table td.level-red { background: var(--level-red); color: #fff; font-weight: 700; }
+.page-calibration .level-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+.page-calibration .level-legend-title { color: var(--color-muted); font-size: 0.875rem; }
+.page-calibration .level-legend-item { padding: var(--space-1) var(--space-3); border-radius: 999px; font-size: 0.8125rem; font-weight: 600; }
+.page-calibration .level-legend-item.level-green { background: var(--level-green); color: #fff; }
+.page-calibration .level-legend-item.level-yellow { background: var(--level-yellow); color: var(--level-yellow-text); }
+.page-calibration .level-legend-item.level-red { background: var(--level-red); color: #fff; }
+@media (min-width: 768px) {
+  .page-calibration .stat-list { grid-template-columns: 1fr 1fr; }
+  .page-calibration .date-row { max-width: 36rem; }
+}
+@media (min-width: 1024px) {
+  .page-calibration .stat-list { grid-template-columns: 1fr 1fr 1fr; }
+  .page-calibration div.chart-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+  .page-calibration div.chart-grid .chart-box { max-width: none; margin-bottom: 0; }
+}
+
+/* v2.21: pindutin ang barcode (table o chart) para laki-an ang point nito */
+.page-calibration .barcode-link { cursor: pointer; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 3px; }
+.page-calibration .barcode-link:hover { color: var(--color-primary); }
+.page-calibration .barcode-link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.page-calibration .result-table tr.is-selected td { box-shadow: inset 0 0 0 9999px rgba(37, 99, 235, 0.12); }
+.page-calibration .result-table tr.is-selected td.barcode-link { color: var(--color-primary); text-decoration-style: solid; }
+.page-calibration circle[data-barcode] { cursor: pointer; }
+.page-calibration circle[data-barcode].is-selected { stroke: var(--color-text); stroke-width: 2.5; fill-opacity: 1; }
+.page-calibration .chart-label-link { cursor: pointer; }
+.page-calibration .chart-label-link:hover { text-decoration: underline; }
+.page-calibration .chart-label-link.is-selected { font-weight: 700; }

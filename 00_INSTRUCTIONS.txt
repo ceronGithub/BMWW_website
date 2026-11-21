@@ -1,3 +1,21 @@
+INSTRUCTIONS v9.0 (Calibration correl)
+1. Backup muna ng buong website folder. Ilagay ang 3 BAGONG file: js/core/calibration-config.js, js/core/calibration-analysis.js, js/core/calibration-export.js. Ipalit ang 6 binagong file: pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, css/pages/calibration.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang file na ginalaw (hindi galing ang Master, config.js, index.html).
+2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge.
+3. TEST STEPS v9.0:
+   - Settings: may Saving path (BMWW), Server path, machine name (hal. MWW 1), at Data source 1 = folder ng calibration CSV (hal. C:\BM-Logging\Calib).
+   - Sidebar > Calibration (hindi makikita ng LEAD PC). DAPAT may card na Data source (path ng Data source 1) at card na Calibration correl na may Date (today, hindi mababago) at button na Calibration Correl.
+   - Pindutin ang Calibration Correl (kung may record na ang petsa ay ngayong araw). Kung hihingi ng permission, pindutin ang Allow.
+   - DAPAT lumabas: badge PASS / WARNING / FAIL, R Square, Date, Actual AVG, Master AVG, File; table na Barcode / Actual (After) / Master (green / yellow / red ang Actual); scatter chart na pamagat na "<machine name> Calibration Correl" na may trendline; bar chart. Sa sample na CalibSts_261114085817.csv (kapag ang petsa ng record ay ngayong araw): 29 barcode, R Square 0.9901, Actual AVG 63.696662, Master AVG 63.696552, PASS.
+   - Pindutin ang barcode sa table: DAPAT lumaki ang point nito sa chart at ma-highlight ang row; pindutin ulit para ibalik.
+   - Berde ang mensahe: "Na-save ang Excel file: <Saving path>\calibration-correl\<petsa>\calibration-correl_...xlsx. Kopya sa Server: <Server path>\calibration-correl\<machine name>\<petsa>\calibration-correl_latest.xlsx". Buksan ang Excel: DAPAT may sheet na Calibration Correl (buod, table, scatter chart na may trendline at R squared).
+   - Pindutin ulit ang Calibration Correl: DAPAT bagong file sa Saving path at ino-overwrite ang calibration-correl_latest.xlsx sa Server.
+   - Alisin ang Server path at ulitin: DAPAT naka-save pa rin sa Saving path at pula ang mensahe na "Hindi nakopya sa Server path: ...".
+   - Lumipat sa ibang page at bumalik (parehong araw): DAPAT nandoon pa rin ang huling resulta.
+   - Folder na walang calibration CSV: DAPAT "Walang calibration file ... sa mga file na nabasa." Walang record ngayong araw: DAPAT "Walang calibration record sa napiling petsa."
+   - Master page: DAPAT walang pagbabago.
+   - Nasubukan sa Node at jsdom gamit ang sample CSV at gawa-gawang folder handle. Hindi pa sa totoong Chrome/Edge at totoong Server path; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v7.3) ---
 INSTRUCTIONS v7.3 (PASS / WARNING / FAIL ng Master Correl sa LEAD PC)
 1. Backup muna ng buong website folder. Ilagay ang 2 BAGONG file: js/core/correl-sync-config.js, js/core/correl-sync.js. Ipalit ang 8 binagong file: js/pages/master.js, js/pages/dashboard-machines.js, js/core/dashboard-machines-config.js, css/pages/dashboard-machines.css, pages/master.html, pages/dashboard.html, js/templates/master.template.js, js/templates/dashboard.template.js (kasama ang mga file ng v7.1 at v7.2 sa ibaba, at README.txt, 00_INSTRUCTIONS.txt). Walang binago sa index.html. Ctrl+F5 sa index.html (Chrome o Edge).
 2. TEST STEPS v7.3:

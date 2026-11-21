@@ -2,6 +2,7 @@
  * FILE    : js/templates/calibration.template.js
  * PURPOSE : Kopya ng pages/calibration.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v9.0 | 2026-11-22 | kasabay ng pages/calibration.html (Calibration correl at mga script nito)
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.3 | 2026-11-20 | bagong file
  */
@@ -12,13 +13,40 @@
 <section class="page page-calibration" data-page="calibration">
   <header class="page-header">
     <h1 class="page-title">Calibration</h1>
-    <p class="page-subtitle">Calibration ng BM Analyzer.</p>
+    <p class="page-subtitle">Calibration correl mula sa Data source 1.</p>
   </header>
-  <div class="card empty-state">
-    <h2 class="card-title">Wala pang laman ang pahinang ito</h2>
-    <p class="card-note">Idadagdag dito ang mga tool ng Calibration.</p>
+
+  <div class="card">
+    <h2 class="card-title">Data source</h2>
+    <p id="calibration-source" class="source-path"></p>
+    <p class="card-note">Galing sa Settings (Data source 1). <a href="#settings">Buksan ang Settings</a></p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Calibration correl</h2>
+        <p class="card-note">Pinakabagong calibration record ngayong araw: Actual (After) laban sa Master. Ang Date ay laging today at hindi puwedeng baguhin.</p>
+      </div>
+    </div>
+    <div class="date-row">
+      <div class="form-group">
+        <label class="form-label" for="calibration-date">Date</label>
+        <input id="calibration-date" class="form-input" type="date" readonly>
+      </div>
+    </div>
+    <div class="action-row action-row-split">
+      <button id="calibration-run" class="btn btn-primary" type="button">Calibration Correl</button>
+    </div>
+    <p id="calibration-status" class="status" role="status"></p>
+    <div id="calibration-result" class="result-area"></div>
   </div>
 </section>
+<script src="js/core/master-export-config.js"></script>
+<script src="js/core/xlsx-writer.js"></script>
+<script src="js/core/calibration-config.js"></script>
+<script src="js/core/calibration-analysis.js"></script>
+<script src="js/core/calibration-export.js"></script>
 <script src="js/pages/calibration.js"></script>
 `);
 })();
