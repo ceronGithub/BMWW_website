@@ -5,6 +5,7 @@
  * DEPENDS : js/core/preview-tab.js, js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v8.13 | 2026-11-21 | FAIL ng Master Repeatability: naka-highlight ang tile (dm-tile-alert), chip na Repeatability fail sa buod, at nauuna sa pagkakasunod (hasRepeatabilityFail)
  * VERSION : v8.12 | 2026-11-21 | Master Repeatability sa tile: LEAD PC (renderLead: attachToItems, buildMachineTile) at Sender (ownRepeatability sa readOwnCorrel at renderSender); ang tile at Preview ay nasa js/core/repeatability-tile.js
  * VERSION : v8.10 | 2026-11-21 | LEAD PC: may Preview na rin ang worst slider sa tile ng machine; binabasa ang Master Compare Excel sa <Server path>\\master-compare\\<machine> (loadCompareDetails ay may LEAD PC branch)
  * VERSION : v8.9 | 2026-11-21 | Preview ay bagong tab (previewTab.open) na nagpapakita ng buod, chart at laman ng Excel; inalis ang popup, handleExplorerClick, buildCorrelTable, buildCompareTable, fillPreviewBody, fillCompareBody; dagdag na buildCorrelPage, buildComparePage
@@ -83,7 +84,7 @@
   }
 
   // Buod ng mga machine sa taas ng listahan.
-  function renderSummary(summary, alertCount, correlFailCount) {
+  function renderSummary(summary, alertCount, correlFailCount, repeatabilityFailCount) {
     const list = createElementWith('ul', 'dm-chip-list');
     const labels = TEXT.summary;
     list.append(
@@ -94,7 +95,8 @@
       buildChip(labels.stale, summary.stale, 'dm-chip-stale'),
       buildChip(labels.noStatus, summary.noStatus),
       buildChip(labels.worstSlider, alertCount, 'dm-chip-alert'),
-      buildChip(labels.correlFail, correlFailCount, 'dm-chip-correl-fail')
+      buildChip(labels.correlFail, correlFailCount, 'dm-chip-correl-fail'),
+      buildChip(labels.repeatabilityFail, repeatabilityFailCount, 'dm-chip-correl-fail')
     );
     query(SEL.summary).replaceChildren(list);
   }
@@ -118,9 +120,14 @@
     return Boolean(item.correl) && item.correl.status.status === CONFIG.MASTER.STATUS.fail;
   }
 
-  // Ranggo ng machine item para sa pagkakasunod (alert o Correl FAIL muna, tapos ongoing; no status sa huli).
+  // FAIL ba ang huling Master Repeatability ng machine (galing sa Excel sa <Server path>\\master-repeatability)?
+  function hasRepeatabilityFail(item) {
+    return Boolean(item.repeatability) && item.repeatability.status === CONFIG.MASTER.STATUS.fail;
+  }
+
+  // Ranggo ng machine item para sa pagkakasunod (alert, Correl FAIL o Repeatability FAIL muna, tapos ongoing; no status sa huli).
   function getRank(item) {
-    if (hasAlert(item) || hasCorrelFail(item)) return DM.RANK.alert;
+    if (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item)) return DM.RANK.alert;
     if (item.presence === QUEUE.PRESENCE.stale) return DM.RANK.stale;
     if (item.presence === QUEUE.PRESENCE.noStatus || !item.status) return DM.RANK.noStatus;
     return DM.RANK[item.status.state] === undefined ? DM.RANK.idle : DM.RANK[item.status.state];
@@ -424,7 +431,7 @@
 
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
-    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) ? ' dm-tile-alert' : ''));
+    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
     tile.append(head, buildCorrelBlock(item.correl, nowMs), root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false));
@@ -492,7 +499,7 @@
     const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
     await root.repeatabilityTile.attachToItems(snapshot.handle, snapshot.machineItemList);
     if (!query(SEL.section)) return;
-    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length);
+    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length, snapshot.machineItemList.filter(hasRepeatabilityFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
     grid.replaceChildren(...sortedList.map((item) => buildMachineTile(item, nowMs)));
     setMessage(sortedList.length === 0 ? TEXT.emptyGrid : excelIssueList.join(' | '), false);

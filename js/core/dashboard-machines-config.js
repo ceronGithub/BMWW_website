@@ -2,6 +2,7 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v8.13 | 2026-11-21 | TEXT.summary.repeatabilityFail (chip ng FAIL ng Master Repeatability)
  * VERSION : v8.10 | 2026-11-21 | TEXT.preview.panel.compare.noFileLead (Preview ng worst slider sa LEAD PC)
  * VERSION : v8.9 | 2026-11-21 | Preview ay bagong tab (PREVIEW_TAB, TEXT.preview.tab); inalis ang text ng popup (close, loading, columns, openExplorer, rowHint)
  * VERSION : v8.8 | 2026-11-21 | PREVIEW_PANEL, TEXT.preview.panel.compare at text ng chart (Preview ng worst slider at chart ng Master Correl)
@@ -81,7 +82,7 @@
         error: '{machine}: pumalya ang pagbasa ng Excel ({detail}).',
         none: '(wala)'
       },
-      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider', correlFail: 'Correl fail' },
+      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider', correlFail: 'Correl fail', repeatabilityFail: 'Repeatability fail' },
       correl: { label: 'MASTER CORREL', none: 'Wala pang resulta', rSquared: 'R Square ', record: 'Record: ', sent: 'Sent: ', stale: 'LUMA', icon: { PASS: '\u2714', WARNING: '\u25B2', FAIL: '\u2716' } },
       compare: {
         preview: 'Preview',
