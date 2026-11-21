@@ -22,6 +22,7 @@ v3.1 | 2026-11-21 | tools/file-watcher: script sa Windows na kusang nagbubukas n
 v3.0 | 2026-11-21 | Search Files: Preview kada file sa Result (text, CSV, larawan, PDF)
 v2.9 | 2026-11-21 | Search Files: tanong kung papalitan ang kapangalan (overwrite), send log sa <Saving path>\logs\send-log.txt, alaala ng huling manual destination
 v2.8 | 2026-11-20 | Search Files page: hanap sa CLO1A/CLO1A1 (by name, by range date, latest), resulta na may scroll, Send to (Path o manual input)
+v6 | 2026-11-21 | Task 1D: Dashboard machine view. Role badge (LEAD PC = MONITOR ONLY, MACHINE = SENDER); sa LEAD PC: naka-pin na tile ng LEAD PC, chips, at tile ng bawat machine na may dot (ACTIVE/STALE/NO STATUS), state (ONGOING/DONE/IDLE), mode, lot at oras; sa machine: sariling status lang. Bagong dashboard-machines-config.js, dashboard-machines.js, dashboard-machines.css; binago: dashboard.html, dashboard.template.js, dashboard.js, README
 v5.2 | 2026-11-21 | Task 1C: monitor ng Data source 1, 2, 3 sa not-LEAD PC (Calibration/Master, Online/Offline; ONGOING at DONE) at sulat ng status sa <Server path>\queue. Bagong js/core/monitor.js; sinisimulan ng app.js. Wala pang UI (1D)
 v5.1 | 2026-11-21 | Task 1B: queue sa Server path (<Server path>\queue\<machine name>.json): sulat ng status ng sariling machine, basa ng lahat, listahan ng machine mula sa server settings. Bagong js/core/queue.js; wala pang UI at wala pang tumatawag (1C monitor, 1D Dashboard)
 v5 | 2026-11-20 | Task 1A: Settings ay sine-save kada machine (<machine name>.json) sa <Saving path>\settings at <Server path>\settings. Config.js, storage.js, settings.js lang ang binago
@@ -78,6 +79,10 @@ js/core/queue.js        | [v5.1] queue ng machine sa Server path (status, listah
 js/core/monitor.js      | [v5.2] monitor ng Data source 1, 2, 3 ng sariling machine; nagsusulat ng status sa queue | window.BMWW.monitor
 js/pages/dashboard-events.js | [v3] orasan, kalendaryo, listahan at form ng events ng Dashboard (nagre-register sa window.BMWW.dashboardEvents)
 css/pages/dashboard-events.css | [v3] style ng seksyon (naka-scope sa .page-dashboard)
+js/core/dashboard-machines-config.js | [v6] constants, selector at text ng machine view | window.BMWW.dashboardMachinesConfig
+js/pages/dashboard-machines.js | [v6] role badge (LEAD PC = monitor only, MACHINE = sender), listahan ng machine (LEAD PC), sariling status (machine) | window.BMWW.dashboardMachines
+css/pages/dashboard-machines.css | [v6] style ng role badge, tile, dot, chips (naka-scope sa .page-dashboard)
+pages/dashboard.html, js/templates/dashboard.template.js, js/pages/dashboard.js | [v6] BINAGO: role badge slot (#dm-role), seksyong #dm-section, link/script ng bago, isang linya sa init
 
 css/theme.css | [v4] buong design: pinapalitan ang mga variable ng base.css (kulay, radius, shadow, font), animation at effects; naka-load sa huli sa index.html
 js/core/effects.js | [v4] spotlight sa card, ripple sa button, sliding indicator ng sidebar (window.BMWW walang bagong export)
@@ -309,6 +314,28 @@ start(shouldRequest)   | monitor.js | ->Promise<state> | simula ng monitor; hind
 stop()                 | monitor.js | - | itinitigil ang timer | start
 getState()             | monitor.js | ->{state,machineName,lastWriteMs,lastError,sources} | buod ng kalagayan (walang snapshot); sources[key] = {state,mode,fileName,wafer,blk,layer,entryCount,truncated,error} | Dashboard (1D), pag-debug
 
+[v6] dashboard-machines.js (window.BMWW.dashboardMachines). Walang isinusulat sa server; basa lang:
+createElementWith(tag,class,text) | dashboard-machines.js | ->Element | gumagawa ng elemento, textContent lang (ligtas sa XSS) | lahat ng build function
+query(selector)       | dashboard-machines.js | ->Element|null | document.querySelector | lahat
+getRole(settings)     | dashboard-machines.js | ->ROLE | lead-pc = LEAD PC; user-input na may machine name = SENDER; kung hindi = NOT SET | refresh, handleGrantClick
+formatAgo(timeMs,nowMs) | dashboard-machines.js | ->string | "ngayon lang", "12s ago", "3m ago", "2h ago", "wala pa" | buildMachineTile, renderSender
+buildRoleBadge(role)  | dashboard-machines.js | ->Element | badge na may icon + label + note (hindi kulay lang) | refresh, buildMachineTile, buildLeadTile, renderSender
+buildChip / renderSummary(summary) | dashboard-machines.js | chips: Total, Active, Ongoing, Done, Stale, No status (galing sa queue.summarize) | renderLead
+formatLot(wafer,blk,layer) | dashboard-machines.js | ->string | "Wafer X | Blk Y | Layer Z" (walang laman kung wala) | buildMachineTile, buildSourceRow
+getRank(item) / sortItems(list) | dashboard-machines.js | ongoing, done, idle, stale, no status; sunod ay pangalan (natural sort) | renderLead
+buildMachineTile(item,nowMs) | dashboard-machines.js | ->Element | tile ng isang machine: pangalan, SENDER badge, dot at presence, state, mode, lot, file, ago | renderLead
+buildLeadTile(settings) | dashboard-machines.js | ->Element | naka-pin na tile ng LEAD PC (monitor lang, walang dot) | renderLead
+setMessage(message,canGrant) | dashboard-machines.js | mensahe sa #dm-message at ipakita/itago ang #dm-grant | renderLead, renderSender, renderUnset
+renderLead(settings,shouldRequest) | dashboard-machines.js | ->Promise | queue.loadSnapshot, tapos chips at tiles; friendly na mensahe kapag hindi ok ang koneksyon | refresh
+getOwnOverallState(sourceMap) | dashboard-machines.js | ->state | ongoing, kung wala ay done, kung wala ay idle | renderSender
+buildSourceRow(key,source) | dashboard-machines.js | ->Element | hilera ng Data source (state, mode, lot, file) | renderSender
+renderSender(settings) | dashboard-machines.js | sariling status lang ng machine (monitor.getState) | refresh
+renderUnset()         | dashboard-machines.js | gabay kapag walang naka-save na machine name | refresh
+refresh(shouldRequest) | dashboard-machines.js | ->Promise | isang ikot; hindi nag-o-overlap; humihinto ang timer kapag wala na ang page; try/catch | init, timer, handleGrantClick
+stopTimer()           | dashboard-machines.js | pinipigil ang interval | init, refresh
+handleGrantClick()    | dashboard-machines.js | ->Promise | humihingi ng permission: LEAD PC = Server folder; machine = monitor.start(true) | click #dm-grant
+init()                | dashboard-machines.js | simula ng view at timer | dashboard.js (init)
+
 C. VARIABLES / CONSTANTS
 CONFIG (config.js, frozen): PATH_LIST (v2.2: server, root, source1, source2, source3; v2.3: required sa root, gated sa iba), ROW_CLASS, REDUCED_MOTION_QUERY, SCROLL_BEHAVIOR (v2.3), PAGE_LIST (v2.3: dashboard, settings, calibration, master), ROOT_KEY, LEGACY_NAME_FIELD, BADGE (v2.2), PAGE_FOLDER [LUMA v2], COMPONENT_FOLDER [LUMA v2], SIDEBAR_TEMPLATE (v2), DEFAULT_PAGE, NOT_FOUND_PAGE, PAGE_LIST, OPEN_CLASS, ACTIVE_CLASS,
   STORAGE_KEY, DB_NAME, DB_STORE, HANDLE_KEY, ROOT_FOLDER_NAME, SETTINGS_SUBFOLDER, SETTINGS_FILE, SETTINGS_PATH_LABEL,
@@ -347,6 +374,9 @@ lote, pendingBarcode, sourceList, timerId, isScanning (lot-tracking.js, let, nas
 [v5.2] CONFIG.MONITOR (config.js): POLL_MS 5000, SETTLE_MS 30000, MAX_ENTRIES 5000, SOURCE_KEYS, SOURCE_MODE {source1 'auto' (master/calibration), source2 'online', source3 'offline'}, ONGOING_TIMEOUT_MS {source1 300000, source2 1800000, source3 1800000}, IGNORED_PREFIXES ['~$'], IGNORED_EXTENSIONS ['.tmp','.temp','.part','.crdownload'], STATE {stopped, running, notApplicable, noSource, noServer, noPermission, unsupported, error}
 [v5.2] Variables sa monitor.js (let, nasa loob ng IIFE): context (machine at mga handle), timerId, isPolling, monitorState, lastWriteMs, lastWrittenKey (huling isinulat na status, para malaman kung nagbago), lastWrittenName (para mabura ang lumang queue file), lastError, settingsKey (para malaman kung nagbago ang settings), sourceMap (state ng bawat source)
 
+[v6] window.BMWW.dashboardMachinesConfig (js/core/dashboard-machines-config.js): POLL_MS 5000 | ROLE {lead: LEAD PC / MONITOR ONLY, sender: MACHINE / SENDER, unset} | RANK {ongoing 0, done 1, idle 2, stale 3, noStatus 4} (pagkakasunod ng tile) | LABEL {presence, state, mode, source} | CLASS | SELECTOR (lahat ng #dm-*) | TEXT (lahat ng mensahe)
+[v6] Variables sa dashboard-machines.js (let, nasa loob ng IIFE): timerId (interval ng refresh), isBusy (iwas overlap)
+
 D. EVENTS
 click       | #menu-button, #overlay, .sidebar-link | app.js | buksan/isara ang menu
 hashchange  | window | app.js | loadPage
@@ -375,6 +405,9 @@ pointermove | document | effects.js | spotlight ng card
 pointerdown | document | effects.js | ripple ng button
 resize      | window | effects.js | scheduleIndicator
 MutationObserver | #sidebar (childList, subtree, class) | effects.js | scheduleIndicator kapag nagbago ang active link
+
+[v6] click | #dm-grant | dashboard-machines.js | handleGrantClick
+[v6] setInterval (POLL_MS 5000) | window | dashboard-machines.js | refresh (huminto kapag wala na ang #dm-section)
 
 E. STORAGE / API
 localStorage "bmww.settings" | settings.js, dashboard.js | {machineMode, machineName, [BINURA v2.4: machineNameLocked], [v2.4] folderPaths{server,root,source1,source2,source3}, rootFolderName, sourceFolderName (para sa Dashboard), folderNames{server,root,source1,source2,source3}, savedAt} | cache
@@ -411,12 +444,16 @@ Walang backend/API sa v1 (api/ ay walang laman).
   FILE: <Saving path>\master-compare\<yyyy-mm-dd>\*.xlsx (bagong subfolder) | walang localStorage / API na bago
   CSS: css/pages/master-compare.css (naka-scope sa .page-master): .compare-actions, .compare-title, td.trend-worse / trend-better / trend-same / trend-unknown; gumagamit ng --level-green, --level-red mula sa master.css
 
+[v6] Walang bagong localStorage key o API. Binabasa lang ng dashboard-machines.js ang "bmww.settings", ang <Server path>\queue at \settings (basa lang), at ang monitor.getState.
+
 F. CSS VARIABLES [v2.7: css/pages/master.css --level-green, --level-yellow, --level-red, --level-yellow-text, --master-warning, --chart-1..8] (css/base.css): --color-primary, --color-primary-dark, --color-primary-soft, --color-on-primary, --color-bg, --color-surface, --color-text, --color-muted, --color-border,
   --color-cta, --color-cta-dark, --color-on-cta (green, para sa Save/Buy/Purchase), --color-focus, --color-success, --color-danger, --color-overlay,
   --space-1/2/3/4/6/8, --radius, --radius-sm, --shadow, --shadow-hover, --ring, --transition, --sidebar-width, --content-max, --touch-size, --font-size-label, --font-main
   Dark mode: prefers-color-scheme block sa base.css, variables lang ang pinapalitan.
 
 [v2.10] master.js -> master-export.js -> xlsx-writer.js, master-export-config.js (ang apat ay naka-link sa pages/master.html at template; walang binago sa index.html)
+
+[v6] css/pages/dashboard-machines.css (naka-scope sa .page-dashboard): --dm-warning (amber ng STALE) | class: dm-role-badge/-lead/-sender/-unset, dm-tile, dm-tile-lead, dm-tile-sender, dm-presence-*, dm-state-*, dm-dot, dm-chip*, dm-grid
 
 G. DEPENDENCY MAP (v2: classic scripts, ayos ng <script defer> sa index.html ang mahalaga)
 index.html -> config.js -> registry.js -> security.js -> storage.js -> router.js -> js/templates/*.js -> app.js
@@ -430,10 +467,12 @@ settings.js -> config, security, storage | dashboard.js -> config, storage (laha
 [v4] index.html -> css/theme.css (huling CSS) at js/core/effects.js (pagkatapos ng router.js, bago ang templates at app.js) | effects.js -> config (REDUCED_MOTION_QUERY, SELECTOR.sidebar)
 [v5.1] queue.js -> config, security, storage (toMachineFileName, loadHandle, hasPermission, isFolderAccessSupported) | ayos sa index.html: ... events-store.js, queue.js ... | walang tumatawag pa (1C monitor, 1D Dashboard)
 [v5.2] monitor.js -> config, security, storage, queue, csv | app.js -> monitor.start(false) | ayos sa index.html: ... queue.js, csv-reader.js, master-analysis.js, chart-draw.js, monitor.js, router.js ... app.js
+[v6] dashboard-machines.js -> dashboard-machines-config, config, storage, queue, monitor | dashboard.js -> dashboardMachines.init | dashboard.template.js at pages/dashboard.html ang naglo-load ng dashboard-machines-config.js at dashboard-machines.js (kaya walang binago sa index.html)
 [v3.5] master.js -> compareUi (init, refresh) | master-compare-ui.js -> config, storage, csv-reader, chart-draw, master-compare, master-compare-export, master-compare-config, master-export-config | master-compare.js -> csv-reader, master-analysis (analyzeLatest, classifyDeviation, findWorstSlider), master-compare-config | master-compare-export.js -> config, master-export-config, master-compare-config, xlsx-writer, csv-reader | ayos sa pages/master.html at template: ... correl-export.js, master-compare-config.js, master-compare.js, master-compare-export.js, master-compare-ui.js, pages/master.js (walang binago sa index.html)
 
 PAGE CONTRACTS
 PAGE: dashboard | INPUT: localStorage "bmww.settings" | OUTPUT: pangalan, folder, huling save
+[v6] PAGE: dashboard (machine view) | INPUT: localStorage "bmww.settings" (machineMode, machineName); LEAD PC: <Server path>\queue at \settings via queue.loadSnapshot; machine: monitor.getState | OUTPUT: role badge (#dm-role), tile ng LEAD PC at mga machine (#dm-pinned, #dm-grid), chips (#dm-summary), mensahe (#dm-message) | HTML ID: dm-section, dm-title, dm-updated, dm-summary, dm-pinned, dm-grid, dm-message, dm-grant, dm-role | DEPENDS: dashboardMachinesConfig, storage.readLocalSettings, queue.loadSnapshot, monitor.getState, monitor.start
   HTML ID: dash-machine, dash-mode, dash-root, dash-source, dash-saved | DEPENDS: readLocalSettings
 PAGE: calibration | INPUT: wala pa | OUTPUT: placeholder (wala pang laman) | HTML ID: wala | DEPENDS: registry.registerPage [v2.3]
 PAGE: master [v2.6, v2.10: #range-export; Range Master = Master Repeatability] | INPUT: Data source 1 (folder handle sa IndexedDB, full path sa localStorage 'bmww.settings'), CSV sa folder, #range-start, #range-end | OUTPUT: status, stats, table, chart (hindi sine-save)
@@ -514,10 +553,10 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
 2026-11-20 | [v5] Dalawang PC na pareho ang machine name ay magpapatungan ng file sa server (isang file kada pangalan). Kailangang magkaiba ang machine name.
 2026-11-20 | [v5] Kapag nagpalit ng machine name, binubura ang lumang <pangalan>.json sa Saving path at Server path. Hindi binubura ang lumang settings.json at events.json.
 2026-11-20 | [v5] Kapag pumalya ang Server path (sarado ang server o walang permission), naka-save pa rin sa Saving path; error ang ipinapakita at kailangang i-save ulit.
-2026-11-20 | [v5] Ang LEAD PC view, queue folder at monitor ng Data source 1, 2, 3 ay hindi pa ginagawa (Task 1B, 1C, 1D).
+2026-11-20 | [v5] Ang LEAD PC view, queue folder at monitor ng Data source 1, 2, 3 ay hindi pa ginagawa (Task 1B, 1C, 1D). [AYOS v6: 1D tapos, may LEAD PC view sa Dashboard]
 2026-11-20 | [v5] Hindi pa nasubukan sa totoong Chrome/Edge at totoong server ng gumawa; jsdom at fake folder handle lang (26 test). Ang unang test ay sa device mo.
 2026-11-20 | [v5] Ang settings ng lumang bersyon (settings.json) ay nababasa pa; sa unang Save ay gagawa na ng <machine name>.json.
-2026-11-21 | [v5.1] Ang queue ay data lang; wala pang monitor na nagsusulat at wala pang Dashboard na nagpapakita (1C at 1D).
+2026-11-21 | [v5.1] Ang queue ay data lang; wala pang monitor na nagsusulat at wala pang Dashboard na nagpapakita (1C at 1D). [AYOS v6: nagpapakita na ang Dashboard]
 2026-11-21 | [v5.1] Ang stale/active ay batay sa oras ng file sa server kumpara sa orasan ng nagbabasang PC. Kapag may malaking pagkakaiba ang orasan ng PC at server, maaaring mali ang stale. Itama ang oras ng mga PC.
 2026-11-21 | [v5.1] Kapag pumalya ang server, state 'error' ang ibinibigay (hindi '0 machine'), para hindi mapagkamalang walang machine.
 2026-11-21 | [v5.1] Ang queue file ng machine na binura ang settings (o nagpalit ng pangalan) ay mananatili hanggang burahin; lalabas itong registered: false. Maaaring burahin gamit ang removeQueueStatus (UI sa 1D).
@@ -532,6 +571,11 @@ PAGE: dashboard [v3 dagdag] | INPUT: localStorage "bmww.events", <BMWW>\settings
 2026-11-21 | [v5.2] Pagkatapos magsara ng browser, maaaring humingi ulit ng permission ang Chrome/Edge; walang kusang prompt. Pindutin ang Save sa Settings para ma-allow ulit (ang button na Payagan ay sa 1D).
 2026-11-21 | [v5.2] Ang DONE ay nananatili hanggang may susunod na pagbabago (o hanggang mag-restart ang page). Ang scan ng malalaking folder kada 5 segundo sa network drive ay maaaring mabigat; hanggang 5000 entry lang ang binabasa kada source.
 2026-11-21 | [v5.2] Hindi pa nasubukan sa totoong Chrome/Edge, totoong instrument at totoong server; jsdom at fake folder handle lang (30 test sa monitor). Ang unang test ay sa device mo.
+2026-11-21 | [v6] Hindi pa nasubukan sa totoong Chrome/Edge, totoong server at maraming machine; jsdom at fake queue/monitor lang. Ang unang test ay sa device mo.
+2026-11-21 | [v6] ASSUMPTION: ang LEAD PC ay ang machineMode "lead-pc" sa Settings; ang SENDER ay "user-input" na may machine name. Kung iba ang gusto mong tawag o kulay ng badge, nasa js/core/dashboard-machines-config.js (ROLE, LABEL).
+2026-11-21 | [v6] Ang tile ng machine na naka-register pero walang queue file ay NO STATUS (hindi pa nagpapadala); ang lampas 2 minutong walang update (CONFIG.QUEUE.STALE_MS) ay STALE.
+2026-11-21 | [v6] Hindi pa ginagamit ng UI ang removeQueueStatus (button na burahin ang lumang machine na HINDI NAKA-REGISTER). TODO kung kailangan.
+2026-11-21 | [v6] Ang Barcode ay wala pa sa tile (blangko pa sa queue; tingnan ang v5.2 issue).
 
 === [v2.8] SEARCH FILES ===
 FILES: pages/file-search.html (+ kopya js/templates/file-search.template.js) | css/pages/file-search.css | js/pages/file-search.js | js/core/file-scanner.js | js/core/file-sender.js

@@ -5,6 +5,7 @@
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na; nagre-register sa registry (walang module)
  * VERSION : v3 | 2026-11-20 | tinatawag ang dashboardEvents.init (Date at Events)
+ * VERSION : v6 | 2026-11-21 | Task 1D: tinatawag ang dashboardMachines.init (role badge at machine view)
  */
 (function () {
   'use strict';
@@ -28,6 +29,7 @@
     setText('source', settings.sourceFolderName || text.notSet);
     setText('saved', settings.savedAt ? new Date(settings.savedAt).toLocaleString() : text.notSet);
     if (root.dashboardEvents) root.dashboardEvents.init();
+    if (root.dashboardMachines) root.dashboardMachines.init();
   }
 
   root.registry.registerPage('dashboard', Object.freeze({ init }));

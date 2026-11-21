@@ -4,20 +4,33 @@
  * DEPENDS : js/core/registry.js
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v3 | 2026-11-20 | kopya na ng bagong pages/dashboard.html (Date at oras, kalendaryo, Events)
+ * VERSION : v6 | 2026-11-21 | Task 1D: kopya ng bagong pages/dashboard.html (role badge at machine view)
  */
 (function () {
   'use strict';
   window.BMWW.registry.registerTemplate('dashboard', `<!-- PAGE: dashboard -->
 <link rel="stylesheet" href="css/pages/dashboard.css">
 <link rel="stylesheet" href="css/pages/dashboard-events.css">
+<link rel="stylesheet" href="css/pages/dashboard-machines.css">
 <section class="page page-dashboard" data-page="dashboard">
   <h1 class="page-title">Dashboard</h1>
   <div class="card-grid">
-    <article class="card"><h2 class="card-title">Machine name</h2><p id="dash-machine" class="card-value"></p><p id="dash-mode" class="card-note"></p></article>
+    <article class="card"><h2 class="card-title">Machine name</h2><p id="dash-machine" class="card-value"></p><p id="dash-mode" class="card-note"></p><p id="dm-role" class="dm-role"></p></article>
     <article class="card"><h2 class="card-title">Save folder (BMWW)</h2><p id="dash-root" class="card-value"></p></article>
     <article class="card"><h2 class="card-title">Data source folder</h2><p id="dash-source" class="card-value"></p></article>
     <article class="card"><h2 class="card-title">Last saved</h2><p id="dash-saved" class="card-value"></p></article>
   </div>
+  <section id="dm-section" class="dm" aria-labelledby="dm-title">
+    <div class="dm-head">
+      <h2 id="dm-title" class="dm-title"></h2>
+      <p id="dm-updated" class="card-note"></p>
+    </div>
+    <div id="dm-summary"></div>
+    <div id="dm-pinned" class="dm-pinned"></div>
+    <div id="dm-grid" class="dm-grid"></div>
+    <p id="dm-message" class="status" role="status"></p>
+    <button id="dm-grant" class="btn btn-secondary" type="button" hidden>Payagan ang folder</button>
+  </section>
   <div class="dash-events">
     <article class="card dash-clock">
       <h2 class="card-title">Date at oras</h2>
@@ -60,5 +73,7 @@
 </section>
 <script src="js/pages/dashboard.js"></script>
 <script src="js/pages/dashboard-events.js"></script>
+<script src="js/core/dashboard-machines-config.js"></script>
+<script src="js/pages/dashboard-machines.js"></script>
 `);
 })();

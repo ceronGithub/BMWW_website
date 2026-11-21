@@ -1,0 +1,83 @@
+/*
+ * FILE    : css/pages/dashboard-machines.css
+ * PURPOSE : Style ng machine view sa Dashboard (role badge, tile, dot, chips); naka-scope sa .page-dashboard
+ * DEPENDS : css/base.css, css/components.css, css/theme.css
+ * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
+ */
+.page-dashboard {
+  --dm-warning: #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  .page-dashboard { --dm-warning: #fbbf24; }
+}
+
+.page-dashboard .dm { margin-top: var(--space-6); }
+.page-dashboard .dm-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-3); }
+.page-dashboard .dm-title { margin: 0; font-size: 1.125rem; font-weight: 700; }
+
+/* Role badge: icon + label + note, hindi kulay lang */
+.page-dashboard .dm-role { margin: var(--space-2) 0 0; }
+.page-dashboard .dm-role-badge { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0.25rem var(--space-3); font-size: var(--font-size-label); font-weight: 700; letter-spacing: 0.04em; border: 2px solid currentColor; border-radius: 999px; white-space: nowrap; }
+.page-dashboard .dm-role-note { font-weight: 500; opacity: 0.85; }
+.page-dashboard .dm-role-lead { color: var(--color-primary); background: var(--color-primary-soft); }
+.page-dashboard .dm-role-sender { color: var(--color-success); background: var(--color-surface); }
+.page-dashboard .dm-role-unset { color: var(--color-muted); background: var(--color-surface); }
+
+/* Summary chips */
+.page-dashboard .dm-chip-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+.page-dashboard .dm-chip { display: inline-flex; align-items: baseline; gap: var(--space-2); padding: var(--space-1) var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 999px; }
+.page-dashboard .dm-chip-count { font-size: 1.125rem; font-weight: 700; }
+.page-dashboard .dm-chip-label { font-size: var(--font-size-label); color: var(--color-muted); }
+.page-dashboard .dm-chip-active .dm-chip-count,
+.page-dashboard .dm-chip-ongoing .dm-chip-count { color: var(--color-success); }
+.page-dashboard .dm-chip-stale .dm-chip-count { color: var(--dm-warning); }
+
+/* Tile */
+.page-dashboard .dm-pinned { margin-bottom: var(--space-4); }
+.page-dashboard .dm-grid { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
+.page-dashboard .dm-tile { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-left-width: 5px; border-radius: var(--radius); box-shadow: var(--shadow); }
+.page-dashboard .dm-tile-lead { border-left-color: var(--color-primary); }
+.page-dashboard .dm-tile-sender { border-left-color: var(--color-success); }
+.page-dashboard .dm-tile.dm-presence-stale { border-left-color: var(--dm-warning); }
+.page-dashboard .dm-tile.dm-presence-none { border-left-color: var(--color-border); opacity: 0.85; }
+.page-dashboard .dm-tile-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.page-dashboard .dm-tile-name { margin: 0; font-size: 1.125rem; font-weight: 700; overflow-wrap: anywhere; }
+.page-dashboard .dm-presence,
+.page-dashboard .dm-state-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; }
+.page-dashboard .dm-presence-label { font-size: var(--font-size-label); font-weight: 700; letter-spacing: 0.06em; }
+.page-dashboard .dm-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--color-muted); }
+.page-dashboard .dm-presence-active .dm-dot { background: var(--color-success); }
+.page-dashboard .dm-presence-stale .dm-dot { background: var(--dm-warning); }
+.page-dashboard .dm-presence-active .dm-presence-label { color: var(--color-success); }
+.page-dashboard .dm-presence-stale .dm-presence-label { color: var(--dm-warning); }
+.page-dashboard .dm-presence-none .dm-presence-label { color: var(--color-muted); }
+
+.page-dashboard .dm-state { display: inline-block; padding: 0.125rem var(--space-2); font-size: var(--font-size-label); font-weight: 700; letter-spacing: 0.04em; border-radius: var(--radius-sm); border: 1px solid currentColor; }
+.page-dashboard .dm-state-ongoing { color: var(--color-success); }
+.page-dashboard .dm-state-done { color: var(--color-primary); }
+.page-dashboard .dm-state-idle { color: var(--color-muted); }
+.page-dashboard .dm-tag { display: inline-block; padding: 0.125rem var(--space-2); font-size: var(--font-size-label); color: var(--color-muted); background: var(--color-bg); border-radius: var(--radius-sm); }
+.page-dashboard .dm-lot,
+.page-dashboard .dm-file { margin: 0; font-size: 0.875rem; overflow-wrap: anywhere; }
+.page-dashboard .dm-file { color: var(--color-muted); }
+.page-dashboard .dm-ago { margin: 0; }
+
+/* Listahan ng Data source sa tile ng sariling machine */
+.page-dashboard .dm-source-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.page-dashboard .dm-source-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.page-dashboard .dm-source-name { min-width: 7rem; font-size: 0.875rem; font-weight: 600; }
+.page-dashboard .dm-source-detail { font-size: 0.875rem; color: var(--color-muted); overflow-wrap: anywhere; }
+
+.page-dashboard #dm-grant { min-height: 44px; margin-top: var(--space-2); }
+
+/* Ongoing: banayad na pulse sa dot; wala kung reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .page-dashboard .dm-presence-active .dm-dot { animation: dmPulse 1600ms ease-in-out infinite; }
+}
+@keyframes dmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(21, 128, 61, 0); }
+}
+
+@media (min-width: 768px) { .page-dashboard .dm-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .page-dashboard .dm-grid { grid-template-columns: repeat(3, 1fr); } }
