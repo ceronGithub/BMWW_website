@@ -1,0 +1,31 @@
+/*
+ * FILE    : css/pages/calibration-compare.css
+ * PURPOSE : Style ng Compare sliders sa Calibration page (naka-scope sa .page-calibration)
+ * DEPENDS : css/base.css, css/pages/calibration.css (variables --level-green, --level-red at iba pa)
+ * VERSION : v9.1 | 2026-11-22 | bagong file (kopya ng master-compare.css para sa Calibration)
+ */
+.page-calibration .compare-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.page-calibration #calibration-compare-result:not(:empty) { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+/* Trend: pula = lumalala, berde = gumaganda; puting text sa may kulay para sapat ang contrast. */
+.page-calibration .result-table td.trend-worse { background: var(--level-red); color: #fff; font-weight: 700; }
+.page-calibration .result-table td.trend-better { background: var(--level-green); color: #fff; font-weight: 700; }
+.page-calibration .result-table td.trend-same { color: var(--color-text); }
+.page-calibration .result-table td.trend-unknown { color: var(--color-muted); }
+
+/* Banner ng worst slider, filter, table na may Previous at Today */
+.page-calibration .compare-banner { margin-bottom: var(--space-3); padding: var(--space-4); border-radius: var(--radius); color: #fff; background: var(--level-red); }
+.page-calibration .compare-banner.level-yellow { color: var(--level-yellow-text); background: var(--level-yellow); }
+.page-calibration .compare-banner.level-green { background: var(--level-green); }
+.page-calibration .compare-banner-title { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.page-calibration .compare-banner-line { margin: var(--space-1) 0 0; font-weight: 600; }
+.page-calibration .compare-ok { margin-bottom: var(--space-3); padding: var(--space-4); color: #fff; background: var(--level-green); border-radius: var(--radius); }
+.page-calibration .compare-filter { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; margin: var(--space-2) 0; cursor: pointer; }
+.page-calibration .compare-filter input { width: 1.25rem; height: 1.25rem; }
+.page-calibration .compare-table th, .page-calibration .compare-table td { text-align: center; }
+.page-calibration .compare-table th:first-child, .page-calibration .compare-table td:first-child { text-align: left; }
+.page-calibration .compare-table .group-start { border-left: 2px solid var(--color-border); }
+.page-calibration .compare-table tr.is-worst td:first-child { font-weight: 800; box-shadow: inset 4px 0 0 var(--level-red); }
+.page-calibration .compare-table td.master-changed { text-decoration: underline dotted; }
+
+/* 2 column kada row (mas mataas ang specificity kaysa sa 3 column ng calibration.css sa desktop) */
+.page-calibration #calibration-compare-result .stat-list { grid-template-columns: 1fr 1fr; }

@@ -1,3 +1,35 @@
+INSTRUCTIONS v9.2 (Calibration: Calibration Repeatability)
+1. Backup muna ng buong website folder. Ilagay ang 5 BAGONG file: js/core/calibration-repeatability-config.js, js/core/calibration-repeatability.js, js/core/calibration-repeatability-export.js, js/core/calibration-repeatability-ui.js, css/pages/calibration-repeatability.css. Ipalit ang 5 binagong file: pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, README.txt, 00_INSTRUCTIONS.txt.
+2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge.
+3. TEST STEPS v9.2:
+   - Calibration page: DAPAT may bagong card na "Calibration Repeatability" sa ilalim ng Compare sliders, may Start date, End date (default: 7 araw hanggang today), radio na All data points / Latest per shift, at button na Calibration Repeatability.
+   - Pindutin ang button (may calibration CSV sa Data source 1 na ang petsa ng file ay nasa saklaw). Kung hihingi ng permission, pindutin ang Allow.
+   - DAPAT lumabas: badge PASS / WARNING / FAIL, Repeatability %, Avg diff, Worst slider, Max diff, Actual AVG, Master AVG, Records, CSV files, Range, Data points; table kada barcode (Master, Actual avg, Avg diff, Max diff na green / yellow / red); line chart (isang linya kada record, makapal na itim ang MASTER); legend ng petsa; at panel na "Files" sa gilid ng chart.
+   - I-uncheck ang isang file sa panel: DAPAT mawala ang mga linya ng file na iyon sa chart. I-check ulit: DAPAT bumalik.
+   - Pindutin ang barcode sa table: DAPAT lumaki ang point nito sa chart; pindutin ulit para ibalik.
+   - Berde ang mensahe: "Na-save ang Excel file: <Saving path>\calibration-repeatability\<petsa>\calibration-repeatability_... Kopya sa Server: <Server path>\calibration-repeatability\<machine name>\<petsa>\calibration-repeatability_latest.xlsx". Buksan ang .xlsx: DAPAT may sheet na Repeatability at Readings (may line chart sa Readings, pamagat na "<machine name> Calibration Repeatability").
+   - Piliin ang Latest per shift at pindutin ulit: DAPAT "Latest per shift" sa Data points at iisang record kada shift kada petsa.
+   - Petsa na walang file: DAPAT "Walang file sa napiling petsa." Start date na mas huli kaysa End date: DAPAT "Hindi puwedeng mas huli ang Start date kaysa sa End date."
+   - Lumipat ng page at bumalik: DAPAT nandoon pa rin ang huling resulta at ang mga napiling file.
+   - Calibration Correl at Compare sliders: DAPAT gumagana pa rin. Master page at Dashboard: DAPAT walang pagbabago.
+   - Nasubukan sa Node at jsdom (gawa-gawang folder handle). Hindi pa sa totoong Chrome/Edge at totoong Server path; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.1) ---
+INSTRUCTIONS v9.1 (Calibration: Compare sliders)
+1. Backup muna ng buong website folder. Ilagay ang 5 BAGONG file: js/core/calibration-compare-config.js, js/core/calibration-compare.js, js/core/calibration-compare-export.js, js/core/calibration-compare-ui.js, css/pages/calibration-compare.css. Ipalit ang 5 binagong file: pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, README.txt, 00_INSTRUCTIONS.txt.
+2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge.
+3. TEST STEPS v9.1:
+   - Calibration page: DAPAT may bagong card na "Compare sliders" sa ilalim ng Calibration correl. Ang button na Compare vs previous ay DAPAT disabled hangga't wala pang Calibration Correl.
+   - Pindutin ang Calibration Correl (may record ngayong araw). DAPAT mag-enable ang Compare vs previous at DAPAT HINDI kusang lumabas ang compare.
+   - Pindutin ang Compare vs previous. Kailangang may calibration record sa nakaraang 7 araw (Data source 1). DAPAT lumabas: banner ng WORST SLIDER (pula o dilaw), table ng Actual / Master / Diff ng Previous at Today, buod (R Square, Status, Lumalala / Gumaganda / Pareho), table ng mga slider (checkbox na Ipakita lahat), at line chart na Previous at Today.
+   - Berde ang mensahe: "Na-save ang Excel file: <Saving path>\calibration-compare\<petsa>\calibration-compare_... Kopya sa Server: <Server path>\calibration-compare\<machine name>\<petsa>\calibration-compare_latest.xlsx". Buksan ang .xlsx: DAPAT may sheet na Compare at Chart (may line chart).
+   - Pindutin ulit: DAPAT bagong file sa Saving path at ino-overwrite ang _latest sa Server.
+   - Kung lahat ng slider ay green: DAPAT "Walang worst slider na na-detect" (walang compare). Kung walang naunang record: DAPAT "Walang naunang calibration record sa nakaraang 7 araw...".
+   - Lumipat ng page at bumalik: DAPAT nandoon pa rin ang Calibration Correl; ang Compare ay mawawala at kailangang pindutin ulit.
+   - Master page at Dashboard: DAPAT walang pagbabago.
+   - Nasubukan sa Node at jsdom (gawa-gawang folder handle). Hindi pa sa totoong Chrome/Edge at totoong Server path; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.0) ---
 INSTRUCTIONS v9.0 (Calibration correl)
 1. Backup muna ng buong website folder. Ilagay ang 3 BAGONG file: js/core/calibration-config.js, js/core/calibration-analysis.js, js/core/calibration-export.js. Ipalit ang 6 binagong file: pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, css/pages/calibration.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang file na ginalaw (hindi galing ang Master, config.js, index.html).
 2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge.

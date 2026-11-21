@@ -2,6 +2,8 @@
  * FILE    : js/pages/calibration.js
  * PURPOSE : Calibration page: Calibration correl (pinakabagong calibration record ngayong araw: After = Actual vs Master), gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js, calibration-config.js, calibration-analysis.js, calibration-export.js
+ * VERSION : v9.2 | 2026-11-22 | hook sa calibrationRepeatabilityUi (Calibration Repeatability): init at refresh kasabay ng Compare
+ * VERSION : v9.1 | 2026-11-22 | hook sa calibrationCompareUi (Compare sliders): refresh pagkatapos ng run, init ng compare, getReadyHandle hook
  * VERSION : v9.0 | 2026-11-22 | Calibration correl (kopya ng Master Correl): resulta, chart, table, kusang export sa Saving path at Server path
  * VERSION : v2.3 | 2026-11-20 | bagong file
  */
@@ -82,6 +84,13 @@
   function setBusy(nextBusy) {
     isBusy = nextBusy;
     query('runButton').disabled = nextBusy;
+    refreshCompare();
+  }
+
+  // Ina-update ang button ng Compare sliders (bukas lang kapag may Calibration Correl run at hindi busy).
+  function refreshCompare() {
+    if (root.calibrationCompareUi) root.calibrationCompareUi.refresh();
+    if (root.calibrationRepeatabilityUi) root.calibrationRepeatabilityUi.refresh();
   }
 
   // Inihahanda ang folder handle ng Data source 1 at hinihingi ang permission (dapat galing sa click).
@@ -291,6 +300,7 @@
     clearResult();
     lastRun = null;
     saved.latest = null;
+    refreshCompare();
     if (CALIBRATION.LATEST.DATE_READONLY) query('date').value = csv.formatDateInput(getTodayDate());
     const startDate = csv.parseDateInput(query('date').value);
     if (!startDate) { setStatus(TEXT.error.badDate, 'error'); return; }
@@ -333,6 +343,24 @@
     renderSource();
     restoreSaved();
     query('runButton').addEventListener('click', onRun);
+    root.calibrationCompareUi.init({
+      getLatestRun: () => lastRun,
+      isBusy: () => isBusy,
+      setBusy,
+      getReadyHandle,
+      getReadErrorMessage: getErrorMessage,
+      getMachineName,
+      getSourceText
+    });
+    root.calibrationRepeatabilityUi.init({
+      isBusy: () => isBusy,
+      setBusy,
+      getReadyHandle,
+      getReadErrorMessage: getErrorMessage,
+      getMachineName,
+      getSourceText,
+      getTodayDate
+    });
     if (!storage.isFolderAccessSupported()) {
       setBusy(true);
       setStatus(TEXT.error.unsupported, 'error');
