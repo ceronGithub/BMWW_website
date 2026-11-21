@@ -1,0 +1,78 @@
+/*
+ * FILE    : css/pages/trend.css
+ * PURPOSE : Style ng Trend page (naka-scope sa .page-trend): date row, buod, chart (6 na chart na may scroll), limit lines, point, marker ng cantilever, listahan ng record ng araw
+ * DEPENDS : css/base.css, css/components.css
+ * VERSION : v9.3 | 2026-11-22 | bagong file
+ */
+.page-trend {
+  --trend-ucl: #dc2626; --trend-lcl: #d97706; --trend-cl: #15803d;
+  --trend-line: #2563eb; --trend-out: #dc2626; --trend-set: #9333ea; --trend-change: #0891b2;
+  padding-bottom: var(--space-6);
+}
+.page-trend .source-path { font-weight: 600; overflow-wrap: anywhere; margin-bottom: var(--space-1); }
+.page-trend .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.page-trend .action-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+.page-trend .status.is-info { color: var(--color-muted); }
+.page-trend .result-area { margin-top: var(--space-4); }
+.page-trend .result-area:empty { margin-top: 0; }
+.page-trend .stat-list { display: grid; grid-template-columns: 1fr; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.page-trend .stat-item { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-trend .stat-label { color: var(--color-muted); }
+.page-trend .stat-value { font-weight: 600; text-align: right; }
+.page-trend .result-note { color: var(--color-muted); font-size: 0.875rem; margin-bottom: var(--space-3); }
+.page-trend .result-note.is-warning { color: var(--color-danger); font-weight: 600; }
+.page-trend .trend-day-picker { max-width: 16rem; }
+.page-trend .trend-changes { margin-bottom: var(--space-4); padding: var(--space-3); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-trend .trend-changes-title { margin: 0 0 var(--space-2); font-size: 0.9375rem; }
+.page-trend .trend-changes-list { display: grid; gap: var(--space-1); margin: 0; padding-left: 1.25rem; }
+.page-trend .trend-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+.page-trend .trend-legend-item { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.8125rem; }
+.page-trend .trend-legend-item::before { content: ""; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--trend-line); }
+.page-trend .trend-legend-item.is-out::before { background: var(--trend-out); }
+.page-trend .trend-legend-item.is-set::before { background: var(--trend-line); box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px var(--trend-set); }
+.page-trend .trend-legend-item.is-change::before { width: 0; height: 1rem; border-radius: 0; background: none; border-left: 2px dashed var(--trend-change); }
+.page-trend .trend-chart-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+.page-trend .trend-chart-grid:empty { display: none; }
+.page-trend .trend-legend { grid-column: 1 / -1; }
+.page-trend .trend-chart-block { min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-trend .trend-chart-scroll { overflow-x: auto; }
+.page-trend .trend-chart-scroll:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.page-trend .trend-svg { display: block; max-width: none; }
+.page-trend .trend-out-note { margin: 0; padding: 0 var(--space-3) var(--space-2); color: var(--color-muted); font-size: 0.8125rem; }
+.page-trend .trend-text { fill: var(--color-text); stroke: none; font-size: 14px; }
+.page-trend .trend-title { font-size: 19px; font-weight: 700; }
+.page-trend .trend-tick, .page-trend .trend-xlabel { fill: var(--color-muted); font-size: 12px; }
+.page-trend .trend-grid { stroke: var(--color-border); stroke-width: 1; }
+.page-trend .trend-axis { stroke: var(--color-muted); stroke-width: 1.5; }
+.page-trend .trend-limit { stroke-width: 1.75; }
+.page-trend .trend-limit-ucl { stroke: var(--trend-ucl); stroke-dasharray: 8 5; }
+.page-trend .trend-limit-lcl { stroke: var(--trend-lcl); stroke-dasharray: 8 5; }
+.page-trend .trend-limit-cl { stroke: var(--trend-cl); }
+.page-trend .trend-limit-label { font-size: 12px; font-weight: 700; }
+.page-trend .trend-limit-label-ucl { fill: var(--trend-ucl); }
+.page-trend .trend-limit-label-lcl { fill: var(--trend-lcl); }
+.page-trend .trend-limit-label-cl { fill: var(--trend-cl); }
+.page-trend .trend-line { fill: none; stroke: var(--trend-line); stroke-width: 2; stroke-linejoin: round; }
+.page-trend .trend-point-dot { fill: var(--trend-line); stroke: var(--color-surface); stroke-width: 1.5; }
+.page-trend .trend-point.is-out .trend-point-dot { fill: var(--trend-out); }
+.page-trend .trend-point-ring { fill: none; stroke: var(--trend-set); stroke-width: 2.5; }
+.page-trend .trend-change-line { stroke: var(--trend-change); stroke-width: 2; stroke-dasharray: 5 4; }
+.page-trend .trend-change-label { fill: var(--trend-change); font-size: 12px; font-weight: 700; }
+.page-trend .table-wrap { overflow-x: auto; margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-trend .result-table { width: 100%; border-collapse: collapse; }
+.page-trend .result-table th, .page-trend .result-table td { padding: var(--space-2) var(--space-3); text-align: center; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.page-trend .result-table th { background: var(--color-primary-soft); font-weight: 700; }
+.page-trend .result-table tr:last-child td { border-bottom: 0; }
+.page-trend .result-table tr.is-chosen td { background: var(--color-primary-soft); }
+.page-trend .result-table td.is-out { color: var(--trend-out); font-weight: 700; }
+.page-trend .trend-file-cell { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+.page-trend .trend-action { min-height: 2.25rem; padding: 0 var(--space-3); }
+@media (min-width: 768px) {
+  .page-trend .stat-list { grid-template-columns: repeat(5, 1fr); }
+}
+@media (min-width: 1280px) {
+  .page-trend .trend-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-color-scheme: dark) {
+  .page-trend { --trend-ucl: #f87171; --trend-lcl: #fbbf24; --trend-cl: #4ade80; --trend-line: #60a5fa; --trend-out: #f87171; --trend-set: #c084fc; --trend-change: #22d3ee; }
+}

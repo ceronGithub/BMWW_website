@@ -2,6 +2,7 @@
  * FILE    : js/core/config.js
  * PURPOSE : Lahat ng constants, selectors at text
  * DEPENDS : wala
+ * VERSION : v9.3 | 2026-11-22 | PAGE_LIST at LEAD_BLOCKED_PAGES: dagdag na page na trend (Trend, binabasa ang Data source 1)
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v3 | 2026-11-20 | EVENTS (constants ng Dashboard events), SELECTOR.events, TEXT.events
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
@@ -37,7 +38,7 @@
     SIDEBAR_TEMPLATE: 'sidebar',
     DEFAULT_PAGE: 'dashboard',
     NOT_FOUND_PAGE: '404',
-    PAGE_LIST: ['dashboard', 'lot-tracking', 'file-search', 'settings', 'calibration', 'master'],
+    PAGE_LIST: ['dashboard', 'lot-tracking', 'file-search', 'settings', 'calibration', 'master', 'trend'],
     OPEN_CLASS: 'sidebar-open',
     ACTIVE_CLASS: 'is-active',
     STORAGE_KEY: 'bmww.settings',
@@ -146,7 +147,7 @@
     MACHINE_MODE: { USER_INPUT: 'user-input', LEAD_PC: 'lead-pc' },
     LEAD_PC_NAME: 'LEAD PC',
     // Mga page na hindi makikita ng LEAD PC (monitor lang ito): itinatago sa sidebar at hinaharang sa router.
-    LEAD_BLOCKED_PAGES: ['file-search', 'calibration', 'master'],
+    LEAD_BLOCKED_PAGES: ['file-search', 'calibration', 'master', 'trend'],
     // Event na ibinabato kapag nagbago ang settings sa localStorage (para ma-update ang sidebar nang hindi nire-reload ang page).
     SETTINGS_CHANGED_EVENT: 'bmww:settings-changed',
     MACHINE_NAME_MAX: 30,

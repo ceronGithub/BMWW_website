@@ -6,6 +6,7 @@
  * VERSION : v2.3 | 2026-11-20 | kasabay ng components/sidebar.html (dagdag na link: Calibration, Master)
  * VERSION : v2.5 | 2026-11-20 | kasabay ng components/sidebar.html (dagdag na link: LOT Tracking)
  * VERSION : v2.8 | 2026-11-20 | kasabay ng components/sidebar.html (dagdag na link: Search Files)
+ * VERSION : v9.3 | 2026-11-22 | kasabay ng components/sidebar.html (dagdag na link: Trend)
  */
 (function () {
   'use strict';
@@ -17,6 +18,7 @@
     <li><a class="sidebar-link" href="#file-search" data-page="file-search">Search Files</a></li>
     <li><a class="sidebar-link" href="#calibration" data-page="calibration">Calibration</a></li>
     <li><a class="sidebar-link" href="#master" data-page="master">Master</a></li>
+    <li><a class="sidebar-link" href="#trend" data-page="trend">Trend</a></li>
     <li><a class="sidebar-link" href="#settings" data-page="settings">Settings</a></li>
   </ul>
 </nav>

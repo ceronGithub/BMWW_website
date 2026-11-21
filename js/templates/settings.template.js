@@ -2,6 +2,7 @@
  * FILE    : js/templates/settings.template.js
  * PURPOSE : Kopya ng pages/settings.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v9.3 | 2026-11-22 | kasabay ng pages/settings.html (card na Trend limits)
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.2 | 2026-11-20 | kasabay ng pages/settings.html (bagong layout)
  * VERSION : v2.4 | 2026-11-20 | kasabay ng pages/settings.html (walang lock badge)
@@ -13,6 +14,7 @@
   window.BMWW.registry.registerTemplate('settings', `<!-- PAGE: settings -->
 <link rel="stylesheet" href="css/pages/settings.css">
 <link rel="stylesheet" href="css/pages/watcher-install.css">
+<link rel="stylesheet" href="css/pages/trend-settings.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -48,6 +50,8 @@
 
   <div id="watcher-card" class="card"></div>
 
+  <div id="trend-limits-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-unsaved" class="unsaved-note" role="status" hidden>May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.</p>
     <p id="settings-status" class="status" role="status"></p>
@@ -55,6 +59,9 @@
   </div>
 </section>
 <script src="js/pages/watcher-install.js"></script>
+<script src="js/core/trend-config.js"></script>
+<script src="js/core/trend-limits.js"></script>
+<script src="js/core/trend-settings.js"></script>
 <script src="js/pages/settings.js"></script>
 `);
 })();

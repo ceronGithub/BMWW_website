@@ -1,0 +1,13 @@
+/*
+ * FILE    : css/pages/trend-settings.css
+ * PURPOSE : Style ng card na Trend limits sa Settings (table ng UCL, CL, LCL), naka-scope sa .page-settings
+ * DEPENDS : css/components.css, css/pages/settings.css
+ * VERSION : v9.3 | 2026-11-22 | bagong file
+ */
+.page-settings .trend-limit-wrap { overflow-x: auto; margin-top: var(--space-3); }
+.page-settings .trend-limit-table { width: 100%; min-width: 22rem; border-collapse: collapse; }
+.page-settings .trend-limit-table th, .page-settings .trend-limit-table td { padding: var(--space-2); text-align: center; }
+.page-settings .trend-limit-table thead th { font-weight: 700; border-bottom: 1px solid var(--color-border); }
+.page-settings .trend-limit-table .trend-limit-name { text-align: left; font-weight: 600; white-space: nowrap; }
+.page-settings .trend-limit-input { min-width: 5rem; text-align: right; }
+.page-settings .trend-limit-input.is-error { border-color: var(--color-danger); }

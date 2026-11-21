@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional)
+ * VERSION : v9.3 | 2026-11-22 | hook sa trendSettings (card na Trend limits): init, at tsek at save ng limits sa onSave
  * VERSION : v2.20 | 2026-11-21 | awtomatikong lagay ng full path kapag pumili ng folder (getParentPath, guessFullPath); lumalabas agad sa ilalim ng pangalan ng path
  * VERSION : v2.18 | 2026-11-21 | kailangan na ang full path ng bawat napiling folder; paalala na may hindi pa na-save (isDirty) kapag may binago
  * VERSION : v1 | 2026-11-19 | unang bersyon
@@ -360,6 +361,8 @@
       CONFIG.PATH_LIST.forEach((pathItem) => { fullPathMap[pathItem.key] = getInputFullPath(pathItem.key); });
       const pathError = checkAllFullPaths(fullPathMap);
       if (pathError) { setStatus(pathError, true); return; }
+      const trendResult = root.trendSettings ? root.trendSettings.read() : null;
+      if (trendResult && trendResult.error) { setStatus(trendResult.error, true); return; }
       if (!(await storage.hasPermission(rootHandle, true))) { setStatus(TEXT.noPermission, true); return; }
       const serverHandle = handleMap[CONFIG.SERVER_KEY];
       let isServerAllowed = false;
@@ -385,6 +388,7 @@
         if (legacyField) next[legacyField] = folderName;
       });
       next.folderNames = folderNames;
+      if (trendResult) next[root.trendConfig.STORAGE.LIMITS_FIELD] = trendResult.limits;
       next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
       await storage.writeMachineSettings(rootHandle, fileName, next);
@@ -412,6 +416,7 @@
   async function init() {
     await loadState();
     buildPathRows();
+    if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
     CONFIG.PATH_LIST.forEach((pathItem) => { rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key); });
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => {
       radio.checked = radio.value === settings.machineMode;

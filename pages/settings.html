@@ -7,10 +7,12 @@
   VERSION : v2.4 | 2026-11-20 | tinanggal ang lock badge; note ng path (full path)
   VERSION : v2.18 | 2026-11-21 | paalala na may hindi pa na-save (#settings-unsaved); note ng full path ay kailangan na
   VERSION : v3.2 | 2026-11-21 | card ng Install File Watcher (css/pages/watcher-install.css, js/pages/watcher-install.js)
+  VERSION : v9.3 | 2026-11-22 | card na Trend limits (UCL, CL, LCL) at css/pages/trend-settings.css, js/core/trend-config.js, trend-limits.js, trend-settings.js
 -->
 <!-- PAGE: settings -->
 <link rel="stylesheet" href="css/pages/settings.css">
 <link rel="stylesheet" href="css/pages/watcher-install.css">
+<link rel="stylesheet" href="css/pages/trend-settings.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -46,6 +48,8 @@
 
   <div id="watcher-card" class="card"></div>
 
+  <div id="trend-limits-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-unsaved" class="unsaved-note" role="status" hidden>May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.</p>
     <p id="settings-status" class="status" role="status"></p>
@@ -53,4 +57,7 @@
   </div>
 </section>
 <script src="js/pages/watcher-install.js"></script>
+<script src="js/core/trend-config.js"></script>
+<script src="js/core/trend-limits.js"></script>
+<script src="js/core/trend-settings.js"></script>
 <script src="js/pages/settings.js"></script>

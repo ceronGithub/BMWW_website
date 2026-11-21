@@ -1,3 +1,22 @@
+INSTRUCTIONS v9.3 (Trend: bagong page, Trend limits sa Settings)
+1. Backup muna ng buong website folder. Ilagay ang 11 BAGONG file: js/core/trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-settings.js, js/pages/trend.js, js/templates/trend.template.js, pages/trend.html, css/pages/trend.css, css/pages/trend-settings.css. Ipalit ang 9 binagong file: components/sidebar.html, js/templates/sidebar.template.js, js/core/config.js, index.html, pages/settings.html, js/templates/settings.template.js, js/pages/settings.js, README.txt, 00_INSTRUCTIONS.txt.
+2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge. I-refresh nang Ctrl+F5.
+3. TEST STEPS v9.3:
+   - Settings: DAPAT may bagong card na "Trend limits": table ng Mean Offset, Stdev, CV, Slope, Intercept, R2 na may UCL, CL, LCL. Maglagay ng halimbawa (Mean Offset UCL 5, CL 0, LCL -5), i-click ang Save settings. DAPAT lumabas ang berdeng mensahe ng pag-save. Mag-refresh: DAPAT nandoon pa ang mga numero.
+   - Maglagay ng "abc" sa isang limit at Save: DAPAT pulang mensahe na numero lang ang puwede. Maglagay ng UCL na mas mababa sa CL: DAPAT mensaheng mali ang ayos; walang na-save.
+   - Sidebar: DAPAT may bagong link na Trend (sa ilalim ng Master; hindi makikita ng LEAD PC).
+   - Trend page: DAPAT may Data source (path ng Data source 1), Start date at End date (default 14 araw hanggang today), Run Trend, at Reset lahat ng Set (disabled hangga't walang run).
+   - Piliin ang saklaw na may master file (hal. 11/13 hanggang 11/16/2026 para sa CalibSts_261114081240.csv) at pindutin ang Run Trend. Kung hihingi ng permission, pindutin ang Allow.
+   - DAPAT lumabas: buod (Mga point, Mga record, Master file, Labas sa limit, Mga Set ng user), listahan ng Pagpalit ng cantilever, at 6 na chart (Mean Offset, Stdev, CV, Slope, Intercept, R2). Sa sample mo: 11/13 Day = 17:55, 11/13 Night = 20:02, 11/14 Day = 7:43 (ang 7:32 ay hindi kasama dahil pinakahuli ang kinukuha).
+   - Chart: DAPAT may UCL (pulang putol-putol), CL (berde), LCL (kahel) ng value na may naka-set; pulang point ang labas sa limit; ang value na walang naka-set na limit ay walang limit line. Kapag walang kahit isang limit na naka-set: DAPAT paalala na itakda sa Settings.
+   - Kapag may ibang cantilever sa saklaw: DAPAT patayong putol-putol na linya at pangalan ng bagong cantilever sa chart, at nakalista sa Pagpalit ng cantilever (hal. S221-4A -> S221-5B).
+   - Card na Mga record ng araw: pumili ng petsa (hal. 11/14/2026). DAPAT lumabas ang mga record ng araw na iyon: Oras, Shift, Cantilever, File, Mean Offset, Stdev, CV, Slope, Intercept, R2, at kung nasa chart. Pindutin ang Set sa 7:32: DAPAT magbago ang point ng 11/14 Day sa chart (may lilang bilog), Mga Set ng user = 1, at ang row ay "Oo (Set)" na may Reset. Pindutin ang Reset: DAPAT bumalik sa 7:43. Mag-refresh at mag-Run ulit: DAPAT nandoon pa ang Set. Reset lahat ng Set: DAPAT bumalik lahat.
+   - Petsa na walang file: DAPAT "Walang file sa napiling saklaw ng petsa." Start date na mas huli kaysa End date: DAPAT "Ang Start date ay hindi puwedeng lampas sa End date."
+   - Lumipat ng page at bumalik: DAPAT nandoon pa rin ang huling resulta.
+   - Calibration, Master, Dashboard at Settings (ibang card): DAPAT gumagana pa rin at walang pagbabago.
+   - Nasubukan sa Node at jsdom (CSV mo at gawa-gawang pangalawang master file; nag-render ang chart sa PNG). Hindi pa sa totoong Chrome/Edge; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.2) ---
 INSTRUCTIONS v9.2 (Calibration: Calibration Repeatability)
 1. Backup muna ng buong website folder. Ilagay ang 5 BAGONG file: js/core/calibration-repeatability-config.js, js/core/calibration-repeatability.js, js/core/calibration-repeatability-export.js, js/core/calibration-repeatability-ui.js, css/pages/calibration-repeatability.css. Ipalit ang 5 binagong file: pages/calibration.html, js/templates/calibration.template.js, js/pages/calibration.js, README.txt, 00_INSTRUCTIONS.txt.
 2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge.
