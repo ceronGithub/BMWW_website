@@ -5,6 +5,9 @@
  * INPUT   : folder handle ng <Server path>\master-correl, pangalan ng machine
  * OUTPUT  : { status, fileName, modifiedMs } (kapareho ng item ng correlSync.readCorrelList) o null; hindi nagtatapon ng error. Basa lang, walang sinusulat sa Server.
  * NOTE    : Walang library: sariling basa ng ZIP (store at deflate) at XML. Ang deflate ay nangangailangan ng DecompressionStream (Chrome / Edge).
+ * VERSION : v8.10 | 2026-11-21 | readLatestCompareDetailsForMachine (LEAD PC: Master Compare Excel ng machine sa <Server path>\\master-compare\\<machine>\\<petsa>); findLatestFileByPrefix
+ * VERSION : v8.9 | 2026-11-21 | buildGrid: lahat ng cell ng sheet (grid) sa details ng Master Correl at Compare para sa Preview tab
+ * VERSION : v8.8 | 2026-11-21 | readCompareDetailsFromFile, readLatestCompareDetailsInSavingPath (buong laman ng Master Compare Excel para sa Preview ng worst slider); walang binago sa lumang function
  * VERSION : v8.7 | 2026-11-21 | readDetailsFromFile, readLatestDetailsInSavingPath, readLatestDetailsForMachine (buong laman ng Master Correl para sa Preview panel)
  * VERSION : v8.6 | 2026-11-21 | readLatestCompareInSavingPath (Excel ng Compare sa <Saving path>\\master-compare\\<petsa ngayon>); findLatestInDayFolders; findDayFolders may parameter na subfolder
  * VERSION : v8.4 | 2026-11-21 | readLatestInSavingPath: tinitingnan din ang <Saving path>\\master-correl\\<machine>\\<petsa> (findDayFolders)
@@ -339,7 +342,27 @@
     }
   }
 
-  // Binabasa ang buong laman ng Master Correl Excel para sa Preview panel: buod at table ng Barcode, Actual, Master. Null kung hindi mabasa.
+  // Mga cell ng sheet bilang grid para sa Preview tab: { columnList: ['A', 'B', ...], rowList: [[text, ...]] } hanggang sa huling row at column na may laman.
+  function buildGrid(cellMap) {
+    let lastRow = 0;
+    let lastColumn = 0;
+    const entryList = [];
+    cellMap.forEach((value, reference) => {
+      const match = /^([A-Z]+)(\d+)$/.exec(reference);
+      if (!match || value === '') return;
+      let columnNumber = 0;
+      for (const letter of match[1]) columnNumber = columnNumber * 26 + (letter.charCodeAt(0) - 64);
+      lastRow = Math.max(lastRow, Number(match[2]));
+      lastColumn = Math.max(lastColumn, columnNumber);
+      entryList.push({ row: Number(match[2]), column: columnNumber, value });
+    });
+    const rowList = Array.from({ length: lastRow }, () => Array(lastColumn).fill(''));
+    entryList.forEach((entry) => { rowList[entry.row - 1][entry.column - 1] = entry.value; });
+    const columnList = Array.from({ length: lastColumn }, (unused, index) => String.fromCharCode(65 + (index % 26)));
+    return { columnList, rowList };
+  }
+
+  // Binabasa ang buong laman ng Master Correl Excel para sa Preview tab: buod at table ng Barcode, Actual, Master. Null kung hindi mabasa.
   async function readDetailsFromFile(file) {
     if (file.size > FILE_MAX_BYTES) return null;
     const view = new DataView(await file.arrayBuffer());
@@ -374,6 +397,7 @@
       actualAverage: findValue(rowList, TEXT.actualAverage),
       masterAverage: findValue(rowList, TEXT.masterAverage),
       worst: findValue(rowList, TEXT.worstBarcode),
+      grid: buildGrid(cellMap),
       sliderList
     };
   }
@@ -400,10 +424,99 @@
     }
   }
 
+  // Binabasa ang buong laman ng Master Compare Excel para sa Preview ng worst slider: buod at lahat ng slider (Previous at Today). Null kung hindi mabasa.
+  async function readCompareDetailsFromFile(file) {
+    if (file.size > FILE_MAX_BYTES) return null;
+    const view = new DataView(await file.arrayBuffer());
+    const entryMap = readZipEntries(view);
+    if (!entryMap) return null;
+    const sheetXml = await readEntryText(view, entryMap, SHEET_PATH);
+    if (!sheetXml) return null;
+    const sharedList = parseSharedStrings(await readEntryText(view, entryMap, STRINGS_PATH));
+    const cellMap = parseAllCells(sheetXml, sharedList);
+    const label = root.compareConfig.LABEL;
+    let headerRow = 0;
+    for (let row = 1; row <= LABEL_ROW_LIMIT; row += 1) {
+      if ((cellMap.get('A' + row) || '').trim() === label.columnBarcode) { headerRow = row; break; }
+    }
+    if (!headerRow) return null;
+    const rowValue = (text) => {
+      for (let row = 1; row < headerRow; row += 1) if ((cellMap.get('A' + row) || '').trim().toLowerCase() === text.toLowerCase()) return (cellMap.get('B' + row) || '').trim();
+      return '';
+    };
+    const classify = root.masterAnalysis && root.masterAnalysis.classifyDeviation ? root.masterAnalysis.classifyDeviation : () => '';
+    const sliderList = [];
+    for (let row = headerRow + 1; row <= CELL_ROW_LIMIT; row += 1) {
+      const barcode = (cellMap.get('A' + row) || '').trim();
+      if (!barcode) break;
+      const slider = {
+        barcode,
+        previousActual: cellNumber(cellMap, 'B' + row), previousMaster: cellNumber(cellMap, 'C' + row), previousDifference: cellNumber(cellMap, 'D' + row),
+        currentActual: cellNumber(cellMap, 'E' + row), currentMaster: cellNumber(cellMap, 'F' + row), currentDifference: cellNumber(cellMap, 'G' + row),
+        change: cellNumber(cellMap, 'H' + row), trend: trendFromText((cellMap.get('I' + row) || '').trim())
+      };
+      slider.level = slider.currentActual === null || slider.currentMaster === null ? '' : classify(slider.currentActual, slider.currentMaster);
+      sliderList.push(slider);
+    }
+    if (!sliderList.length) return null;
+    const worst = sliderList.reduce((top, slider) => ((slider.currentDifference || 0) > (top.currentDifference || 0) ? slider : top), sliderList[0]);
+    return {
+      fileName: file.name,
+      modifiedMs: file.lastModified,
+      todayDate: rowValue(label.todayDate),
+      previousDate: rowValue(label.previousDate),
+      todayFile: rowValue(label.todayFile),
+      previousFile: rowValue(label.previousFile),
+      rSquaredToday: rowValue(label.rSquaredToday),
+      rSquaredPrevious: rowValue(label.rSquaredPrevious),
+      worst,
+      grid: buildGrid(cellMap),
+      sliderList
+    };
+  }
+
+  // Pinakabagong file (last modified) sa lahat ng folder ng petsa ng machine na ang pangalan ay nagsisimula sa prefix at nagtatapos sa extension; null kung wala.
+  async function findLatestFileByPrefix(machineHandle, prefix, extension) {
+    let latest = null;
+    for await (const [, dateHandle] of machineHandle.entries()) {
+      if (dateHandle.kind !== 'directory') continue;
+      for await (const [fileName, fileHandle] of dateHandle.entries()) {
+        if (fileHandle.kind !== 'file' || !fileName.startsWith(prefix) || !fileName.toLowerCase().endsWith(extension)) continue;
+        const file = await fileHandle.getFile();
+        if (!latest || file.lastModified > latest.lastModified) latest = file;
+      }
+    }
+    return latest;
+  }
+
+  // Preview ng worst slider (LEAD PC): buong laman ng pinakabagong Master Compare Excel ng machine sa <Server path>\\master-compare\\<machine>\\<petsa>. Null kung wala o hindi mabasa.
+  async function readLatestCompareDetailsForMachine(compareFolderHandle, machineName) {
+    try {
+      const folder = await findMachineFolder(compareFolderHandle, machineName);
+      if (!folder.handle) return null;
+      const compare = root.compareConfig;
+      const latest = await findLatestFileByPrefix(folder.handle, compare.FILE_PREFIX, compare.FILE_EXTENSION);
+      return latest ? await readCompareDetailsFromFile(latest) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Preview ng worst slider (Sender): buong laman ng pinakabagong Master Compare Excel ngayong araw sa <Saving path>\\master-compare. Null kung wala o hindi mabasa.
+  async function readLatestCompareDetailsInSavingPath(rootHandle, machineName, dayName) {
+    try {
+      const compare = root.compareConfig;
+      const latest = await findLatestInDayFolders(rootHandle, machineName, dayName, compare.SUBFOLDER, compare.FILE_PREFIX, compare.FILE_EXTENSION);
+      return latest ? await readCompareDetailsFromFile(latest) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   // Dahilan kung bakit hindi nabasa ang huling subok sa machine: { code, detail } o null.
   function getIssue(machineName) {
     return issueMap.get(normalizeName(machineName)) || null;
   }
 
-  root.correlExcelReader = Object.freeze({ readLatestForMachine, readLatestInSavingPath, readLatestCompareInSavingPath, readLatestDetailsInSavingPath, readLatestDetailsForMachine, getIssue });
+  root.correlExcelReader = Object.freeze({ readLatestForMachine, readLatestInSavingPath, readLatestCompareInSavingPath, readLatestDetailsInSavingPath, readLatestDetailsForMachine, readLatestCompareDetailsInSavingPath, readLatestCompareDetailsForMachine, getIssue });
 })();

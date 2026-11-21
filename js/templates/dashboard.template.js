@@ -2,6 +2,7 @@
  * FILE    : js/templates/dashboard.template.js
  * PURPOSE : Kopya ng pages/dashboard.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v8.9 | 2026-11-21 | kasabay ng pages/dashboard.html (Preview sa bagong tab: script ng preview-tab-style at preview-tab; inalis ang preview-panel)
  * VERSION : v7.6 | 2026-11-21 | kasabay ng pages/dashboard.html (script ng correl-excel-reader)
  * VERSION : v7.4 | 2026-11-21 | kasabay ng pages/dashboard.html (Preview button ng Master Correl)
  * VERSION : v7.3 | 2026-11-21 | kasabay ng pages/dashboard.html (script ng correl-sync-config at correl-sync)
@@ -88,6 +89,9 @@
 <script src="js/core/correl-preview.js"></script>
 <script src="js/core/correl-excel-reader.js"></script>
 <script src="js/core/dashboard-machines-config.js"></script>
+<script src="js/core/preview-chart.js"></script>
+<script src="js/core/preview-tab-style.js"></script>
+<script src="js/core/preview-tab.js"></script>
 <script src="js/pages/dashboard-machines.js"></script>
 `);
 })();

@@ -1,0 +1,56 @@
+/*
+ * FILE    : css/pages/preview-panel.css
+ * PURPOSE : Laki at itsura ng Preview panel ng Dashboard (mas malaki) at style ng chart sa loob nito (naka-scope sa .dm-preview-panel)
+ * DEPENDS : css/base.css, css/pages/dashboard-machines.css
+ * VERSION : v8.8 | 2026-11-21 | bagong file (malaking panel, chart, highlight ng napiling row)
+ */
+.dm-preview-panel {
+  --chart-1: #2563eb; --chart-2: #16a34a; --chart-3: #d97706; --chart-4: #9333ea;
+  --chart-5: #0891b2; --chart-6: #db2777; --chart-7: #65a30d; --chart-8: #ea580c;
+  --level-green: #16a34a; --level-yellow: #eab308; --level-red: #dc2626;
+}
+/* Mobile-first: halos buong screen; mas malaki sa tablet at desktop. */
+.page-dashboard .dm-preview-panel { width: 100%; max-width: 100%; max-height: 94vh; }
+.page-dashboard.dm-preview-overlay { padding: var(--space-2); }
+.page-dashboard .dm-preview-stats { grid-template-columns: max-content 1fr; }
+.page-dashboard .dm-preview-table-wrap { max-height: 18rem; }
+.page-dashboard .dm-preview-row { cursor: pointer; }
+.page-dashboard .dm-preview-row:hover { background: var(--color-bg); }
+.page-dashboard .dm-preview-row:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.page-dashboard .dm-preview-row.is-selected { background: var(--color-bg); font-weight: 700; box-shadow: inset 4px 0 0 var(--color-primary); }
+.dm-preview-panel .chart-box { width: 100%; max-width: 46rem; margin: 0 auto; padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.dm-preview-panel .chart-svg { display: block; width: 100%; height: auto; }
+.dm-preview-panel .chart-text { fill: var(--color-text); stroke: none; font-size: 16px; }
+.dm-preview-panel .chart-title { font-size: 21px; font-weight: 700; }
+.dm-preview-panel .chart-axis-title { font-size: 17px; font-weight: 600; }
+.dm-preview-panel .chart-equation { font-size: 16px; font-weight: 700; paint-order: stroke; stroke: var(--color-surface); stroke-width: 4px; stroke-linejoin: round; }
+.dm-preview-panel .chart-label-link { cursor: default; }
+.dm-preview-panel line.chart-grid { stroke: var(--color-border); stroke-width: 1; }
+.dm-preview-panel .chart-axis { stroke: var(--color-muted); stroke-width: 1.5; }
+.dm-preview-panel .chart-point { fill: var(--chart-1); fill-opacity: 0.95; stroke: var(--color-surface); stroke-width: 1.5; }
+.dm-preview-panel .chart-point.level-green, .dm-preview-panel .chart-dot.level-green { fill: var(--level-green); }
+.dm-preview-panel .chart-point.level-yellow, .dm-preview-panel .chart-dot.level-yellow { fill: var(--level-yellow); }
+.dm-preview-panel .chart-point.level-red, .dm-preview-panel .chart-dot.level-red { fill: var(--level-red); }
+.dm-preview-panel .chart-point.is-selected, .dm-preview-panel .chart-dot.is-selected { stroke: var(--color-text); stroke-width: 2.5; }
+.dm-preview-panel .chart-trend { stroke: var(--color-danger); stroke-width: 2; stroke-dasharray: 6 4; }
+.dm-preview-panel .chart-line { fill: none; stroke: currentColor; stroke-width: 2; }
+.dm-preview-panel .chart-dot { fill: currentColor; stroke: var(--color-surface); stroke-width: 1; }
+.dm-preview-panel .chart-series-0 { color: var(--chart-1); }
+.dm-preview-panel .chart-series-1 { color: var(--chart-2); }
+.dm-preview-panel .chart-series-2 { color: var(--chart-3); }
+.dm-preview-panel .chart-series-3 { color: var(--chart-4); }
+.dm-preview-panel .chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: var(--space-2) 0 0; padding: 0 var(--space-2); list-style: none; }
+.dm-preview-panel .chart-legend-item { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.8125rem; }
+.dm-preview-panel .chart-legend-item::before { content: ""; width: 1.25rem; height: 0.25rem; background: currentColor; border-radius: 2px; }
+.dm-preview-hint { margin: 0; }
+@media (min-width: 768px) {
+  .page-dashboard.dm-preview-overlay { padding: var(--space-4); }
+  .page-dashboard .dm-preview-panel { max-width: 56rem; max-height: 92vh; }
+  .page-dashboard .dm-preview-stats { grid-template-columns: max-content 1fr max-content 1fr; }
+}
+@media (min-width: 1024px) {
+  .page-dashboard .dm-preview-panel { max-width: 64rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-dashboard .dm-preview-row { transition: none; }
+}

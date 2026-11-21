@@ -2,9 +2,12 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
+ * DEPENDS : js/core/preview-tab.js, js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v8.10 | 2026-11-21 | LEAD PC: may Preview na rin ang worst slider sa tile ng machine; binabasa ang Master Compare Excel sa <Server path>\\master-compare\\<machine> (loadCompareDetails ay may LEAD PC branch)
+ * VERSION : v8.9 | 2026-11-21 | Preview ay bagong tab (previewTab.open) na nagpapakita ng buod, chart at laman ng Excel; inalis ang popup, handleExplorerClick, buildCorrelTable, buildCompareTable, fillPreviewBody, fillCompareBody; dagdag na buildCorrelPage, buildComparePage
+ * VERSION : v8.8 | 2026-11-21 | Preview: malaking panel na may chart (Master Correl) at Preview ng worst slider ng sariling machine (Compare); panel ay galing na sa preview-panel.js; inalis ang closePreviewPanel at buildPreviewTable
  * VERSION : v7.8 | 2026-11-21 | itinatago ang stale at hindi naka-register na machine (lumang pangalan); buod ay kinukuwenta ulit
  * VERSION : v7.7 | 2026-11-21 | ipinapakita sa #dm-message ang dahilan kung bakit hindi nabasa ang Master Correl Excel ng machine
  * VERSION : v8.7 | 2026-11-21 | Preview: maliit na panel (popout) na may laman ng pinakabagong Master Correl file (buod at table); Sender = Saving path, LEAD PC = Server path; may button na Buksan sa File Explorer sa loob ng panel
@@ -31,7 +34,6 @@
   const MONITOR = CONFIG.MONITOR;
   let timerId = null;
   let isBusy = false;
-  let isPreviewBusy = false;
   let previewClearId = null;
 
   // Gumagawa ng elemento na may class at text (textContent lang, ligtas sa XSS).
@@ -220,8 +222,8 @@
     return wrap;
   }
 
-  // Alert ng worst slider sa tile ng machine: actual at master (previous at today), at listahan ng slider.
-  function buildAlertBlock(compareItem, nowMs) {
+  // Alert ng worst slider sa tile ng machine: actual at master (previous at today), at listahan ng slider. previewMachineName (opsyonal) = may Preview button (Sender at LEAD PC).
+  function buildAlertBlock(compareItem, nowMs, previewMachineName) {
     const text = TEXT.compare;
     const status = compareItem.status;
     const worst = status.worst;
@@ -229,6 +231,8 @@
     const title = createElementWith('p', 'dm-alert-title', text.title.replace('{barcode}', worst.barcode));
     const levelText = DM.COMPARE.LEVEL_TEXT[worst.level];
     if (levelText) title.append(createElementWith('span', 'dm-alert-level', levelText));
+    // Preview: Sender = Excel sa Saving path; LEAD PC = Excel ng machine sa Server path.
+    if (previewMachineName) title.append(buildComparePreviewButton(previewMachineName));
     const updatedMs = compareItem.modifiedMs || Date.parse(status.updatedAt);
     if (updatedMs && nowMs - updatedMs > DM.COMPARE.STALE_MS) title.append(createElementWith('span', 'dm-tag', text.stale));
     box.append(title);
@@ -258,64 +262,29 @@
     if (message) previewClearId = window.setTimeout(() => setPreviewStatus('', false), TEXT.preview.clearMs);
   }
 
-  // ----- Preview: maliit na panel (popout) ng pinakabagong Master Correl file -----
-  let previewOverlay = null;
-  let previewKeyHandler = null;
+  // ----- Preview: bagong tab na nagpapakita ng laman ng Excel file na nabasa (ang tab ay nasa js/core/preview-tab.js) -----
 
-  // Isinasara ang panel at inaalis ang mga listener.
-  function closePreviewPanel() {
-    if (previewKeyHandler) document.removeEventListener('keydown', previewKeyHandler);
-    if (previewKeyHandler) window.removeEventListener('hashchange', closePreviewPanel);
-    previewKeyHandler = null;
-    if (previewOverlay) previewOverlay.remove();
-    previewOverlay = null;
-  }
-
-  // Table ng Barcode, Actual, Master at Diff (pula / dilaw ang Diff kapag lampas sa limit).
-  function buildPreviewTable(sliderList) {
-    const panelText = TEXT.preview.panel;
-    const wrap = createElementWith('div', 'dm-table-wrap dm-preview-table-wrap');
-    const table = createElementWith('table', 'dm-table');
-    const headRow = document.createElement('tr');
-    panelText.columns.forEach((column) => headRow.append(createElementWith('th', '', column)));
-    const head = document.createElement('thead');
-    head.append(headRow);
-    const body = document.createElement('tbody');
-    sliderList.forEach((slider) => {
-      const row = document.createElement('tr');
-      const diffText = typeof slider.difference === 'number' ? slider.difference.toFixed(panelText.digits) : '-';
-      row.append(
-        createElementWith('td', '', slider.barcode),
-        createElementWith('td', '', typeof slider.actual === 'number' ? slider.actual.toFixed(panelText.digits) : '-'),
-        createElementWith('td', '', typeof slider.master === 'number' ? slider.master.toFixed(panelText.digits) : '-'),
-        createElementWith('td', DM.COMPARE.LEVEL_CLASS[slider.level] || '', diffText)
-      );
-      body.append(row);
-    });
-    table.append(head, body);
-    wrap.append(table);
-    return wrap;
-  }
-
-  // Inilalagay ang laman ng Master Correl (status, buod, table) sa body ng panel.
-  function fillPreviewBody(body, details) {
+  // Pahina ng Master Correl para sa tab: status, buod, chart at grid ng sheet.
+  function buildCorrelPage(details, machineName) {
     const panelText = TEXT.preview.panel;
     const stats = panelText.stats;
     const sync = root.correlSyncConfig;
-    const head = createElementWith('div', 'dm-correl-row ' + ((sync && sync.STATUS_CLASS[details.status]) || ''));
-    const badge = createElementWith('span', 'dm-correl-badge');
-    badge.append(createElementWith('span', 'dm-correl-icon', TEXT.correl.icon[details.status] || ''), createElementWith('span', '', details.status || '-'));
-    head.append(badge);
-    const list = createElementWith('dl', 'dm-preview-stats');
-    [
-      [stats.rSquared, typeof details.rSquared === 'number' ? details.rSquared.toFixed(4) : '-'],
-      [stats.record, details.recordDate || '-'],
-      [stats.actualAverage, details.actualAverage || '-'],
-      [stats.masterAverage, details.masterAverage || '-'],
-      [stats.worst, details.worst || '-'],
-      [stats.file, details.fileName]
-    ].forEach((pair) => list.append(createElementWith('dt', '', pair[0]), createElementWith('dd', '', pair[1])));
-    body.replaceChildren(head, list, buildPreviewTable(details.sliderList));
+    return {
+      title: panelText.title + machineName,
+      status: { text: details.status || '-', icon: TEXT.correl.icon[details.status] || '', className: (sync && sync.STATUS_CLASS[details.status]) || '' },
+      statList: [
+        [stats.rSquared, typeof details.rSquared === 'number' ? details.rSquared.toFixed(4) : '-'],
+        [stats.record, details.recordDate || '-'],
+        [stats.actualAverage, details.actualAverage || '-'],
+        [stats.masterAverage, details.masterAverage || '-'],
+        [stats.worst, details.worst || '-'],
+        [stats.file, details.fileName]
+      ],
+      chartBox: root.previewChart.buildCorrelChart(details, machineName),
+      grid: details.grid,
+      fileName: details.fileName,
+      modifiedMs: details.modifiedMs
+    };
   }
 
   // Kinukuha ang laman ng pinakabagong Master Correl file: Sender = <Saving path> ngayong araw; LEAD PC = <Server path>\\master-correl\\<machine>. Ibinibigay { details } o { message }.
@@ -341,61 +310,80 @@
     return details ? { details } : { message: panelText.noFileLead };
   }
 
-  // Click ng Buksan sa File Explorer (lumang Preview): mensahe ay lumalabas sa loob ng panel.
-  async function handleExplorerClick(machineName, noteElement) {
-    if (isPreviewBusy || !root.correlPreview) return;
-    isPreviewBusy = true;
-    const text = TEXT.preview;
-    try {
-      noteElement.textContent = text.opening + machineName + '...';
-      const result = await root.correlPreview.previewLatest(machineName, true);
-      noteElement.textContent = result.ok ? text.opened + result.openedPath + text.openedHint : (text.error[result.code] || text.error.error);
-    } finally {
-      isPreviewBusy = false;
-    }
+  // Click ng Preview ng Master Correl: bagong tab (binubuksan agad sa click) na nagpapakita ng pinakabagong Master Correl file.
+  function handlePreviewClick(machineName) {
+    return root.previewTab.open({
+      title: TEXT.preview.panel.title + machineName,
+      load: () => loadPreviewDetails(machineName),
+      buildPage: (details) => buildCorrelPage(details, machineName),
+      onBlocked: () => setPreviewStatus(TEXT.preview.tab.blocked, true)
+    });
   }
 
-  // Click ng Preview: lumalabas ang maliit na panel (popout) na may laman ng pinakabagong Master Correl file.
-  async function handlePreviewClick(machineName) {
-    closePreviewPanel();
-    const panelText = TEXT.preview.panel;
-    const overlay = createElementWith('div', 'page-dashboard dm-preview-overlay');
-    const panel = createElementWith('div', 'dm-preview-panel');
-    panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-modal', 'true');
-    panel.setAttribute('aria-label', panelText.title + machineName);
-    const head = createElementWith('div', 'dm-preview-head');
-    const closeButton = createElementWith('button', 'btn btn-secondary dm-preview-close', panelText.close);
-    closeButton.type = 'button';
-    closeButton.setAttribute('aria-label', panelText.closeAria);
-    head.append(createElementWith('h3', 'dm-preview-title', panelText.title + machineName), closeButton);
-    const body = createElementWith('div', 'dm-preview-body');
-    body.append(createElementWith('p', 'card-note', panelText.loading));
-    const note = createElementWith('p', 'card-note dm-preview-note');
-    const explorerButton = createElementWith('button', 'btn btn-secondary dm-preview-explorer', panelText.openExplorer);
-    explorerButton.type = 'button';
-    const foot = createElementWith('div', 'dm-preview-foot');
-    foot.append(explorerButton, note);
-    panel.append(head, body, foot);
-    overlay.append(panel);
-    document.body.append(overlay);
-    previewOverlay = overlay;
-    previewKeyHandler = (event) => { if (event.key === 'Escape') closePreviewPanel(); };
-    document.addEventListener('keydown', previewKeyHandler);
-    window.addEventListener('hashchange', closePreviewPanel);
-    closeButton.addEventListener('click', closePreviewPanel);
-    overlay.addEventListener('click', (event) => { if (event.target === overlay) closePreviewPanel(); });
-    explorerButton.addEventListener('click', () => handleExplorerClick(machineName, note));
-    closeButton.focus();
-    let loaded;
-    try {
-      loaded = await loadPreviewDetails(machineName);
-    } catch (error) {
-      loaded = { message: TEXT.preview.error.error };
+  // Kinukuha ang laman ng pinakabagong Master Compare file: Sender = <Saving path> ngayong araw; LEAD PC = <Server path>\\master-compare\\<machine>. Ibinibigay { details } o { message }.
+  async function loadCompareDetails(machineName) {
+    const compareText = TEXT.preview.panel.compare;
+    if (!root.correlExcelReader || !root.storage.isFolderAccessSupported()) return { message: TEXT.preview.error.unsupported };
+    if (getRole(root.storage.readLocalSettings()).key !== DM.ROLE.sender.key) {
+      const found = await root.queue.findServerHandle(true);
+      if (found.state !== QUEUE.CONNECTION.ok) return { message: TEXT.preview.error[found.state] || TEXT.preview.error.error };
+      let compareFolder;
+      try {
+        compareFolder = await found.handle.getDirectoryHandle(root.compareConfig.SERVER.SUBFOLDER);
+      } catch (error) {
+        return { message: compareText.noFileLead };
+      }
+      const leadDetails = await root.correlExcelReader.readLatestCompareDetailsForMachine(compareFolder, machineName);
+      return leadDetails ? { details: leadDetails } : { message: compareText.noFileLead };
     }
-    if (previewOverlay !== overlay) return;
-    if (loaded.details) fillPreviewBody(body, loaded.details);
-    else body.replaceChildren(createElementWith('p', 'dm-preview-message', loaded.message));
+    const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
+    if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: compareText.noRoot };
+    const details = await root.correlExcelReader.readLatestCompareDetailsInSavingPath(rootHandle, machineName, root.csv.formatDateInput(new Date()));
+    return details ? { details } : { message: compareText.noFileSender };
+  }
+
+  // Pahina ng Compare para sa tab: worst slider, buod, chart at grid ng sheet.
+  function buildComparePage(details, machineName) {
+    const compareText = TEXT.preview.panel.compare;
+    const stats = compareText.stats;
+    const worst = details.worst;
+    return {
+      title: compareText.title + machineName,
+      status: { text: worst.barcode + (DM.COMPARE.LEVEL_TEXT[worst.level] ? ' ' + DM.COMPARE.LEVEL_TEXT[worst.level] : ''), icon: '', className: DM.PREVIEW_TAB.LEVEL_BADGE[worst.level] || '' },
+      statList: [
+        [stats.worst, worst.barcode + ' (' + formatReading(worst.currentDifference) + ')'],
+        [stats.today, details.todayDate || '-'],
+        [stats.previous, details.previousDate || '-'],
+        [stats.rSquaredToday, details.rSquaredToday || '-'],
+        [stats.rSquaredPrevious, details.rSquaredPrevious || '-'],
+        [stats.todayFile, details.todayFile || '-'],
+        [stats.previousFile, details.previousFile || '-'],
+        [stats.file, details.fileName]
+      ],
+      chartBox: root.previewChart.buildCompareChart(details, machineName),
+      grid: details.grid,
+      fileName: details.fileName,
+      modifiedMs: details.modifiedMs
+    };
+  }
+
+  // Click ng Preview ng worst slider: parehong tab ng Master Correl, laman ay galing sa Master Compare Excel.
+  function handleComparePreviewClick(machineName) {
+    return root.previewTab.open({
+      title: TEXT.preview.panel.compare.title + machineName,
+      load: () => loadCompareDetails(machineName),
+      buildPage: (details) => buildComparePage(details, machineName),
+      onBlocked: () => setPreviewStatus(TEXT.preview.tab.blocked, true)
+    });
+  }
+
+  // Preview button ng worst slider (sariling tile ng machine lang).
+  function buildComparePreviewButton(machineName) {
+    const button = createElementWith('button', 'btn btn-secondary dm-preview-button', TEXT.compare.preview);
+    button.type = 'button';
+    button.setAttribute('aria-label', TEXT.compare.previewAria + machineName);
+    button.addEventListener('click', () => handleComparePreviewClick(machineName));
+    return button;
   }
 
   // Preview button ng Master Correl ng isang machine (text at aria-label, hindi icon lang).
@@ -439,7 +427,7 @@
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
     tile.append(head, buildCorrelBlock(item.correl, nowMs));
-    if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs));
+    if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs, item.machineName));
 
     const presenceRow = createElementWith('p', 'dm-presence');
     presenceRow.append(createElementWith('span', 'dm-dot'), createElementWith('span', 'dm-presence-label', DM.LABEL.presence[item.presence]));
@@ -542,7 +530,7 @@
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
     tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs));
     // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
-    if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs));
+    if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs, settings.machineName));
     const isRunning = monitorState.state === MONITOR.STATE.running;
     if (isRunning) {
       const overall = getOwnOverallState(monitorState.sources);
@@ -653,7 +641,6 @@
 
   // Init ng page, tinatawag ng dashboard.js.
   function init() {
-    closePreviewPanel();
     stopTimer();
     isBusy = false;
     const grantButton = query(SEL.grant);

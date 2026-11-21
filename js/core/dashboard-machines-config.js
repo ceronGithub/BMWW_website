@@ -2,6 +2,9 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v8.10 | 2026-11-21 | TEXT.preview.panel.compare.noFileLead (Preview ng worst slider sa LEAD PC)
+ * VERSION : v8.9 | 2026-11-21 | Preview ay bagong tab (PREVIEW_TAB, TEXT.preview.tab); inalis ang text ng popup (close, loading, columns, openExplorer, rowHint)
+ * VERSION : v8.8 | 2026-11-21 | PREVIEW_PANEL, TEXT.preview.panel.compare at text ng chart (Preview ng worst slider at chart ng Master Correl)
  * VERSION : v8.7 | 2026-11-21 | TEXT.preview.panel (maliit na panel ng Preview)
  * VERSION : v7.8 | 2026-11-21 | HIDE_ORPHANS (itinatago ang stale at hindi naka-register na machine, hal. lumang pangalan)
  * VERSION : v7.7 | 2026-11-21 | TEXT.excelIssue (dahilan kung bakit hindi nabasa ang Master Correl Excel)
@@ -29,6 +32,8 @@
     RANK: { alert: -1, ongoing: 0, done: 1, idle: 2, stale: 3, noStatus: 4 },
     // Worst slider galing sa Master Correl ng machine: luma na kapag lampas dito ang edad ng file (ms).
     COMPARE: { STALE_MS: 86400000, DIGITS: 3, LEVEL_CLASS: { 'level-red': 'dm-alert-red', 'level-yellow': 'dm-alert-yellow' }, LEVEL_TEXT: { 'level-red': 'RED', 'level-yellow': 'YELLOW' } },
+    // Preview tab: target ng window.open, gaano katagal bago i-revoke ang blob URL (ms), pinakakaunting point para magkaroon ng chart, class ng numero, at klase ng badge ayon sa level.
+    PREVIEW_TAB: { TARGET: '_blank', BLANK_URL: 'about:blank', REVOKE_MS: 60000, MIN_POINTS: 2, NUMBER_CLASS: 'num', LEVEL_BADGE: { 'level-red': 'is-fail', 'level-yellow': 'is-warning', 'level-green': 'is-pass' } },
     LABEL: {
       presence: { active: 'ACTIVE', stale: 'STALE', noStatus: 'NO STATUS' },
       state: { ongoing: 'ONGOING', done: 'DONE', idle: 'IDLE' },
@@ -79,6 +84,8 @@
       summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider', correlFail: 'Correl fail' },
       correl: { label: 'MASTER CORREL', none: 'Wala pang resulta', rSquared: 'R Square ', record: 'Record: ', sent: 'Sent: ', stale: 'LUMA', icon: { PASS: '\u2714', WARNING: '\u25B2', FAIL: '\u2716' } },
       compare: {
+        preview: 'Preview',
+        previewAria: 'Buksan ang Preview ng worst slider ng ',
         title: 'WORST SLIDER: {barcode}',
         today: 'Today: Actual {actual} | Master {master} | Diff {diff}',
         previous: 'Previous: Actual {actual} | Master {master} | Diff {diff} ({change})',
@@ -116,16 +123,28 @@
         opened: 'Ipinadala ang utos na buksan ang folder: ',
         openedHint: ' | Kung walang bumukas: i-install muna ang tools\\open-handler\\install-open-handler.bat, at sa tanong ng browser piliin ang Open.',
         clearMs: 12000,
-        // Maliit na panel (popout) ng Preview: laman ng pinakabagong Master Correl file.
+        // Preview: bagong tab na nagpapakita ng laman ng Excel file na nabasa (buod, chart at laman ng sheet).
         panel: {
-          title: 'Master Correl: ', close: 'Isara', closeAria: 'Isara ang Preview', loading: 'Binabasa ang pinakabagong Master Correl file...',
-          openExplorer: 'Buksan sa File Explorer',
+          title: 'Master Correl: ',
           stats: { rSquared: 'R Square', record: 'Record', actualAverage: 'Actual AVG', masterAverage: 'Master AVG', worst: 'Worst slider', file: 'File' },
-          columns: ['Barcode', 'Actual', 'Master', 'Diff'],
-          digits: 3,
           noFileSender: 'Wala pang Master Correl file ngayong araw sa Saving path. Patakbuhin ang Master Correl sa Master page.',
           noFileLead: 'Wala pang nabasang Master Correl file ng machine na ito sa Server path.',
-          noRoot: 'Kailangan ng pahintulot sa Saving path. Pindutin ulit ang Preview at i-Allow.'
+          noRoot: 'Kailangan ng pahintulot sa Saving path. Pindutin ulit ang Preview at i-Allow.',
+          correlChartTitle: 'Master Correl ', correlChartX: 'Master', correlChartY: 'Actual',
+          // Preview ng worst slider (Compare): Previous vs Today.
+          compare: {
+            title: 'Worst slider: ', dateLength: 10, seriesPrevious: 'Previous', seriesToday: 'Today', chartTitle: 'Compare diff: Previous vs Today',
+            stats: { worst: 'Worst slider', today: 'Today record', previous: 'Previous record', rSquaredToday: 'R Square (today)', rSquaredPrevious: 'R Square (previous)', todayFile: 'Today file', previousFile: 'Previous file', file: 'File' },
+            noFileSender: 'Wala pang Master Compare file ngayong araw sa Saving path. Pindutin ang Compare vs previous sa Master page.',
+            noFileLead: 'Wala pang nabasang Master Compare file ng machine na ito sa Server path (master-compare). Kailangang mag-Compare vs previous muna ito sa Master page.',
+            noRoot: 'Kailangan ng pahintulot sa Saving path. Pindutin ulit ang Preview at i-Allow.'
+          }
+        },
+        // Teksto ng bagong tab.
+        tab: {
+          loading: 'Binabasa ang Excel file...',
+          blocked: 'Hinarang ng browser ang bagong tab. I-allow ang pop-ups para sa site na ito, tapos pindutin ulit ang Preview.',
+          readAt: 'Na-save ang file: ', chartHeading: 'Chart (iginuhit mula sa data ng Excel)', sheetHeading: 'Laman ng Excel file', sheetNote: 'Ito ang mga cell na nabasa sa sheet (basa lang; walang binabago sa file).', rowHeader: '#', noSheet: 'Walang laman ang sheet.', lang: 'fil'
         },
         error: {
           noFile: 'Wala pang na-export na Master Correl file ng machine na ito sa Server path. Kailangang mag-Export to Excel muna ito sa Master page.',
