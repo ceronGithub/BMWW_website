@@ -2,6 +2,8 @@
  * FILE    : js/templates/master.template.js
  * PURPOSE : Kopya ng pages/master.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v7.3 | 2026-11-21 | dagdag na script ng correl-sync-config at correl-sync (status ng Master Correl para sa LEAD PC)
+ * VERSION : v7.1 | 2026-11-21 | kasabay ng pages/master.html (card na Compare sliders)
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.17c | 2026-11-21 | kasabay ng pages/master.html (Latest Master: iisang Date)
  * VERSION : v2.3 | 2026-11-20 | bagong file
@@ -50,12 +52,21 @@
       <button id="latest-export" class="btn btn-secondary" type="button" disabled>Export to Excel</button>
     </div>
     <p id="latest-status" class="status" role="status"></p>
+    <div id="latest-result" class="result-area"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Compare sliders</h2>
+        <p class="card-note">Ihambing ang mga slider ng huling Master Correl sa naunang record. Hindi ito kusang tumatakbo; pindutin ang Compare vs previous.</p>
+      </div>
+    </div>
     <div class="action-row compare-actions">
-      <button id="compare-run" class="btn btn-secondary" type="button" disabled>Compare vs previous</button>
+      <button id="compare-run" class="btn btn-primary" type="button" disabled>Compare vs previous</button>
       <button id="compare-export" class="btn btn-secondary" type="button" disabled>Export compare to Excel</button>
     </div>
     <p id="compare-status" class="status" role="status"></p>
-    <div id="latest-result" class="result-area"></div>
     <div id="compare-result" class="result-area"></div>
   </div>
 
@@ -102,6 +113,8 @@
 <script src="js/core/master-compare.js"></script>
 <script src="js/core/master-compare-export.js"></script>
 <script src="js/core/compare-sync.js"></script>
+<script src="js/core/correl-sync-config.js"></script>
+<script src="js/core/correl-sync.js"></script>
 <script src="js/core/master-compare-ui.js"></script>
 <script src="js/pages/master.js"></script>
 `);

@@ -2,6 +2,9 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v7.3 | 2026-11-21 | Master Correl: pagkatapos ng run, ipinapadala ang status (PASS / WARNING / FAIL) sa Server path para sa LEAD PC (sendCorrelToLead)
+ * VERSION : v7.2 | 2026-11-21 | Export ng Master Correl: may kopya na rin sa Server path (findServerForCopy, copyCorrelToServer); hindi pumapalya ang Saving path kapag pumalya ang Server
+ * VERSION : v7.1 | 2026-11-21 | Master Correl: tinanggal ang Worst slider sa stat list (formatWorstSlider); nasa hiwalay na card na Compare sliders na ito
  * VERSION : v3.5 | 2026-11-21 | Compare vs previous: init ng root.compareUi (pagkatapos ng restoreSaved) at refresh sa updateExportButton
  * VERSION : v2.19 | 2026-11-21 | Export ng Master Correl: ipinapasa ang machine name para sa pamagat ng chart sa Excel
  * VERSION : v2.17c | 2026-11-21 | Latest Master: iisang Date na lang (query latestDate); ang Date ang ginagamit bilang start at end sa analyzeLatest
@@ -268,12 +271,6 @@
     return value === null || value === undefined ? '-' : value.toFixed(digits === undefined ? 3 : digits);
   }
 
-  // Text ng Worst slider ng Correl: <barcode> (<diff>) o '-' kung wala.
-  function formatWorstSlider(result) {
-    const worst = masterAnalysis.findWorstSlider(result.barcodeList, result.actualList, result.masterList);
-    return worst ? worst.barcode + ' (' + formatNumber(worst.difference, 3) + ')' : '-';
-  }
-
   // Nagre-render ng resulta ng Latest Master.
   function renderLatest(result) {
     const area = query('latestResult');
@@ -284,7 +281,6 @@
       [TEXT.recordDate, csv.formatDateTime(result.recordDate, true)],
       [TEXT.actualAverage, formatNumber(result.actualAverage, 6)],
       [TEXT.masterAverage, formatNumber(result.masterAverage, 6)],
-      [TEXT.worstBarcode, formatWorstSlider(result)],
       [TEXT.fileName, result.fileName]
     ]));
     const latestTable = makeTable([TEXT.barcode, TEXT.actual, TEXT.master], result.barcodeList.map((barcode, index) => [barcode, { text: formatNumber(result.actualList[index], 3), level: levelOf(result.actualList[index], result.masterList[index]) }, formatNumber(result.masterList[index], 3)]));
@@ -416,6 +412,15 @@
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + TEXT.unreadable));
   }
 
+  // Ipinapadala ang status ng Master Correl (PASS / WARNING / FAIL) sa Server path para makita ng LEAD PC; ang resulta ay ipinapakita sa status line.
+  async function sendCorrelToLead(result) {
+    const sync = root.correlSyncConfig;
+    const key = await root.correlSync.publishStatus(result, storage.readLocalSettings(), true);
+    const rSquared = result.regression && typeof result.regression.rSquared === 'number' ? result.regression.rSquared.toFixed(sync.R_SQUARED_DIGITS) : '-';
+    const message = (sync.TEXT[key] || sync.TEXT.error).replace('{status}', result.status).replace('{rSquared}', rSquared);
+    setStatus('latestStatus', message, sync.MESSAGE_KIND[key] || 'error');
+  }
+
   // Click ng Run Latest Master.
   async function onRunLatest() {
     if (isBusy) return;
@@ -435,6 +440,7 @@
       lastLatestRun = { result, range: { startDate, endDate } };
       saved.latest = lastLatestRun;
       setStatus('latestStatus', '', '');
+      await sendCorrelToLead(result);
     } catch (error) {
       query('latestResult').replaceChildren();
       setStatus('latestStatus', getErrorMessage(error), 'error');
@@ -532,7 +538,30 @@
     return correlMap[fallbackKey];
   }
 
-  // Click ng Export to Excel ng Master Correl: sine-save sa <Saving path>/master-correl/<petsa>/.
+  // Kinukuha ang Server path at humihingi ng permission (galing sa click). Hindi nagtatapon ng error.
+  async function findServerForCopy() {
+    try {
+      return await root.queue.findServerHandle(true);
+    } catch (error) {
+      return { handle: null, state: CONFIG.QUEUE.CONNECTION.error };
+    }
+  }
+
+  // Kopya ng na-export na Excel sa Server path. Ibinibigay { ok: true, path } o { ok: false, message }; hindi nagtatapon ng error.
+  async function copyCorrelToServer(serverFound, saved, paths) {
+    const serverText = CORREL.TEXT.serverState;
+    if (serverFound.state !== CONFIG.QUEUE.CONNECTION.ok) return { ok: false, message: serverText[serverFound.state] || serverText.error };
+    try {
+      const copied = await correlExport.copyToServer(serverFound.handle, saved, getMachineName());
+      const separator = EXPORT.PATH_SEPARATOR;
+      const basePath = paths[CONFIG.SERVER_KEY] || serverFound.handle.name;
+      return { ok: true, path: basePath + separator + copied.folderName + separator + copied.fileName };
+    } catch (error) {
+      return { ok: false, message: serverText.error };
+    }
+  }
+
+  // Click ng Export to Excel ng Master Correl: sine-save sa <Saving path>/master-correl/<petsa>/ at kinokopya sa <Server path>/master-correl/<machine name>/<petsa>/.
   async function onExportCorrel() {
     if (isBusy) return;
     if (!lastLatestRun) { setStatus('latestStatus', CORREL.TEXT.error.noResult, 'error'); return; }
@@ -543,13 +572,17 @@
       const rootHandle = await storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
       if (!rootHandle) throw csv.createError('noRoot');
       if (!(await storage.hasPermission(rootHandle, true))) throw csv.createError('noPermission');
+      const serverFound = await findServerForCopy();
       const settings = storage.readLocalSettings();
       const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
       const sourceText = paths[MASTER.SOURCE_KEY] || (settings.folderNames || {})[MASTER.SOURCE_KEY] || TEXT.sourceNotSet;
       const saved = await correlExport.exportCorrel(lastLatestRun.result, lastLatestRun.range, rootHandle, sourceText, getMachineName());
       const basePath = paths[CONFIG.ROOT_KEY] || rootHandle.name;
       const separator = EXPORT.PATH_SEPARATOR;
-      setStatus('latestStatus', CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName, 'success');
+      const savedText = CORREL.TEXT.saved + basePath + separator + saved.folderName + separator + saved.fileName;
+      const serverCopy = await copyCorrelToServer(serverFound, saved, paths);
+      if (serverCopy.ok) setStatus('latestStatus', savedText + CORREL.TEXT.serverSaved + serverCopy.path, 'success');
+      else setStatus('latestStatus', savedText + CORREL.TEXT.serverFailed + serverCopy.message, 'error');
     } catch (error) {
       setStatus('latestStatus', getCorrelErrorMessage(error, 'exportFail'), 'error');
     } finally {

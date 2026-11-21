@@ -2,9 +2,10 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js
+ * DEPENDS : js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v7.3 | 2026-11-21 | status ng Master Correl ng machine (<Server path>\correl): badge na PASS / WARNING / FAIL sa tile, chip na Correl fail, FAIL ay nauuna sa listahan
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
  * VERSION : v7 | 2026-11-21 | worst slider ng machine (<Server path>\compare): alert sa tile, chip, at listahan ng slider (actual at master)
  */
@@ -66,7 +67,7 @@
   }
 
   // Buod ng mga machine sa taas ng listahan.
-  function renderSummary(summary, alertCount) {
+  function renderSummary(summary, alertCount, correlFailCount) {
     const list = createElementWith('ul', 'dm-chip-list');
     const labels = TEXT.summary;
     list.append(
@@ -76,7 +77,8 @@
       buildChip(labels.done, summary.done),
       buildChip(labels.stale, summary.stale, 'dm-chip-stale'),
       buildChip(labels.noStatus, summary.noStatus),
-      buildChip(labels.worstSlider, alertCount, 'dm-chip-alert')
+      buildChip(labels.worstSlider, alertCount, 'dm-chip-alert'),
+      buildChip(labels.correlFail, correlFailCount, 'dm-chip-correl-fail')
     );
     query(SEL.summary).replaceChildren(list);
   }
@@ -95,9 +97,14 @@
     return Boolean(item.compare && item.compare.status.detected && item.compare.status.worst);
   }
 
-  // Ranggo ng machine item para sa pagkakasunod (alert muna, tapos ongoing; no status sa huli).
+  // FAIL ba ang huling Master Correl ng machine (galing sa <Server path>\correl)?
+  function hasCorrelFail(item) {
+    return Boolean(item.correl) && item.correl.status.status === CONFIG.MASTER.STATUS.fail;
+  }
+
+  // Ranggo ng machine item para sa pagkakasunod (alert o Correl FAIL muna, tapos ongoing; no status sa huli).
   function getRank(item) {
-    if (hasAlert(item)) return DM.RANK.alert;
+    if (hasAlert(item) || hasCorrelFail(item)) return DM.RANK.alert;
     if (item.presence === QUEUE.PRESENCE.stale) return DM.RANK.stale;
     if (item.presence === QUEUE.PRESENCE.noStatus || !item.status) return DM.RANK.noStatus;
     return DM.RANK[item.status.state] === undefined ? DM.RANK.idle : DM.RANK[item.status.state];
@@ -134,6 +141,19 @@
       // hindi mabasa ang compare folder: ituloy ang listahan ng machine nang walang alert
     }
     return compareMap;
+  }
+
+  // Basa ng status ng Master Correl ng lahat ng machine mula sa Server path; walang laman na Map kung pumalya.
+  async function readCorrelMap(serverHandle) {
+    const correlMap = new Map();
+    if (!root.correlSync || !serverHandle) return correlMap;
+    try {
+      const list = await root.correlSync.readCorrelList(serverHandle);
+      list.forEach((item) => correlMap.set(item.status.machineName.toLowerCase(), item));
+    } catch (error) {
+      // hindi mabasa ang correl folder: ituloy ang listahan nang walang badge
+    }
+    return correlMap;
   }
 
   // Maliit na table ng mga slider na kailangang tingnan: Actual at Master (previous > today), Diff, Trend.
@@ -193,12 +213,37 @@
     return box;
   }
 
+  // Status ng Master Correl sa tile: PASS / WARNING / FAIL (may icon at text, hindi lang kulay), R Square, petsa ng record at kailan naipadala.
+  function buildCorrelBlock(correlItem, nowMs) {
+    const text = TEXT.correl;
+    const sync = root.correlSyncConfig;
+    const row = createElementWith('div', 'dm-correl-row');
+    row.append(createElementWith('span', 'dm-correl-label', text.label));
+    if (!correlItem || !sync) {
+      row.append(createElementWith('span', 'dm-correl-empty', text.none));
+      const emptyBox = createElementWith('div', 'dm-correl dm-correl-none');
+      emptyBox.append(row);
+      return emptyBox;
+    }
+    const status = correlItem.status;
+    const box = createElementWith('div', 'dm-correl ' + (sync.STATUS_CLASS[status.status] || ''));
+    const badge = createElementWith('span', 'dm-correl-badge');
+    badge.append(createElementWith('span', 'dm-correl-icon', text.icon[status.status] || ''), createElementWith('span', '', status.status));
+    row.append(badge);
+    const updatedMs = correlItem.modifiedMs || Date.parse(status.updatedAt);
+    if (updatedMs && nowMs - updatedMs > sync.STALE_MS) row.append(createElementWith('span', 'dm-tag', text.stale));
+    const recordMs = Date.parse(status.recordDate);
+    const rSquared = typeof status.rSquared === 'number' ? status.rSquared.toFixed(sync.R_SQUARED_DIGITS) : '-';
+    box.append(row, createElementWith('p', 'card-note dm-correl-meta', text.rSquared + rSquared + ' | ' + text.record + (recordMs ? new Date(recordMs).toLocaleDateString() : '-') + ' | ' + text.sent + formatAgo(updatedMs, nowMs)));
+    return box;
+  }
+
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
-    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) ? ' dm-tile-alert' : ''));
+    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head);
+    tile.append(head, buildCorrelBlock(item.correl, nowMs));
     if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs));
 
     const presenceRow = createElementWith('p', 'dm-presence');
@@ -252,9 +297,13 @@
       return;
     }
     const compareMap = await readCompareMap(snapshot.handle);
+    const correlMap = await readCorrelMap(snapshot.handle);
     if (!query(SEL.section)) return;
-    snapshot.machineItemList.forEach((item) => { item.compare = compareMap.get(item.machineName.toLowerCase()) || null; });
-    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length);
+    snapshot.machineItemList.forEach((item) => {
+      item.compare = compareMap.get(item.machineName.toLowerCase()) || null;
+      item.correl = correlMap.get(item.machineName.toLowerCase()) || null;
+    });
+    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
     grid.replaceChildren(...sortedList.map((item) => buildMachineTile(item, nowMs)));
     setMessage(sortedList.length === 0 ? TEXT.emptyGrid : '', false);

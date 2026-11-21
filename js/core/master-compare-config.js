@@ -2,6 +2,7 @@
  * FILE    : js/core/master-compare-config.js
  * PURPOSE : Constants ng Compare vs previous (Master Correl ngayon laban sa nakaraan): lookback, threshold, subfolder, selector, kulay, text
  * DEPENDS : js/core/config.js, js/core/master-export-config.js
+ * VERSION : v7.1 | 2026-11-21 | AUTO_RUN (false): hindi na kusang tumatakbo ang compare pagkatapos ng Master Correl; sa card na Compare sliders na ito pinipindot
  * VERSION : v3.5 | 2026-11-21 | bagong file
  * VERSION : v7 | 2026-11-21 | detect ng worst slider (DETECT), sync sa Server path (SYNC), CLASS, bagong LABEL at TEXT (mas malinis na screen)
  */
@@ -10,6 +11,8 @@
   const root = window.BMWW;
 
   root.compareConfig = Object.freeze({
+    // false = hindi kusang tumatakbo ang compare pagkatapos ng Master Correl; pinipindot ang Compare vs previous sa card na Compare sliders. true = ibalik ang dating kusang takbo.
+    AUTO_RUN: false,
     // Ilang araw ang pinakamalayong titingnan para sa previous record (bago ang napiling Date).
     LOOKBACK_DAYS: 7,
     // Lumalala kapag tumaas ang |actual - master| nang ganito o higit, O bumaba ang level (green -> yellow -> red).

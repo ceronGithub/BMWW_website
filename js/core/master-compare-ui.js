@@ -2,6 +2,7 @@
  * FILE    : js/core/master-compare-ui.js
  * PURPOSE : Screen ng Compare vs previous sa Master page: kusang gumagawa kapag may worst slider (yellow o red), table na may actual at master, chart, Export to Excel, at sulat ng status sa Server path para sa LEAD PC (window.BMWW.compareUi)
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, chart-draw.js, master-compare.js, master-compare-export.js, master-compare-config.js, compare-sync.js
+ * VERSION : v7.1 | 2026-11-21 | refresh: kusang takbo lang kapag COMPARE.AUTO_RUN; bukas ang Compare vs previous kapag may Master Correl run (kahit green lahat, para may sagot)
  * VERSION : v3.5 | 2026-11-21 | bagong file; tinatawag ng js/pages/master.js (init at refresh)
  * VERSION : v7 | 2026-11-21 | kusang compare kapag may worst slider lang; banner, Previous vs Today table ng actual/master/diff, filter (kailangang tingnan lang), sync sa Server path
  */
@@ -356,7 +357,7 @@
     }
   }
 
-  // Ina-update ang button: bukas ang Compare kapag may worst slider; bukas ang Export kapag may compare. Kusang pinoproseso ang bagong Master Correl run.
+  // Ina-update ang button: bukas ang Compare kapag may Master Correl run; bukas ang Export kapag may compare. Kusang pinoproseso ang bagong run lang kapag COMPARE.AUTO_RUN (false ngayon).
   function refresh() {
     if (!hooks) return;
     const runButton = query('runButton');
@@ -368,10 +369,9 @@
       renderView();
       setStatus('', '');
     }
-    const detection = run ? masterCompare.detectWorst(run.result) : null;
-    runButton.disabled = hooks.isBusy() || !detection;
+    runButton.disabled = hooks.isBusy() || !run;
     exportButton.disabled = hooks.isBusy() || !(view && view.comparison);
-    if (run && autoRun !== run && !hooks.isBusy()) {
+    if (COMPARE.AUTO_RUN && run && autoRun !== run && !hooks.isBusy()) {
       autoRun = run;
       processRun(run, false).catch(() => setStatus(COMPARE.TEXT.error.exportFail, 'error'));
     }

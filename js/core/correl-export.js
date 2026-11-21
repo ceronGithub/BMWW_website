@@ -1,7 +1,8 @@
 /*
  * FILE    : js/core/correl-export.js
- * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Correl (isang record) at sine-save sa <Saving path>\master-correl\<petsa ng export>\
+ * PURPOSE : Ginagawang Excel (.xlsx) ang resulta ng Master Correl (isang record) at sine-save sa <Saving path>\master-correl\<petsa ng export>\ (may kopya sa <Server path>\master-correl\<machine name>\<petsa ng export>\)
  * DEPENDS : js/core/config.js, master-export-config.js, correl-export-config.js, xlsx-writer.js, csv-reader.js, master-analysis.js
+ * VERSION : v7.2 | 2026-11-21 | copyToServer (kopya sa <Server path>\master-correl\<machine name>\<petsa>\); writeBlob (pinagsamang sulat ng file); exportCorrel ay nagbibigay na rin ng blob at dateFolderName
  * VERSION : v2.22 | 2026-11-21 | Worst slider sa buod ng sheet
  * VERSION : v2.21 | 2026-11-21 | walang legend sa chart ng Excel (CORREL.CHART.SHOW_LEGEND = false); isang series na lang na may kulay kada point
  * VERSION : v2.19 | 2026-11-21 | table: Barcode, Actual, Master (dating Master, Actual, Barcode); legend ng chart: kulay + Actual / Master kada point; pamagat ng chart: <machine name> Master Correl
@@ -146,14 +147,8 @@
     return xlsx.buildWorkbook([buildSheet(result, range, exportedAt, sourceText, machineName)], EXPORT.COLOR);
   }
 
-  // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa).
-  async function exportCorrel(result, range, rootHandle, sourceText, machineName) {
-    const exportedAt = new Date();
-    const blob = buildBlob(result, range, exportedAt, sourceText, machineName);
-    const subfolderHandle = await rootHandle.getDirectoryHandle(CORREL.SUBFOLDER, { create: true });
-    const dateFolderName = formatDay(exportedAt);
-    const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });
-    const fileName = buildFileName(result, exportedAt);
+  // Isinusulat ang Blob bilang file sa loob ng folder; kapag pumalya, inaabort ang sulat at ipinapasa ang error.
+  async function writeBlob(folderHandle, fileName, blob) {
     const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
     const writable = await fileHandle.createWritable();
     try {
@@ -163,8 +158,35 @@
       throw error;
     }
     await writable.close();
-    return { folderName: CORREL.SUBFOLDER + EXPORT.PATH_SEPARATOR + dateFolderName, fileName };
   }
 
-  root.correlExport = Object.freeze({ buildBlob, buildFileName, exportCorrel });
+  // Sine-save ang Excel sa <Saving path>/<SUBFOLDER>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa). Ibinibigay rin ang blob at dateFolderName para sa kopya sa Server path.
+  async function exportCorrel(result, range, rootHandle, sourceText, machineName) {
+    const exportedAt = new Date();
+    const blob = buildBlob(result, range, exportedAt, sourceText, machineName);
+    const subfolderHandle = await rootHandle.getDirectoryHandle(CORREL.SUBFOLDER, { create: true });
+    const dateFolderName = formatDay(exportedAt);
+    const folderHandle = await subfolderHandle.getDirectoryHandle(dateFolderName, { create: true });
+    const fileName = buildFileName(result, exportedAt);
+    await writeBlob(folderHandle, fileName, blob);
+    return { folderName: CORREL.SUBFOLDER + EXPORT.PATH_SEPARATOR + dateFolderName, fileName, blob, dateFolderName };
+  }
+
+  // Pangalan ng folder ng machine sa Server path: pinapalitan ang mga bawal na character; kapag walang matira, ang NO_MACHINE_FOLDER.
+  function getMachineFolderName(machineName) {
+    const cleaned = String(machineName || '').replace(CORREL.SERVER.UNSAFE_NAME, '_').replace(CORREL.SERVER.TRIM_NAME, '');
+    return cleaned || CORREL.SERVER.NO_MACHINE_FOLDER;
+  }
+
+  // Kopya ng na-export na Excel sa <Server path>/<SERVER.SUBFOLDER>/<machine name>/<yyyy-mm-dd>/ (ginagawa ang mga folder kung wala pa). saved = ibinalik ng exportCorrel.
+  async function copyToServer(serverHandle, saved, machineName) {
+    const subfolderHandle = await serverHandle.getDirectoryHandle(CORREL.SERVER.SUBFOLDER, { create: true });
+    const machineFolderName = getMachineFolderName(machineName);
+    const machineHandle = await subfolderHandle.getDirectoryHandle(machineFolderName, { create: true });
+    const folderHandle = await machineHandle.getDirectoryHandle(saved.dateFolderName, { create: true });
+    await writeBlob(folderHandle, saved.fileName, saved.blob);
+    return { folderName: [CORREL.SERVER.SUBFOLDER, machineFolderName, saved.dateFolderName].join(EXPORT.PATH_SEPARATOR), fileName: saved.fileName };
+  }
+
+  root.correlExport = Object.freeze({ buildBlob, buildFileName, exportCorrel, copyToServer, getMachineFolderName });
 })();

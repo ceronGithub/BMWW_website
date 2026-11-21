@@ -1,3 +1,41 @@
+INSTRUCTIONS v7.3 (PASS / WARNING / FAIL ng Master Correl sa LEAD PC)
+1. Backup muna ng buong website folder. Ilagay ang 2 BAGONG file: js/core/correl-sync-config.js, js/core/correl-sync.js. Ipalit ang 8 binagong file: js/pages/master.js, js/pages/dashboard-machines.js, js/core/dashboard-machines-config.js, css/pages/dashboard-machines.css, pages/master.html, pages/dashboard.html, js/templates/master.template.js, js/templates/dashboard.template.js (kasama ang mga file ng v7.1 at v7.2 sa ibaba, at README.txt, 00_INSTRUCTIONS.txt). Walang binago sa index.html. Ctrl+F5 sa index.html (Chrome o Edge).
+2. TEST STEPS v7.3:
+   - Settings: sa machine (hal. MWW 1) at sa LEAD PC, parehong may Server path. Ang machine ay may machine name.
+   - Sa MACHINE: Master page > Master Correl (petsa na may record). Kung hihingi ng permission sa Server folder, pindutin ang Allow. DAPAT lumabas sa status line: "LEAD PC: na-update ang Master Correl (PASS, R Square 0.99xx)" (o WARNING / FAIL). Sa <Server path>\correl DAPAT may <machine name>.json.
+   - Sa LEAD PC: Dashboard (hintayin ang refresh, 5 segundo). Sa tile ng machine DAPAT may "MASTER CORREL" na badge: PASS (berde, may ✔), WARNING (amber, may ▲) o FAIL (pula, may ✖), kasama ang R Square, petsa ng record, at kung kailan naipadala.
+   - Kapag FAIL: DAPAT pula ang kaliwang gilid ng tile, nauuna ang machine sa listahan, at ang chip na "Correl fail" ay DAPAT may bilang.
+   - Machine na wala pang Master Correl: DAPAT "Wala pang resulta".
+   - Mag-Master Correl ulit sa machine: DAPAT mapalitan ang badge sa LEAD PC sa susunod na refresh.
+   - Kapag ang LEAD PC mismo ang nag-Master Correl: DAPAT "hindi isinulat sa Server (ito mismo ang LEAD PC)".
+   - Alisin ang Server path at mag-Master Correl: DAPAT lumabas ang "hindi na-update, wala pang Server path" at gumagana pa rin ang Master Correl.
+   - Nasubukan sa jsdom na may gawa-gawang folder. Hindi pa sa totoong Chrome/Edge at totoong server.
+
+--- LUMANG INSTRUCTIONS (v7.2) ---
+INSTRUCTIONS v7.2 (Master Correl: kopya ng Excel sa Server path)
+1. Backup muna ng buong website folder. Ipalit ang 3 binagong file ng v7.2: js/core/correl-export-config.js, js/core/correl-export.js, js/pages/master.js (kasama ang mga file ng v7.1 sa ibaba, at README.txt, 00_INSTRUCTIONS.txt). Walang bagong file. Ctrl+F5 sa index.html (Chrome o Edge).
+2. TEST STEPS v7.2:
+   - Settings: siguraduhing may Saving path (BMWW) at Server path, at may machine name.
+   - Master page > Master Correl (petsa na may record) > Export to Excel. Kung hihingi ang browser ng permission sa Server folder, pindutin ang Allow.
+   - DAPAT berde ang mensahe: "Na-save ang Excel file: <Saving path>\master-correl\<petsa>\<file>. Kopya sa Server: <Server path>\master-correl\<machine name>\<petsa>\<file>". Buksan ang dalawang folder: DAPAT nandoon ang parehong .xlsx.
+   - Alisin ang Server path (o isara ang server) at mag-export ulit: DAPAT naka-save pa rin sa Saving path, at pula ang mensahe na "Hindi nakopya sa Server path: ..." (HINDI dapat mawala ang file sa Saving path).
+   - Open latest correl file: DAPAT Saving path pa rin ang bubukas.
+   - Export compare to Excel (Compare sliders) at Export ng Master Repeatability: DAPAT walang pagbabago (Saving path lang).
+   - Nasubukan sa jsdom na may gawa-gawang folder (4 scenario). Hindi pa sa totoong Chrome/Edge at totoong network drive.
+
+--- LUMANG INSTRUCTIONS (v7.1) ---
+INSTRUCTIONS v7.1 (Compare sliders: hiwalay na card; walang kusang compare)
+1. Backup muna ng buong website folder. Ipalit ang 5 binagong file: pages/master.html, js/templates/master.template.js, js/pages/master.js, js/core/master-compare-ui.js, js/core/master-compare-config.js (at README.txt, 00_INSTRUCTIONS.txt). Walang bagong file. Ctrl+F5 sa index.html (Chrome o Edge).
+2. TEST STEPS v7.1:
+   - Master page: DAPAT may hiwalay na card na "Compare sliders" sa ilalim ng Latest Master card. Nandoon ang Compare vs previous at Export compare to Excel; naka-disable pareho bago mag-Master Correl.
+   - Pindutin ang Master Correl: DAPAT lumabas ang status, table at 2 chart lang. DAPAT HINDI lumabas ang banner na "WORST SLIDER", at DAPAT WALANG "Worst slider" sa stat list ng Master Correl. Ang Compare sliders card ay DAPAT blangko pa rin.
+   - Pindutin ang Compare vs previous (sa Compare sliders card): DAPAT lumabas ang banner ng worst slider, table, at chart doon. Kapag green lahat: "Walang worst slider na na-detect". Gumagana pa rin ang Export compare to Excel.
+   - Mag-Master Correl ulit: DAPAT mabura ang lumang resulta sa Compare sliders card.
+   - Master Repeatability: DAPAT may "Worst slider" pa rin. Excel ng Master Correl: DAPAT may "Worst slider" pa rin sa buod.
+   - Paalala: ang sulat sa LEAD PC (alert sa Dashboard) ay nangyayari na lang kapag pinindot ang Compare vs previous. Para ibalik ang kusa: js/core/master-compare-config.js, AUTO_RUN: true.
+   - Nasubukan sa jsdom. Hindi pa sa totoong Chrome/Edge.
+
+--- LUMANG INSTRUCTIONS (v2.22) ---
 INSTRUCTIONS v2.22 (Worst slider sa Correl at Repeatability)
 1. Backup muna. Ipalit: js/core/master-analysis.js, js/pages/master.js, js/core/correl-export.js, js/core/config.js (kasama ang mga file ng v2.20 at v2.21). Ctrl+F5.
 2. TEST STEPS v2.22:

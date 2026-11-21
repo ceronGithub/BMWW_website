@@ -2,6 +2,7 @@
  * FILE    : js/core/dashboard-machines-config.js
  * PURPOSE : Lahat ng constants, selector at text ng Dashboard machine view (LEAD PC monitor at SENDER machine)
  * DEPENDS : js/core/registry.js (window.BMWW)
+ * VERSION : v7.3 | 2026-11-21 | TEXT.correl at TEXT.summary.correlFail (status ng Master Correl: PASS / WARNING / FAIL)
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file (hiwalay sa config.js para hindi magalaw ang existing)
  * VERSION : v7 | 2026-11-21 | COMPARE (worst slider mula sa <Server path>\compare), RANK.alert, text at class ng alert
  */
@@ -61,7 +62,8 @@
       emptyGrid: 'Wala pang naka-register na machine.',
       noFile: 'Walang file pa',
       lastSent: 'Huling naipadala: ',
-      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider' },
+      summary: { total: 'Total', active: 'Active', ongoing: 'Ongoing', done: 'Done', stale: 'Stale', noStatus: 'No status', worstSlider: 'Worst slider', correlFail: 'Correl fail' },
+      correl: { label: 'MASTER CORREL', none: 'Wala pang resulta', rSquared: 'R Square ', record: 'Record: ', sent: 'Sent: ', stale: 'LUMA', icon: { PASS: '\u2714', WARNING: '\u25B2', FAIL: '\u2716' } },
       compare: {
         title: 'WORST SLIDER: {barcode}',
         today: 'Today: Actual {actual} | Master {master} | Diff {diff}',

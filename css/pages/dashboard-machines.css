@@ -2,6 +2,7 @@
  * FILE    : css/pages/dashboard-machines.css
  * PURPOSE : Style ng machine view sa Dashboard (role badge, tile, dot, chips); naka-scope sa .page-dashboard
  * DEPENDS : css/base.css, css/components.css, css/theme.css
+ * VERSION : v7.3 | 2026-11-21 | badge ng Master Correl (PASS / WARNING / FAIL) sa tile at chip na Correl fail
  * VERSION : v6 | 2026-11-21 | Task 1D: bagong file
  * VERSION : v7 | 2026-11-21 | alert ng worst slider, listahan ng slider
  */
@@ -100,3 +101,18 @@
 .page-dashboard .dm-table th, .page-dashboard .dm-table td { padding: var(--space-1) var(--space-2); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--color-border); }
 .page-dashboard .dm-table td.dm-alert-red { color: var(--color-danger); font-weight: 700; }
 .page-dashboard .dm-table td.dm-alert-yellow { color: var(--dm-warning); font-weight: 700; }
+
+/* v7.3: status ng Master Correl (PASS / WARNING / FAIL) sa tile ng machine */
+.page-dashboard .dm-chip-correl-fail .dm-chip-count { color: var(--color-danger); }
+.page-dashboard .dm-correl { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); }
+.page-dashboard .dm-correl-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.page-dashboard .dm-correl-label { font-size: var(--font-size-label); font-weight: 700; letter-spacing: 0.06em; color: var(--color-muted); }
+.page-dashboard .dm-correl-empty { font-size: 0.875rem; color: var(--color-muted); }
+.page-dashboard .dm-correl-badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0.125rem var(--space-3); font-weight: 800; letter-spacing: 0.04em; border: 2px solid currentColor; border-radius: var(--radius-sm); }
+.page-dashboard .dm-correl-meta { margin: 0; overflow-wrap: anywhere; }
+.page-dashboard .dm-correl-pass { border-color: var(--color-success); }
+.page-dashboard .dm-correl-pass .dm-correl-badge { color: var(--color-success); }
+.page-dashboard .dm-correl-warning { border-color: var(--dm-warning); }
+.page-dashboard .dm-correl-warning .dm-correl-badge { color: var(--dm-warning); }
+.page-dashboard .dm-correl-fail { border-color: var(--color-danger); }
+.page-dashboard .dm-correl-fail .dm-correl-badge { color: var(--color-danger); }

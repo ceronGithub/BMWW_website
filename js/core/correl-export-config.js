@@ -2,6 +2,7 @@
  * FILE    : js/core/correl-export-config.js
  * PURPOSE : Constants ng Master Correl export (Excel): subfolder, file name, selector, kulay ng chart, text
  * DEPENDS : js/core/master-export-config.js (kulay, autofit, separator at protocol ay galing doon)
+ * VERSION : v7.2 | 2026-11-21 | SERVER (subfolder ng kopya sa Server path, pangalan ng folder ng machine) at TEXT.serverSaved / serverFailed / serverState
  * VERSION : v2.21 | 2026-11-21 | CHART.SHOW_LEGEND = false (walang legend sa Excel chart)
  * VERSION : v2.20 | 2026-11-21 | OPEN_MODE: 'folder'; openedLatest ay para sa folder
  * VERSION : v2.19 | 2026-11-21 | COLUMN (ayos ng table), CHART.LEGEND_DIGITS at LEGEND_SEPARATOR
@@ -16,6 +17,8 @@
     SUBFOLDER: 'master-correl',
     FILE_PREFIX: 'master-correl',
     FILE_EXTENSION: '.xlsx',
+    // Kopya sa Server path: <Server path>\<SUBFOLDER>\<machine name>\<petsa ng export>\<file>. UNSAFE_NAME = mga character na bawal sa pangalan ng folder (pinapalitan ng _); TRIM_NAME = tinatanggal na espasyo at tuldok sa dulo.
+    SERVER: { SUBFOLDER: 'master-correl', NO_MACHINE_FOLDER: 'no-machine-name', UNSAFE_NAME: /[<>:"/\\|?*\u0000-\u001f]/g, TRIM_NAME: /^[\s.]+|[\s.]+$/g },
     NO_FILE_CODE: 'noLatestCorrelFile',
     // 'folder' = ang Open latest correl file ay nagbubukas ng FOLDER (naka-highlight ang pinakabagong file). Alisin ito para Excel ang bumukas.
     OPEN_MODE: 'folder',
@@ -35,6 +38,14 @@
     TEXT: {
       exporting: 'Sine-save ang Excel file ng Master Correl...',
       saved: 'Na-save ang Excel file: ',
+      serverSaved: '. Kopya sa Server: ',
+      serverFailed: '. Hindi nakopya sa Server path: ',
+      serverState: {
+        noFolder: 'wala pang Server path sa Settings.',
+        noPermission: 'kailangan ng pahintulot sa Server folder.',
+        unsupported: 'hindi suportado ng browser ang folder access (gamitin ang Chrome o Edge).',
+        error: 'hindi ma-save sa Server folder. Subukan ulit.'
+      },
       openingLatest: 'Hinahanap ang pinakabagong Correl file...',
       openedLatest: 'Ipinadala ang utos na buksan ang folder: ',
       error: {
