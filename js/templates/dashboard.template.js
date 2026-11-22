@@ -2,6 +2,7 @@
  * FILE    : js/templates/dashboard.template.js
  * PURPOSE : Kopya ng pages/dashboard.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v11 | 2026-11-22 | kasabay ng pages/dashboard.html (OUTDATED indicator: shift-freshness.css at 2 bagong script)
  * VERSION : v9.4 | 2026-11-22 | kasabay ng pages/dashboard.html (Trend block: trend-tile.css at 3 bagong script)
  * VERSION : v8.12 | 2026-11-21 | kasabay ng pages/dashboard.html (Master Repeatability: 5 bagong script)
  * VERSION : v8.9 | 2026-11-21 | kasabay ng pages/dashboard.html (Preview sa bagong tab: script ng preview-tab-style at preview-tab; inalis ang preview-panel)
@@ -20,6 +21,7 @@
 <link rel="stylesheet" href="css/pages/dashboard-events.css">
 <link rel="stylesheet" href="css/pages/dashboard-machines.css">
 <link rel="stylesheet" href="css/pages/trend-tile.css">
+<link rel="stylesheet" href="css/pages/shift-freshness.css">
 <section class="page page-dashboard" data-page="dashboard">
   <h1 class="page-title">Dashboard</h1>
   <div class="card-grid">
@@ -103,6 +105,8 @@
 <script src="js/core/trend-export-config.js"></script>
 <script src="js/core/trend-sync.js"></script>
 <script src="js/core/trend-tile.js"></script>
+<script src="js/core/shift-freshness-config.js"></script>
+<script src="js/core/shift-freshness.js"></script>
 <script src="js/pages/dashboard-machines.js"></script>
 `);
 })();

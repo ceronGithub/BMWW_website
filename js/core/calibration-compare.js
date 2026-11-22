@@ -2,6 +2,7 @@
  * FILE    : js/core/calibration-compare.js
  * PURPOSE : Hinahanap ang naunang calibration record (bago ang napiling petsa) para sa Compare vs previous; ang kalkulasyon ng pagkukumpara ay galing sa masterCompare
  * DEPENDS : js/core/csv-reader.js, master-analysis.js, calibration-analysis.js, calibration-config.js, master-compare-config.js, master-compare.js
+ * VERSION : v11.2 | 2026-11-22 | Daily Check: kapag blangko ang After, Before ang Actual; ang record na blangko ang pareho ay nilalaktawan sa paghahanap ng previous
  * VERSION : v9.1 | 2026-11-22 | bagong file (isang scan ng mga file; hindi ginalaw ang calibration-analysis.js)
  */
 (function () {
@@ -25,17 +26,6 @@
   function averageOf(valueList) {
     const numberList = valueList.filter((value) => value !== null);
     return numberList.length ? numberList.reduce((total, value) => total + value, 0) / numberList.length : null;
-  }
-
-  // Binabasa ang actual (After) at master na reading ng isang row.
-  function readPoints(rowList, rowIndex, layout) {
-    const actualList = [];
-    const masterList = [];
-    for (let offset = 0; offset < layout.barcodeList.length; offset += 1) {
-      actualList.push(csv.toNumber(csv.getCell(rowList, rowIndex, layout.afterStart + offset)));
-      masterList.push(csv.toNumber(csv.getCell(rowList, rowIndex, layout.masterStart + offset)));
-    }
-    return { actualList, masterList };
   }
 
   // Hinahanap ang pinakabagong calibration record BAGO ang napiling petsa, sa loob ng LOOKBACK_DAYS. Ibinibigay ang parehong hugis ng resulta ng Calibration Correl.
@@ -64,15 +54,19 @@
       for (let rowIndex = CALIBRATION.ROW.dataStart; rowIndex < rowList.length; rowIndex += 1) {
         const rowDate = csv.parseAnyDate(csv.getCell(rowList, rowIndex, CALIBRATION.DATE_COLUMN));
         if (!rowDate || rowDate.getTime() < windowStart || rowDate.getTime() >= windowEnd) continue;
-        if (!best || rowDate > best.recordDate) best = { recordDate: rowDate, rowIndex, rowList, layout, fileName: item.name, fileIndex };
+        // Actual = After; kung blangko ang After (Daily Check), Before. Blangko ang pareho = nilalaktawan.
+        const source = calibrationAnalysis.getActualSource(rowList, rowIndex, layout);
+        if (!source) continue;
+        if (!best || rowDate > best.recordDate) best = { recordDate: rowDate, rowIndex, rowList, layout, source, fileName: item.name + calibrationAnalysis.getTypeSuffix(source), fileIndex };
       }
     }
     if (!best) throw csv.createError('noPreviousRecord');
-    const points = readPoints(best.rowList, best.rowIndex, best.layout);
+    const points = calibrationAnalysis.readActualPoints(best.rowList, best.rowIndex, best.layout, best.source);
     const regression = masterAnalysis.computeRegression(points.masterList, points.actualList);
     if (!regression) throw csv.createError('noRegression');
     const layout = best.layout;
-    const actualAverage = layout.afterAverageColumn >= 0 ? csv.toNumber(csv.getCell(best.rowList, best.rowIndex, layout.afterAverageColumn)) : null;
+    const actualAverageColumn = calibrationAnalysis.getActualAverageColumn(layout, best.source);
+    const actualAverage = actualAverageColumn >= 0 ? csv.toNumber(csv.getCell(best.rowList, best.rowIndex, actualAverageColumn)) : null;
     const masterAverage = layout.masterAverageColumn >= 0 ? csv.toNumber(csv.getCell(best.rowList, best.rowIndex, layout.masterAverageColumn)) : null;
     return {
       kind: 'latest', fileName: best.fileName, recordDate: best.recordDate, barcodeList: layout.barcodeList,

@@ -1,3 +1,45 @@
+INSTRUCTIONS v11.3 (Calibration Repeatability: bawat record vs sariling Master)
+1. Palitan ang 1 binagong file: js/core/calibration-repeatability.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
+2. TEST STEPS v11.3: Calibration Repeatability sa CalibSts.csv (15 barcode, 11/15 hanggang 11/16): DAPAT pareho ang Avg diff at Repeatability % sa dati (pareho ang Master ng 2 record). Kung may mga record na magkaiba ang Master, DAPAT magbago ang Avg diff (bawat record vs sariling Master) at ang Master column ay ang sa pinakabago. Correl, Compare at Dashboard: DAPAT gumagana pa rin.
+   Nasubukan sa Node at jsdom. Hindi pa sa totoong Chrome/Edge.
+
+--- LUMANG INSTRUCTIONS (v11.2) ---
+INSTRUCTIONS v11.2 (Calibration: Daily Check record, Before ang Actual kapag blangko ang After)
+1. Backup muna. Palitan ang 4 na binagong file: js/core/calibration-config.js, js/core/calibration-analysis.js, js/core/calibration-repeatability.js, js/core/calibration-compare.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
+2. TEST STEPS v11.2:
+   - Data source 1 na may CalibSts.csv (Daily Check, 15 barcode, blangko ang After). Calibration Repeatability, Start/End date na sumasaklaw sa 11/15 at 11/16 (ayon sa petsa ng file): DAPAT may linya na ang bawat record (hindi MASTER lang); ang legend ay '11/15/2026 09:02 (Daily Check)' at '11/16/2026 07:56 (Daily Check)'; ang status ay PASS (Repeatability mga 99.3%).
+   - Calibration Correl, Date = 11/16/2026: DAPAT R Square 0.9964 (tugma sa R2 sa file) at ang File ay 'CalibSts.csv (Daily Check)'. Hindi dapat lumabas ang 'Hindi makalkula ang R Square'.
+   - CalibSts_261114085817.csv (buong calibration, 29 barcode), Date = 11/14/2026: DAPAT R Square 0.9901 (After vs Master) at walang ' (Daily Check)' sa File.
+   - Compare vs previous (Date 11/16): DAPAT ang naunang record ay 11/15 09:02 (Daily Check).
+   - Master, Trend at Dashboard: DAPAT gumagana pa rin.
+   - Nasubukan sa Node at jsdom. Hindi pa sa totoong Chrome/Edge.
+
+--- LUMANG INSTRUCTIONS (v11.1) ---
+INSTRUCTIONS v11.1 (Preview ng Master Repeatability: folder ng kahapon)
+1. Palitan ang 1 binagong file: js/core/repeatability-tile.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
+2. TEST STEPS v11.1: Sender, Night shift pagkatapos ng hatinggabi, may Repeatability na na-export bago mag-12: DAPAT may tile (walang OUTDATED kung kasalukuyang Night shift pa) at DAPAT bumukas ang Preview (hindi 'walang file'). Sa umaga ng Day shift: DAPAT may OUTDATED badge at gumagana pa rin ang Preview. Preview ng Correl at worst slider: DAPAT gumagana pa rin.
+   Nasubukan sa syntax check; hindi pa sa totoong Chrome/Edge.
+
+--- LUMANG INSTRUCTIONS (v11) ---
+INSTRUCTIONS v11 (Task 1: OUTDATED indicator ng shift; Task 2: editable Date ng Calibration Correl)
+1. Backup muna ng buong website folder. Ilagay ang 3 BAGONG file: js/core/shift-freshness-config.js, js/core/shift-freshness.js, css/pages/shift-freshness.css. Palitan ang 6 na binagong file: js/pages/dashboard-machines.js, pages/dashboard.html, js/templates/dashboard.template.js, js/core/calibration-config.js, pages/calibration.html, js/templates/calibration.template.js (at README.txt, 00_INSTRUCTIONS.txt).
+2. Buksan ang index.html (double-click o python -m http.server 8000). Chrome o Edge. I-refresh nang Ctrl+F5.
+3. TEST STEPS v11:
+   Task 1 (Dashboard):
+   - Sender: buksan ang Dashboard kapag may Master Correl/Repeatability/Trend na na-export sa kasalukuyang shift: DAPAT WALANG OUTDATED badge.
+   - Para i-test nang hindi naghihintay ng 7:30: palitan ang oras ng PC sa ilang minuto bago ang 7:30 AM o 7:30 PM, buksan ang Dashboard, tapos hintayin ang pagpalit ng oras: DAPAT sa loob ng ~10 segundo ay lumabas ang dilaw na badge 'OUTDATED - Galing sa nakaraang shift (Day, <petsa>)' sa bawat block na may lumang file, at lumabo ang block. (O kaya: pumili ng lumang file na na-modify bago ang simula ng shift.)
+   - LEAD PC: DAPAT pareho ang badge sa tile ng bawat machine; ang machine na may bagong export ngayong shift ay DAPAT WALANG badge.
+   - Kapag nag-Run ng bagong Master Correl/Repeatability/Trend export sa kasalukuyang shift: DAPAT mawala ang badge sa susunod na refresh (5 segundo).
+   - Night shift pagkatapos ng hatinggabi (Sender): DAPAT lumabas pa rin ang data ng gabi (mula sa folder ng kahapon), na walang badge kung nasa kasalukuyang Night shift pa.
+   - Preview ng Master Correl at worst slider: DAPAT gumana pa rin.
+   Task 2 (Calibration):
+   - Calibration page, Calibration correl card: DAPAT editable ang Date (puwedeng pumili ng petsa), default ay today.
+   - Pumili ng petsang may calibration record, pindutin ang Calibration Correl: DAPAT lumabas ang resulta ng petsang iyon. Petsang walang record: DAPAT 'Walang calibration record sa napiling petsa.'
+   - Burahin ang Date at pindutin ang button: DAPAT 'Maglagay ng valid na Date.'
+   - Compare sliders at Calibration Repeatability: DAPAT gumagana pa rin.
+   - Nasubukan sa Node at jsdom (shift logic, badge). Hindi pa sa totoong Chrome/Edge; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.6) ---
 INSTRUCTIONS v9.6 (Trend: clickable na petsa at data point)
 1. Backup muna ng buong website folder. Ilagay ang 2 BAGONG file: js/core/trend-day-config.js, js/core/trend-day-search.js. Palitan ang binagong file: js/core/trend-chart.js, js/pages/trend.js, css/pages/trend.css, pages/trend.html, js/templates/trend.template.js (at README.txt, 00_INSTRUCTIONS.txt).
 2. Buksan ang index.html (double-click o python -m http.server 8000). Chrome o Edge. I-refresh nang Ctrl+F5. Kailangan ang Data source 1 sa Settings.

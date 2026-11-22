@@ -4,6 +4,7 @@
  * DEPENDS : js/core/config.js, queue.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js, dashboard-machines-config.js, correl-sync-config.js, repeatability-tile-config.js, repeatability-reader.js, preview-tab.js
  * INPUT   : details (galing sa repeatabilityReader), oras ngayon (ms), pangalan ng machine, isSender (true = Sender, false = LEAD PC)
  * OUTPUT  : elemento ng tile; Preview tab (basa lang). Hindi nagtatapon ng error.
+ * VERSION : v11.1 | 2026-11-22 | Preview ng Sender: kung walang file sa folder ng ngayon, tinitingnan din ang folder ng kahapon (Night shift na tumawid ng hatinggabi)
  * VERSION : v8.14 | 2026-11-22 | (1) Preview tab ay may line chart (buildChart) mula sa sheet na Readings. (2) Kapag walang nabasa, ipinapakita sa tile at sa Preview ang dahilan (getIssueText)
  * VERSION : v8.12 | 2026-11-21 | bagong file
  */
@@ -76,7 +77,9 @@
     if (isSender) {
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
       if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: panelText.noRoot };
-      const details = await root.repeatabilityReader.readInSavingPath(rootHandle, root.csv.formatDateInput(new Date()));
+      // Folder ng ngayon muna; kung wala, folder ng kahapon (Night shift na tumawid ng hatinggabi), kapareho ng tile ng Dashboard.
+      const details = (await root.repeatabilityReader.readInSavingPath(rootHandle, root.csv.formatDateInput(new Date())))
+        || (await root.repeatabilityReader.readInSavingPath(rootHandle, root.csv.formatDateInput(new Date(Date.now() - 86400000))));
       return details ? { details } : { message: getIssueText(machineName, true) || panelText.noFileSender };
     }
     const found = await root.queue.findServerHandle(true);

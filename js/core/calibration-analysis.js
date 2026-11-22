@@ -2,6 +2,7 @@
  * FILE    : js/core/calibration-analysis.js
  * PURPOSE : Calibration correl: binabasa ang pinakabagong calibration record (After = Actual, Master) at kinakalkula ang R squared
  * DEPENDS : js/core/config.js, csv-reader.js, master-analysis.js, calibration-config.js
+ * VERSION : v11.2 | 2026-11-22 | Daily Check: kapag blangko ang After, Before ang Actual (locateLayout may beforeStart, getActualSource, readActualPoints, getTypeSuffix); analyzeLatest ay pinipili ang pinakabagong record na may laman
  * VERSION : v9.0 | 2026-11-22 | bagong file (kopya ng analyzeLatest ng Master, para sa calibration CSV: "Calibration Status List")
  */
 (function () {
@@ -71,22 +72,53 @@
     const masterStart = masterGroupColumn + 1;
     const barcodeList = readBarcodeList(rowList, afterStart);
     if (!barcodeList.length || readBarcodeList(rowList, masterStart).length !== barcodeList.length) return null;
+    // Before (para sa Daily Check record na blangko ang After); -1 kung wala o hindi tugma ang barcode.
+    const beforeGroupColumn = findGroupColumn(rowList, CALIBRATION.GROUP.before);
+    const beforeStart = beforeGroupColumn >= 0 && readBarcodeList(rowList, beforeGroupColumn + 1).length === barcodeList.length ? beforeGroupColumn + 1 : -1;
     return {
-      afterStart, masterStart, barcodeList,
+      afterStart, beforeStart, masterStart, barcodeList,
       afterAverageColumn: findAverageColumn(rowList, afterStart + barcodeList.length),
+      beforeAverageColumn: beforeStart >= 0 ? findAverageColumn(rowList, beforeStart + barcodeList.length) : -1,
       masterAverageColumn: findAverageColumn(rowList, masterStart + barcodeList.length)
     };
   }
 
-  // Binabasa ang actual (After) at master na reading sa isang row.
-  function readPoints(rowList, rowIndex, layout) {
+  // May kahit isang numero ba ang row sa group na nagsisimula sa column?
+  function hasValues(rowList, rowIndex, startColumn, count) {
+    for (let offset = 0; offset < count; offset += 1) {
+      if (csv.toNumber(csv.getCell(rowList, rowIndex, startColumn + offset)) !== null) return true;
+    }
+    return false;
+  }
+
+  // Alin ang Actual ng row: 'after' (buong calibration), 'before' (Daily Check: blangko ang After), o null kung walang laman ang pareho.
+  function getActualSource(rowList, rowIndex, layout) {
+    const count = layout.barcodeList.length;
+    if (hasValues(rowList, rowIndex, layout.afterStart, count)) return 'after';
+    if (layout.beforeStart >= 0 && hasValues(rowList, rowIndex, layout.beforeStart, count)) return 'before';
+    return null;
+  }
+
+  // Dagdag sa pangalan ayon sa source ('' para sa After, ' (Daily Check)' para sa Before).
+  function getTypeSuffix(source) {
+    return CALIBRATION.TEXT.typeSuffix[source] || '';
+  }
+
+  // Binabasa ang actual at master na reading sa isang row; ang actual ay galing sa source ('after' o 'before').
+  function readActualPoints(rowList, rowIndex, layout, source) {
+    const actualStart = source === 'before' ? layout.beforeStart : layout.afterStart;
     const actualList = [];
     const masterList = [];
     for (let offset = 0; offset < layout.barcodeList.length; offset += 1) {
-      actualList.push(csv.toNumber(csv.getCell(rowList, rowIndex, layout.afterStart + offset)));
+      actualList.push(csv.toNumber(csv.getCell(rowList, rowIndex, actualStart + offset)));
       masterList.push(csv.toNumber(csv.getCell(rowList, rowIndex, layout.masterStart + offset)));
     }
     return { actualList, masterList };
+  }
+
+  // Column ng AVG ng actual ayon sa source; -1 kung wala.
+  function getActualAverageColumn(layout, source) {
+    return source === 'before' ? layout.beforeAverageColumn : layout.afterAverageColumn;
   }
 
   // Pinakabagong calibration record sa araw ng referenceDate (buong araw). Ibinibigay ang parehong hugis ng resulta ng Master Correl.
@@ -113,20 +145,25 @@
       const layout = locateLayout(rowList);
       if (!layout) continue;
       hasCalibrationFile = true;
+      // Pinakabagong record ng araw na may laman (After o Before); ang blangko sa pareho ay nilalaktawan.
       let bestIndex = -1;
       let bestDate = null;
+      let bestSource = null;
       for (let rowIndex = CALIBRATION.ROW.dataStart; rowIndex < rowList.length; rowIndex += 1) {
         const rowDate = csv.parseAnyDate(csv.getCell(rowList, rowIndex, CALIBRATION.DATE_COLUMN));
-        if (rowDate && rowDate.getTime() >= dayStart && rowDate.getTime() < dayEnd && (!bestDate || rowDate > bestDate)) { bestDate = rowDate; bestIndex = rowIndex; }
+        if (!rowDate || rowDate.getTime() < dayStart || rowDate.getTime() >= dayEnd || (bestDate && rowDate <= bestDate)) continue;
+        const rowSource = getActualSource(rowList, rowIndex, layout);
+        if (rowSource) { bestDate = rowDate; bestIndex = rowIndex; bestSource = rowSource; }
       }
       if (bestIndex < 0) continue;
-      const points = readPoints(rowList, bestIndex, layout);
+      const points = readActualPoints(rowList, bestIndex, layout, bestSource);
       const regression = masterAnalysis.computeRegression(points.masterList, points.actualList);
       if (!regression) throw csv.createError('noRegression');
-      const actualAverage = layout.afterAverageColumn >= 0 ? csv.toNumber(csv.getCell(rowList, bestIndex, layout.afterAverageColumn)) : null;
+      const actualAverageColumn = getActualAverageColumn(layout, bestSource);
+      const actualAverage = actualAverageColumn >= 0 ? csv.toNumber(csv.getCell(rowList, bestIndex, actualAverageColumn)) : null;
       const masterAverage = layout.masterAverageColumn >= 0 ? csv.toNumber(csv.getCell(rowList, bestIndex, layout.masterAverageColumn)) : null;
       return {
-        kind: 'latest', fileName: item.name, recordDate: bestDate, barcodeList: layout.barcodeList,
+        kind: 'latest', fileName: item.name + getTypeSuffix(bestSource), recordSource: bestSource, recordDate: bestDate, barcodeList: layout.barcodeList,
         actualList: points.actualList, masterList: points.masterList, regression,
         status: masterAnalysis.classifyLatest(regression.rSquared),
         actualAverage: actualAverage !== null ? actualAverage : averageOf(points.actualList),
@@ -137,5 +174,5 @@
     throw csv.createError(hasCalibrationFile ? 'noRecordToday' : 'noCalibrationFile');
   }
 
-  root.calibrationAnalysis = Object.freeze({ isCalibrationFile, locateLayout, analyzeLatest });
+  root.calibrationAnalysis = Object.freeze({ isCalibrationFile, locateLayout, analyzeLatest, getActualSource, readActualPoints, getActualAverageColumn, getTypeSuffix });
 })();

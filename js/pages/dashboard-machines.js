@@ -5,6 +5,7 @@
  * DEPENDS : js/core/preview-tab.js, js/core/trend-tile.js (kung naka-load), js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v11 | 2026-11-22 | Task 1: OUTDATED badge sa bawat block (Correl, Repeatability, Trend, Compare) kapag galing sa nakaraang shift (withFreshness, shift-freshness.js); kusang refresh kapag nagpalit ng shift (stopShiftWatch); kapag walang file sa folder ng ngayon, tinitingnan din ang folder ng kahapon (readWithYesterday)
  * VERSION : v9.4 | 2026-11-22 | Trend block sa tile (buildTrendBlock; LEAD PC: item.trend galing sa Server path; Sender: ownTrend galing sa Saving path); ang tile at Preview ay nasa js/core/trend-tile.js
  * VERSION : v8.13 | 2026-11-21 | FAIL ng Master Repeatability: naka-highlight ang tile (dm-tile-alert), chip na Repeatability fail sa buod, at nauuna sa pagkakasunod (hasRepeatabilityFail)
  * VERSION : v8.12 | 2026-11-21 | Master Repeatability sa tile: LEAD PC (renderLead: attachToItems, buildMachineTile) at Sender (ownRepeatability sa readOwnCorrel at renderSender); ang tile at Preview ay nasa js/core/repeatability-tile.js
@@ -38,6 +39,7 @@
   let timerId = null;
   let isBusy = false;
   let previewClearId = null;
+  let stopShiftWatch = null;
 
   // Gumagawa ng elemento na may class at text (textContent lang, ligtas sa XSS).
   function createElementWith(tagName, className, text) {
@@ -45,6 +47,22 @@
     if (className) element.className = className;
     if (text !== undefined && text !== null && text !== '') element.textContent = text;
     return element;
+  }
+
+  // Nilalagyan ng OUTDATED badge ang block kapag ang data (modifiedMs) ay galing sa nakaraang shift. Walang epekto kung hindi nai-load ang shift-freshness.js.
+  function withFreshness(block, dataMs, nowMs) {
+    return root.shiftFreshness ? root.shiftFreshness.mark(block, dataMs, nowMs) : block;
+  }
+
+  // Petsa (yyyy-mm-dd) ng kahapon; para sa Night shift na tumawid ng hatinggabi.
+  function getYesterdayName() {
+    return root.csv.formatDateInput(new Date(Date.now() - 86400000));
+  }
+
+  // Tinatawag ang reader gamit ang petsa ngayon; kung walang nabasa, subukan ang petsa ng kahapon. Ibinibigay ang unang may laman (o null).
+  async function readWithYesterday(reader) {
+    const today = await reader(root.csv.formatDateInput(new Date()));
+    return today || reader(getYesterdayName());
   }
 
   // Hinahanap ang elemento ng page; null kung wala na ang page.
@@ -258,7 +276,7 @@
       details.append(createElementWith('summary', '', text.detailsSummary.replace('{n}', String(status.sliderList.length))), buildSliderTable(status.sliderList));
       box.append(details);
     }
-    return box;
+    return withFreshness(box, updatedMs, nowMs);
   }
 
   // Mensahe ng Preview sa #dm-preview-status (hindi ito binubura ng refresh); kusang nawawala pagkalipas ng ilang segundo.
@@ -304,7 +322,7 @@
     if (getRole(settings).key === DM.ROLE.sender.key) {
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
       if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: panelText.noRoot };
-      const details = await root.correlExcelReader.readLatestDetailsInSavingPath(rootHandle, machineName, root.csv.formatDateInput(new Date()));
+      const details = await readWithYesterday((dayName) => root.correlExcelReader.readLatestDetailsInSavingPath(rootHandle, machineName, dayName));
       return details ? { details } : { message: panelText.noFileSender };
     }
     const found = await root.queue.findServerHandle(true);
@@ -347,7 +365,7 @@
     }
     const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
     if (!rootHandle || !(await root.storage.hasPermission(rootHandle, true))) return { message: compareText.noRoot };
-    const details = await root.correlExcelReader.readLatestCompareDetailsInSavingPath(rootHandle, machineName, root.csv.formatDateInput(new Date()));
+    const details = await readWithYesterday((dayName) => root.correlExcelReader.readLatestCompareDetailsInSavingPath(rootHandle, machineName, dayName));
     return details ? { details } : { message: compareText.noFileSender };
   }
 
@@ -427,7 +445,7 @@
     const recordMs = Date.parse(status.recordDate);
     const rSquared = typeof status.rSquared === 'number' ? status.rSquared.toFixed(sync.R_SQUARED_DIGITS) : '-';
     box.append(row, createElementWith('p', 'card-note dm-correl-meta', text.rSquared + rSquared + ' | ' + text.record + (recordMs ? new Date(recordMs).toLocaleDateString() : '-') + ' | ' + text.sent + formatAgo(updatedMs, nowMs)));
-    return box;
+    return withFreshness(box, updatedMs, nowMs);
   }
 
   // Block ng Trend (picture, UPDATED, Preview) sa tile; ang gawa ay nasa js/core/trend-tile.js. Walang laman na block kung hindi nai-load ang module.
@@ -440,7 +458,7 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, buildCorrelBlock(item.correl, nowMs), root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false), buildTrendBlock(item.trend || null, item.machineName));
+    tile.append(head, buildCorrelBlock(item.correl, nowMs), withFreshness(root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false), item.repeatability && item.repeatability.modifiedMs, nowMs), withFreshness(buildTrendBlock(item.trend || null, item.machineName), item.trend && item.trend.modifiedMs, nowMs));
     if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs, item.machineName));
 
     const presenceRow = createElementWith('p', 'dm-presence');
@@ -544,7 +562,7 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence.active);
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true), buildTrendBlock(ownTrend, settings.machineName));
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), withFreshness(root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true), ownRepeatability && ownRepeatability.modifiedMs, nowMs), withFreshness(buildTrendBlock(ownTrend, settings.machineName), ownTrend && ownTrend.modifiedMs, nowMs));
     // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
     if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs, settings.machineName));
     const isRunning = monitorState.state === MONITOR.STATE.running;
@@ -608,6 +626,8 @@
   function stopTimer() {
     if (timerId !== null) window.clearInterval(timerId);
     timerId = null;
+    if (stopShiftWatch) stopShiftWatch();
+    stopShiftWatch = null;
   }
 
   // Click ng Payagan: humihingi ng permission (LEAD PC: Server folder; machine: simula ulit ng monitor).
@@ -633,10 +653,9 @@
       if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
       if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
-      const dayName = root.csv.formatDateInput(new Date());
-      ownCorrel = await root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName);
-      ownCompare = await root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName);
-      ownRepeatability = await root.repeatabilityReader.readInSavingPath(rootHandle, dayName);
+      ownCorrel = await readWithYesterday((dayName) => root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName));
+      ownCompare = await readWithYesterday((dayName) => root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName));
+      ownRepeatability = await readWithYesterday((dayName) => root.repeatabilityReader.readInSavingPath(rootHandle, dayName));
       ownTrend = root.trendTile ? await root.trendTile.readOwn(rootHandle) : null;
     } catch (error) {
       ownCorrel = null;
@@ -669,6 +688,8 @@
     if (grantButton) grantButton.addEventListener('click', handleGrantClick);
     refresh(false);
     timerId = window.setInterval(() => refresh(false), DM.POLL_MS);
+    // Kapag nagpalit ang shift (7:30 AM / 7:30 PM), agad mag-refresh at suriin ulit ang OUTDATED sa lahat ng tile (Sender at LEAD PC).
+    if (root.shiftFreshness) stopShiftWatch = root.shiftFreshness.watch(() => refresh(false));
   }
 
   root.dashboardMachines = Object.freeze({ init });

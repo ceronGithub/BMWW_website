@@ -2,6 +2,7 @@
   FILE    : pages/calibration.html
   PURPOSE : Calibration page: Calibration correl (pinakabagong calibration record, After = Actual vs Master)
   DEPENDS : css/pages/calibration.css, js/pages/calibration.js, js/core/calibration-config.js, calibration-analysis.js, calibration-export.js
+  VERSION : v11 | 2026-11-22 | editable ang Date ng Calibration Correl (tinanggal ang readonly at binago ang note)
   VERSION : v9.2 | 2026-11-22 | dagdag na card na Calibration Repeatability at mga script/css nito
   VERSION : v9.1 | 2026-11-22 | dagdag na card na Compare sliders (Compare vs previous) at mga script/css nito
   VERSION : v9.0 | 2026-11-22 | Calibration correl (card na Data source at card na Calibration Correl); dagdag na script ng export at calibration
@@ -27,13 +28,13 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Calibration correl</h2>
-        <p class="card-note">Pinakabagong calibration record ngayong araw: Actual (After) laban sa Master. Ang Date ay laging today at hindi puwedeng baguhin.</p>
+        <p class="card-note">Pinakabagong calibration record ngayong araw: Actual (After) laban sa Master. Ang Date ay puwedeng baguhin para sa pag-test (default: today).</p>
       </div>
     </div>
     <div class="date-row">
       <div class="form-group">
         <label class="form-label" for="calibration-date">Date</label>
-        <input id="calibration-date" class="form-input" type="date" readonly>
+        <input id="calibration-date" class="form-input" type="date">
       </div>
     </div>
     <div class="action-row action-row-split">
