@@ -1,8 +1,9 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
+ * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
  */
 (function () {
   'use strict';
@@ -13,12 +14,17 @@
   const TEXT = LOT.TEXT;
   const storage = root.storage;
   const { sanitizeInput } = root.security;
+  const LOT_CONFIG = root.lotConfig;
+  const unitCollector = root.lotUnitCollector;
+  const activeStore = root.lotActiveStore;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
   let sourceList = [];
   let timerId = null;
   let isScanning = false;
+  let firstSeenMap = {};
+  let currentMachine = '';
 
   // Walang laman na lote (barcode, operator, simula, wakas sa milliseconds).
   function createEmptyLote() {
@@ -33,6 +39,20 @@
   // Aktibo ba ang lote: may simula at wala pang wakas.
   function isActive() {
     return lote.startMs > 0 && lote.endMs === 0;
+  }
+
+  // Sine-save ang aktibong lote at ang talaan ng unang nakita (para sa pag-refresh ng page).
+  function saveActive() {
+    activeStore.save({ machine: currentMachine, lote, firstSeen: firstSeenMap });
+  }
+
+  // Ibinabalik ang aktibong lote ng machine na ito pagkatapos mag-refresh ng page. Hindi ginagalaw kung may lote na sa memory.
+  function restoreActiveLote() {
+    if (lote.startMs > 0) return;
+    const saved = activeStore.load(currentMachine);
+    if (!saved) return;
+    lote = saved.lote;
+    firstSeenMap = saved.firstSeen;
   }
 
   // Dalawang digit na numero (hal. 5 -> 05).
@@ -152,26 +172,26 @@
     }
   }
 
-  // Inilalagay ang mga nakitang file/folder sa talaan (textContent lang, walang innerHTML).
-  function renderResults(itemList, warningList) {
-    const shownList = itemList.slice(0, LOT.MAX_ROWS);
+  // Inilalagay ang mga row (isa kada LOT Unit) sa talaan (textContent lang, walang innerHTML).
+  function renderResults(rowList, warningList) {
+    const shownList = rowList.slice(0, LOT.MAX_ROWS);
     const fragment = document.createDocumentFragment();
     shownList.forEach((item) => {
-      const row = document.createElement('tr');
-      const cellList = [item.sourceLabel, formatDateTime(item.modifiedMs), item.type, item.path, item.wafer, item.blk, item.layer, item.fileName];
+      const tableRow = document.createElement('tr');
+      const cellList = [item.sourceLabel, item.unitName, formatDateTime(item.modifiedMs), formatDateTime(item.firstSeenMs), item.type, item.path, item.wafer, item.blk, item.layer, item.fileName];
       cellList.forEach((text, index) => {
         const cell = document.createElement('td');
         cell.textContent = text || LOT.EMPTY_CELL;
-        if (index === LOT.PATH_COLUMN) cell.className = 'lot-path';
-        row.append(cell);
+        if (index === LOT_CONFIG.RESULT.PATH_COLUMN) cell.className = 'lot-path';
+        tableRow.append(cell);
       });
-      fragment.append(row);
+      fragment.append(tableRow);
     });
     query('resultBody').replaceChildren(fragment);
-    let note = itemList.length === 0
+    let note = rowList.length === 0
       ? TEXT.waiting + formatDateTime(lote.startMs)
-      : itemList.length + TEXT.found + formatDateTime(lote.startMs);
-    if (itemList.length > LOT.MAX_ROWS) note += ' | ' + TEXT.showing + LOT.MAX_ROWS + '.';
+      : rowList.length + TEXT.found + formatDateTime(lote.startMs);
+    if (rowList.length > LOT.MAX_ROWS) note += ' | ' + TEXT.showing + LOT.MAX_ROWS + '.';
     warningList.forEach((warning) => { note += ' | ' + warning; });
     setResultNote(note);
   }
@@ -204,8 +224,9 @@
         await scanDirectory(source.handle, source.label, source.handle.name, 0, earliestMs, itemList);
       }
       if (!query('resultBody')) { stopTimer(); return; }
-      itemList.sort((first, second) => second.modifiedMs - first.modifiedMs);
-      renderResults(itemList, warningList);
+      const collected = unitCollector.collectUnits(itemList, firstSeenMap, Date.now());
+      if (collected.isFirstSeenChanged && isActive()) saveActive();
+      renderResults(collected.rowList, warningList);
     } catch (error) {
       setResultNote(TEXT.scanError);
     } finally {
@@ -230,6 +251,7 @@
   async function endLote() {
     stopTimer();
     lote.endMs = Date.now();
+    activeStore.clear();
     renderLote();
     setStatus(TEXT.ended + lote.barcode + '.', false);
     await refreshResults();
@@ -238,6 +260,8 @@
   // Sinisimulan ang bagong lote: Start Date/Time = ngayon, clear ang End, simula ng bantay.
   async function startLote(operatorValue) {
     lote = { barcode: pendingBarcode, operator: operatorValue, startMs: Date.now(), endMs: 0 };
+    firstSeenMap = {};
+    saveActive();
     pendingBarcode = '';
     renderLote();
     clearResults();
@@ -278,6 +302,8 @@
     stopTimer();
     const keptEndMs = isActive() ? Date.now() : lote.endMs;
     lote = { barcode: '', operator: '', startMs: 0, endMs: keptEndMs };
+    firstSeenMap = {};
+    activeStore.clear();
     pendingBarcode = '';
     query('barcode').value = '';
     query('operator').value = '';
@@ -296,6 +322,7 @@
   async function init() {
     const machineName = sanitizeInput(storage.readLocalSettings().machineName || '', CONFIG.MACHINE_NAME_MAX);
     const isReady = machineName.length > 0;
+    currentMachine = machineName;
     const barcodeInput = query('barcode');
     const operatorInput = query('operator');
     query('machine').value = machineName || CONFIG.TEXT.notSet;
@@ -314,6 +341,7 @@
       handleOperator();
     });
     query('newButton').addEventListener('click', onNewLote);
+    if (isReady) restoreActiveLote();
     renderLote();
     if (!isReady) { setStatus(TEXT.machineMissing, true); return; }
     if (!storage.isFolderAccessSupported()) setStatus(CONFIG.TEXT.unsupported, true);

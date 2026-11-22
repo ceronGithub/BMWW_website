@@ -1,8 +1,9 @@
 /*
  * FILE    : js/templates/lot-tracking.template.js
  * PURPOSE : Kopya ng pages/lot-tracking.html bilang template string, para gumana sa double-click (file://)
- * DEPENDS : js/core/registry.js
+ * DEPENDS : js/core/registry.js, js/pages/lot-tracking.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
+ * VERSION : v2.6 | 2026-11-22 | Yugto 1: column na LOT Unit at Unang nakita, script ng lot-config, lot-unit-collector at lot-active-store
  */
 (function () {
   'use strict';
@@ -61,7 +62,9 @@
         <thead>
           <tr>
             <th scope="col">Source</th>
+            <th scope="col">LOT Unit</th>
             <th scope="col">Date Modified</th>
+            <th scope="col">Unang nakita</th>
             <th scope="col">Type</th>
             <th scope="col">Path</th>
             <th scope="col">Wafer</th>
@@ -75,6 +78,9 @@
     </div>
   </article>
 </section>
+<script src="js/core/lot-config.js"></script>
+<script src="js/core/lot-unit-collector.js"></script>
+<script src="js/core/lot-active-store.js"></script>
 <script src="js/pages/lot-tracking.js"></script>
 `);
 })();
