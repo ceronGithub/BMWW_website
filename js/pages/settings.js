@@ -1,7 +1,8 @@
 /*
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
- * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional)
+ * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional)
+ * VERSION : v15 | 2026-11-22 | Yugto 0: hook sa shiftSettings (card na Shift): init (sa init at applyRestoredSettings), tsek at save ng shiftTimes sa onSave
  * VERSION : v10.1 | 2026-11-22 | settings ay sa settings\machines\sender o monitoring: removeMachineSettings na may keep ({mode, fileName}) at laging tinatawag kapag may dating file (migration); getFileLocation ay may machines\<role>
  * VERSION : v10 | 2026-11-22 | ibalik ang settings mula sa BMWW\settings: applyRestoredSettings, restoreAfterPick (pagkapili ng BMWW), banner na Ibalik ang settings (initRestoreBanner, onRestoreClick)
  * VERSION : v9.3 | 2026-11-22 | hook sa trendSettings (card na Trend limits): init, at tsek at save ng limits sa onSave
@@ -310,6 +311,7 @@
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => { radio.checked = radio.value === settings.machineMode; });
     query('nameInput').value = settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT ? settings.machineName || '' : '';
     if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
+    if (root.shiftSettings) root.shiftSettings.init(settings, () => setDirty(true));
     renderMachine();
     renderPaths();
   }
@@ -467,6 +469,8 @@
       if (pathError) { setStatus(pathError, true); return; }
       const trendResult = root.trendSettings ? root.trendSettings.read() : null;
       if (trendResult && trendResult.error) { setStatus(trendResult.error, true); return; }
+      const shiftResult = root.shiftSettings ? root.shiftSettings.read() : null;
+      if (shiftResult && shiftResult.error) { setStatus(shiftResult.error, true); return; }
       if (!(await storage.hasPermission(rootHandle, true))) { setStatus(TEXT.noPermission, true); return; }
       const serverHandle = handleMap[CONFIG.SERVER_KEY];
       let isServerAllowed = false;
@@ -493,6 +497,7 @@
       });
       next.folderNames = folderNames;
       if (trendResult) next[root.trendConfig.STORAGE.LIMITS_FIELD] = trendResult.limits;
+      if (shiftResult && shiftResult.times) next[root.shiftTimes.CONFIG.FIELD] = shiftResult.times;
       next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
       await storage.writeMachineSettings(rootHandle, fileName, next);
@@ -521,6 +526,7 @@
     await loadState();
     buildPathRows();
     if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
+    if (root.shiftSettings) root.shiftSettings.init(settings, () => setDirty(true));
     CONFIG.PATH_LIST.forEach((pathItem) => { rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key); });
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => {
       radio.checked = radio.value === settings.machineMode;

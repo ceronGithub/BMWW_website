@@ -1,3 +1,17 @@
+INSTRUCTIONS v15 (Yugto 0: global na shift sa Settings)
+1. Backup muna. Ilagay muna ang v14 (Yugto 1) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/shift-times.js, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/shift-settings.css. BINAGONG file: index.html, js/core/master-shift-config.js, js/core/shift-freshness-config.js, js/pages/settings.js, pages/settings.html, js/templates/settings.template.js (magkapareho palagi), README.txt, 00_INSTRUCTIONS.txt. Ctrl+F5.
+2. TEST STEPS v15 (Settings at shift):
+   - Settings: DAPAT may card na 'Shift' sa ilalim ng Trend limits, may apat na oras: Day simula 07:30, Day wakas 18:30, Night simula 19:30, Night wakas 06:30.
+   - Palitan ang Day simula sa 09:00 at Day wakas sa 08:00, tapos Save settings: DAPAT may mensahe ng error ('Day simula < Day wakas < Night simula...') at HINDI mase-save. Ang mga input na may mali ay may pulang gilid.
+   - Alisin ang laman ng isang oras, Save: DAPAT may mensaheng 'ilagay ang oras (HH:MM)'.
+   - Palitan ang Day simula sa 06:00, Day wakas 17:00, Night simula 18:00, Night wakas 05:00, Save: DAPAT mase-save. I-refresh ang page: DAPAT nandoon pa rin ang mga oras. I-refresh at buksan ang Master (Latest per shift): DAPAT sumunod sa bagong oras (ang record na 06:10 ay Morning; ang 17:30 ay hindi isinasama).
+   - Dashboard: ang OUTDATED ay DAPAT sumunod sa bagong simula ng Day at Night.
+   - Pindutin ang 'Ibalik sa default', tapos Save: DAPAT bumalik sa 07:30, 18:30, 19:30, 06:30 at DAPAT pareho na ang Master at OUTDATED sa dati.
+   - Ibalik ang settings mula sa file (banner na Ibalik ang settings): DAPAT bumalik din ang mga oras ng Shift.
+   - DAPAT HINDI magbago: kapag hindi mo ginalaw ang card, pareho ang resulta ng Master, Calibration, Trend at OUTDATED sa dati.
+   Nasubukan sa Node at jsdom (27 kaso + 1440 minuto kumpara sa dating lohika + pag-init ng Settings). HINDI nasubukan sa totoong Chrome/Edge at sa totoong Save sa folder. Gawing pareho ang oras sa Sender at LEAD PC.
+
+--- LUMANG INSTRUCTIONS (v14) ---
 INSTRUCTIONS v14 (LOT Tracking Yugto 1: Barcode uppercase, check ng Operator, Esc = Cancel, beep sa END, Data source 2 at 3 lang)
 1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-validation.js, js/core/lot-beep.js. BINAGONG file: js/core/lot-config.js, js/core/config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js (magkapareho palagi), README.txt, 00_INSTRUCTIONS.txt. Ctrl+F5.
 2. TEST STEPS v14 (LOT Tracking): may Machine name at Data source sa Settings. Sa LOT Tracking:

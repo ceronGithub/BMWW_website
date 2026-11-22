@@ -2,6 +2,7 @@
  * FILE    : js/templates/settings.template.js
  * PURPOSE : Kopya ng pages/settings.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v15 | 2026-11-22 | kasabay ng pages/settings.html (card na Shift)
  * VERSION : v10 | 2026-11-22 | kasabay ng pages/settings.html (banner na Ibalik ang settings, css at script)
  * VERSION : v9.3 | 2026-11-22 | kasabay ng pages/settings.html (card na Trend limits)
  * VERSION : v2 | 2026-11-20 | bagong file
@@ -16,6 +17,7 @@
 <link rel="stylesheet" href="css/pages/settings.css">
 <link rel="stylesheet" href="css/pages/watcher-install.css">
 <link rel="stylesheet" href="css/pages/trend-settings.css">
+<link rel="stylesheet" href="css/pages/shift-settings.css">
 <link rel="stylesheet" href="css/pages/settings-restore.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
@@ -59,6 +61,8 @@
 
   <div id="trend-limits-card" class="card"></div>
 
+  <div id="shift-settings-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-unsaved" class="unsaved-note" role="status" hidden>May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.</p>
     <p id="settings-status" class="status" role="status"></p>
@@ -69,6 +73,8 @@
 <script src="js/core/trend-config.js"></script>
 <script src="js/core/trend-limits.js"></script>
 <script src="js/core/trend-settings.js"></script>
+<script src="js/core/shift-settings-config.js"></script>
+<script src="js/core/shift-settings.js"></script>
 <script src="js/core/settings-restore-config.js"></script>
 <script src="js/core/settings-restore.js"></script>
 <script src="js/pages/settings.js"></script>

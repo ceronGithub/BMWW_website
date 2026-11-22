@@ -1,0 +1,14 @@
+/*
+ * FILE    : css/pages/shift-settings.css
+ * PURPOSE : Style ng card na Shift sa Settings (apat na oras sa grid), naka-scope sa .page-settings
+ * DEPENDS : css/base.css (variables)
+ * VERSION : v1 | 2026-11-22 | bagong file (Yugto 0: global na shift sa Settings)
+ */
+.page-settings .shift-time-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); margin-top: var(--space-3); }
+.page-settings .shift-time-input { min-height: 44px; }
+.page-settings .shift-time-input.is-error { border-color: var(--color-danger); }
+.page-settings .shift-time-reset { margin-top: var(--space-3); min-height: 44px; }
+
+@media (min-width: 768px) {
+  .page-settings .shift-time-grid { grid-template-columns: repeat(2, 1fr); }
+}

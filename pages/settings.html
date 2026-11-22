@@ -1,12 +1,13 @@
 <!--
   FILE    : pages/settings.html
   PURPOSE : Settings page: machine name at mga path
-  DEPENDS : css/pages/settings-restore.css, js/core/settings-restore.js, css/pages/settings.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
+  DEPENDS : css/pages/shift-settings.css, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/settings-restore.css, js/core/settings-restore.js, css/pages/settings.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
   VERSION : v1 | 2026-11-19 | unang bersyon
   VERSION : v2.2 | 2026-11-20 | bagong layout: page header, card head, path list, sticky save bar
   VERSION : v2.4 | 2026-11-20 | tinanggal ang lock badge; note ng path (full path)
   VERSION : v2.18 | 2026-11-21 | paalala na may hindi pa na-save (#settings-unsaved); note ng full path ay kailangan na
   VERSION : v3.2 | 2026-11-21 | card ng Install File Watcher (css/pages/watcher-install.css, js/pages/watcher-install.js)
+  VERSION : v15 | 2026-11-22 | Yugto 0: card na Shift (#shift-settings-card), css/pages/shift-settings.css, script ng shift-settings-config at shift-settings
   VERSION : v10 | 2026-11-22 | banner na Ibalik ang settings (#settings-restore), css/pages/settings-restore.css, js/core/settings-restore-config.js at settings-restore.js
   VERSION : v9.3 | 2026-11-22 | card na Trend limits (UCL, CL, LCL) at css/pages/trend-settings.css, js/core/trend-config.js, trend-limits.js, trend-settings.js
 -->
@@ -14,6 +15,7 @@
 <link rel="stylesheet" href="css/pages/settings.css">
 <link rel="stylesheet" href="css/pages/watcher-install.css">
 <link rel="stylesheet" href="css/pages/trend-settings.css">
+<link rel="stylesheet" href="css/pages/shift-settings.css">
 <link rel="stylesheet" href="css/pages/settings-restore.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
@@ -57,6 +59,8 @@
 
   <div id="trend-limits-card" class="card"></div>
 
+  <div id="shift-settings-card" class="card"></div>
+
   <div class="save-bar">
     <p id="settings-unsaved" class="unsaved-note" role="status" hidden>May pagbabago na hindi pa na-save. Pindutin ang Save settings para ma-save.</p>
     <p id="settings-status" class="status" role="status"></p>
@@ -67,6 +71,8 @@
 <script src="js/core/trend-config.js"></script>
 <script src="js/core/trend-limits.js"></script>
 <script src="js/core/trend-settings.js"></script>
+<script src="js/core/shift-settings-config.js"></script>
+<script src="js/core/shift-settings.js"></script>
 <script src="js/core/settings-restore-config.js"></script>
 <script src="js/core/settings-restore.js"></script>
 <script src="js/pages/settings.js"></script>
