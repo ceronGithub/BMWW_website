@@ -2,6 +2,7 @@
  * FILE    : js/core/queue.js
  * PURPOSE : Queue ng mga machine sa Server path: sulat ng status ng sariling machine, basa ng lahat ng machine, listahan ng machine mula sa server settings
  * DEPENDS : js/core/config.js, js/core/security.js, js/core/storage.js
+ * VERSION : v10.1 | 2026-11-22 | readMachineList ay nagbabasa sa <Server>\settings\machines\sender, may fallback sa lumang <Server>\settings (openMachineFolders)
  * VERSION : v5.1 | 2026-11-21 | bagong file (Task 1B); wala pang tumatawag, gagamitin ng monitor (1C) at Dashboard (1D)
  */
 (function () {
@@ -126,21 +127,36 @@
     return result;
   }
 
-  // Binabasa ang mga naka-register na machine sa <Server path>\settings (hindi isinasama ang LEAD PC): [{machineName, machineMode, fileName}]
-  async function readMachineList(serverHandle) {
-    let folder;
+  // Mga folder ng naka-register na machine sa Server path: <Server>\settings\machines\sender (bago), tapos ang lumang <Server>\settings (para sa machine na hindi pa nag-Save ng bagong layout). Ang wala ay hindi isinasama; ang pumalyang server ay nagtatapon ng error.
+  async function openMachineFolders(serverHandle) {
+    const folderList = [];
     try {
-      folder = await serverHandle.getDirectoryHandle(CONFIG.SETTINGS_SUBFOLDER);
+      folderList.push(await storage.getRoleFolder(serverHandle, CONFIG.SENDER_SUBFOLDER, false));
     } catch (error) {
-      if (isNotFound(error)) return [];
-      throw error;
+      if (!isNotFound(error)) throw error;
     }
+    try {
+      folderList.push(await serverHandle.getDirectoryHandle(CONFIG.SETTINGS_SUBFOLDER));
+    } catch (error) {
+      if (!isNotFound(error)) throw error;
+    }
+    return folderList;
+  }
+
+  // Binabasa ang mga naka-register na machine (hindi isinasama ang LEAD PC): [{machineName, machineMode, fileName}]. Kapag magkapareho ang pangalan, ang nasa sender ang masusunod.
+  async function readMachineList(serverHandle) {
     const result = [];
-    for (const entry of await listJsonEntries(folder)) {
-      const read = await readEntryJson(entry);
-      const machineName = read && read.data && typeof read.data.machineName === 'string' ? sanitizeInput(read.data.machineName, CONFIG.MACHINE_NAME_MAX) : '';
-      if (!machineName || read.data.machineMode === CONFIG.MACHINE_MODE.LEAD_PC) continue;
-      result.push({ machineName, machineMode: CONFIG.MACHINE_MODE.USER_INPUT, fileName: entry.name });
+    const seenNameSet = new Set();
+    for (const folder of await openMachineFolders(serverHandle)) {
+      for (const entry of await listJsonEntries(folder)) {
+        const read = await readEntryJson(entry);
+        const machineName = read && read.data && typeof read.data.machineName === 'string' ? sanitizeInput(read.data.machineName, CONFIG.MACHINE_NAME_MAX) : '';
+        if (!machineName || read.data.machineMode === CONFIG.MACHINE_MODE.LEAD_PC) continue;
+        const nameKey = machineName.toLowerCase();
+        if (seenNameSet.has(nameKey)) continue;
+        seenNameSet.add(nameKey);
+        result.push({ machineName, machineMode: CONFIG.MACHINE_MODE.USER_INPUT, fileName: entry.name });
+      }
     }
     return result;
   }

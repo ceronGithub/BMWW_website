@@ -23,6 +23,7 @@
  * VERSION : v2.6 | 2026-11-20 | MASTER (column, threshold), CHART, SELECTOR.master, TEXT.master
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path (FULL_PATH_*), bagong text
  * VERSION : v2.2 | 2026-11-20 | PATH_LIST (server, saving, 3 data source), ROOT_KEY, BADGE, LEGACY_NAME_FIELD, bagong selector at text
+ * VERSION : v10.1 | 2026-11-22 | MACHINES_SUBFOLDER, SENDER_SUBFOLDER, MONITORING_SUBFOLDER (settings\machines\sender at monitoring)
  * VERSION : v5 | 2026-11-20 | SERVER_KEY, MACHINE_FILE, MACHINE_FILE_FIELD at text para sa save ng settings kada machine sa Saving path at Server path
  * VERSION : v5.1 | 2026-11-21 | QUEUE (constants ng <Server path>\queue: subfolder, mode, state, source, presence, oras at limit)
  * VERSION : v5.2 | 2026-11-21 | MONITOR (constants ng monitor ng Data source 1, 2, 3 sa not-LEAD PC)
@@ -102,6 +103,10 @@
     ROOT_FOLDER_NAME: 'BMWW',
     SETTINGS_SUBFOLDER: 'settings',
     SETTINGS_FILE: 'settings.json',
+    // Layout ng settings (v10.1): <path>\settings\machines\sender\<machine>.json (User input) at <path>\settings\machines\monitoring\LEAD PC.json (LEAD PC). Saving path at Server path. Ang events.json ay nananatili sa <path>\settings.
+    MACHINES_SUBFOLDER: 'machines',
+    SENDER_SUBFOLDER: 'sender',
+    MONITORING_SUBFOLDER: 'monitoring',
     // Settings kada machine: <path>\settings\<machine name>.json (Saving path at Server path).
     SERVER_KEY: 'server',
     MACHINE_FILE: {

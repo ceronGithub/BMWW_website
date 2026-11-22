@@ -2,6 +2,7 @@
  * FILE    : js/templates/settings.template.js
  * PURPOSE : Kopya ng pages/settings.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v10 | 2026-11-22 | kasabay ng pages/settings.html (banner na Ibalik ang settings, css at script)
  * VERSION : v9.3 | 2026-11-22 | kasabay ng pages/settings.html (card na Trend limits)
  * VERSION : v2 | 2026-11-20 | bagong file
  * VERSION : v2.2 | 2026-11-20 | kasabay ng pages/settings.html (bagong layout)
@@ -15,11 +16,17 @@
 <link rel="stylesheet" href="css/pages/settings.css">
 <link rel="stylesheet" href="css/pages/watcher-install.css">
 <link rel="stylesheet" href="css/pages/trend-settings.css">
+<link rel="stylesheet" href="css/pages/settings-restore.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
     <p class="page-subtitle">Itakda ang pangalan ng machine at ang mga folder na gagamitin ng BM Analyzer.</p>
   </header>
+
+  <div id="settings-restore" class="restore-banner" role="status" hidden>
+    <p id="settings-restore-text" class="restore-banner-text"></p>
+    <button id="settings-restore-button" class="btn btn-secondary" type="button">Ibalik ang settings</button>
+  </div>
 
   <div class="card">
     <div class="card-head">
@@ -62,6 +69,8 @@
 <script src="js/core/trend-config.js"></script>
 <script src="js/core/trend-limits.js"></script>
 <script src="js/core/trend-settings.js"></script>
+<script src="js/core/settings-restore-config.js"></script>
+<script src="js/core/settings-restore.js"></script>
 <script src="js/pages/settings.js"></script>
 `);
 })();

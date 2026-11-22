@@ -1,7 +1,9 @@
 /*
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
- * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional)
+ * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional)
+ * VERSION : v10.1 | 2026-11-22 | settings ay sa settings\machines\sender o monitoring: removeMachineSettings na may keep ({mode, fileName}) at laging tinatawag kapag may dating file (migration); getFileLocation ay may machines\<role>
+ * VERSION : v10 | 2026-11-22 | ibalik ang settings mula sa BMWW\settings: applyRestoredSettings, restoreAfterPick (pagkapili ng BMWW), banner na Ibalik ang settings (initRestoreBanner, onRestoreClick)
  * VERSION : v9.3 | 2026-11-22 | hook sa trendSettings (card na Trend limits): init, at tsek at save ng limits sa onSave
  * VERSION : v2.20 | 2026-11-21 | awtomatikong lagay ng full path kapag pumili ng folder (getParentPath, guessFullPath); lumalabas agad sa ilalim ng pangalan ng path
  * VERSION : v2.18 | 2026-11-21 | kailangan na ang full path ng bawat napiling folder; paalala na may hindi pa na-save (isDirty) kapag may binago
@@ -27,6 +29,7 @@
   const rowMap = {};
   const INPUT = CONFIG.ROW_INPUT_CLASS;
   let isDirty = false;
+  const RESTORE = root.settingsRestoreConfig;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -284,6 +287,98 @@
     }
   }
 
+  // Hinahanap ang elemento ng banner na Ibalik ang settings (selector ay nasa settings-restore-config.js).
+  function queryRestore(key) {
+    return RESTORE ? document.querySelector(RESTORE.SELECTOR[key]) : null;
+  }
+
+  // Kinukuha ang laman ng form (mode, pangalan, full path ng bawat folder) para sa pagsusuri kung blangko.
+  function getFormValues() {
+    const fullPathMap = {};
+    CONFIG.PATH_LIST.forEach((pathItem) => { fullPathMap[pathItem.key] = getInputFullPath(pathItem.key); });
+    return { mode: getSelectedMode(), name: sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX), fullPathMap };
+  }
+
+  // Pinupunan ang form ng naibalik na settings mula sa file at isinusulat din sa localStorage (hindi sine-save sa file).
+  function applyRestoredSettings(restored) {
+    settings = restored;
+    storage.writeLocalSettings(settings);
+    CONFIG.PATH_LIST.forEach((pathItem) => {
+      rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key);
+      rowMap[pathItem.key].inputElement.classList.remove(INPUT.error);
+    });
+    document.querySelectorAll(SEL.modeRadio).forEach((radio) => { radio.checked = radio.value === settings.machineMode; });
+    query('nameInput').value = settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT ? settings.machineName || '' : '';
+    if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
+    renderMachine();
+    renderPaths();
+  }
+
+  // Mensahe pagkatapos ng pagbabalik: kung may folder pang kailangang piliin ulit sa browser na ito, sasabihin.
+  function getRestoredMessage() {
+    const needsPick = CONFIG.PATH_LIST.some((pathItem) => getInputFullPath(pathItem.key) && !handleMap[pathItem.key]);
+    const template = needsPick ? RESTORE.TEXT.restoredNoPicks : RESTORE.TEXT.restoredAllSet;
+    return template.replace('{machine}', settings.machineName || RESTORE.TEXT.fallbackMachine);
+  }
+
+  // Pagkapili ng BMWW: kung blangko ang form at may naka-save na settings sa folder, ibinabalik ito. Ibinibigay ang true kapag naibalik.
+  async function restoreAfterPick(rootHandle) {
+    if (!RESTORE || !root.settingsRestore || !root.settingsRestore.isFormBlank(getFormValues())) return false;
+    try {
+      const outcome = await root.settingsRestore.restoreFromFolder(rootHandle, '');
+      if (outcome.result !== RESTORE.RESULT.restored) return false;
+      applyRestoredSettings(outcome.settings);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Itinatago ang banner na Ibalik ang settings.
+  function hideRestoreBanner() {
+    const banner = queryRestore('banner');
+    if (banner) banner.hidden = true;
+  }
+
+  // Pindot sa Ibalik ang settings: hihingi ng permission (kailangan ng click), babasahin ang file at pupunan ang form.
+  async function onRestoreClick() {
+    const rootHandle = handleMap[CONFIG.ROOT_KEY];
+    if (!rootHandle) return;
+    try {
+      if (!(await storage.hasPermission(rootHandle, true))) { setStatus(RESTORE.TEXT.noPermission, true); return; }
+      hideRestoreBanner();
+      renderPaths();
+      const outcome = await root.settingsRestore.restoreFromFolder(rootHandle, settings[CONFIG.MACHINE_FILE_FIELD] || '');
+      if (outcome.result === RESTORE.RESULT.restored) {
+        if (isDirty) { setStatus(RESTORE.TEXT.keptChanges, false); return; }
+        applyRestoredSettings(outcome.settings);
+        setDirty(false);
+        setStatus(getRestoredMessage(), false);
+      } else if (outcome.result === RESTORE.RESULT.unreadable) {
+        setStatus(RESTORE.TEXT.unreadable, true);
+      } else {
+        setStatus(outcome.result === RESTORE.RESULT.missing ? RESTORE.TEXT.missingFolder : RESTORE.TEXT.emptyFolder, false);
+      }
+    } catch (error) {
+      setStatus(RESTORE.TEXT.error, true);
+    }
+  }
+
+  // Kung may naka-save na BMWW handle pero nawala ang permission (nagsara ang browser), ipinapakita ang banner na Ibalik ang settings.
+  async function initRestoreBanner() {
+    const banner = queryRestore('banner');
+    const rootHandle = handleMap[CONFIG.ROOT_KEY];
+    if (!RESTORE || !root.settingsRestore || !banner || !rootHandle) return;
+    try {
+      if (await storage.hasPermission(rootHandle, false)) return;
+    } catch (error) {
+      return;
+    }
+    queryRestore('bannerText').textContent = RESTORE.TEXT.bannerNeedAccess;
+    queryRestore('bannerButton').addEventListener('click', onRestoreClick);
+    banner.hidden = false;
+  }
+
   // Pumipili ng folder para sa path na may ganitong key; ang saving path ay dapat BMWW.
   async function onPickFolder(key) {
     const pathItem = CONFIG.PATH_LIST.find((item) => item.key === key);
@@ -298,13 +393,21 @@
       handleMap[key] = handle;
       await storage.saveHandle(CONFIG.HANDLE_KEY[key], handle);
       if (key === CONFIG.ROOT_KEY) clearAttention();
+      // Bagong browser o blangkong form: ibalik ang naka-save na settings mula sa BMWW\settings (walang sinusulat).
+      const isRestored = key === CONFIG.ROOT_KEY ? await restoreAfterPick(handle) : false;
+      if (isRestored) hideRestoreBanner();
       // Awtomatikong full path (hula): ilalagay agad sa field at lalabas sa ilalim ng pangalan ng path (renderPaths).
-      const guessedPath = guessFullPath(key, handle.name);
+      const guessedPath = isRestored && getInputFullPath(key) ? '' : guessFullPath(key, handle.name);
       if (guessedPath) {
         rowMap[key].inputElement.value = guessedPath;
         rowMap[key].inputElement.classList.remove(INPUT.error);
       }
       renderPaths();
+      if (isRestored) {
+        setDirty(false);
+        setStatus(getRestoredMessage(), false);
+        return;
+      }
       setDirty(true);
       if (guessedPath) {
         setStatus(TEXT.fullPathAutoFilled + guessedPath + TEXT.fullPathAutoHint, false);
@@ -325,9 +428,10 @@
     return base + CONFIG.PATH_SEPARATOR + CONFIG.SETTINGS_SUBFOLDER;
   }
 
-  // Ibinibigay ang lokasyon ng settings file ng machine para sa mensahe.
-  function getFileLocation(fullPath, fileName) {
-    return getSettingsLocation(fullPath) + CONFIG.PATH_SEPARATOR + fileName;
+  // Ibinibigay ang lokasyon ng settings file ng machine para sa mensahe: <path>\settings\machines\<sender|monitoring>\<file>.
+  function getFileLocation(fullPath, fileName, machineMode) {
+    const separator = CONFIG.PATH_SEPARATOR;
+    return getSettingsLocation(fullPath) + separator + CONFIG.MACHINES_SUBFOLDER + separator + storage.getRoleFolderName(machineMode) + separator + fileName;
   }
 
   // Parehong pangalan ba ang dalawang file? (Hindi sensitibo sa laki ng letra, tulad ng Windows.)
@@ -341,7 +445,7 @@
     try {
       if (!isAllowed) return 'failed';
       await storage.writeMachineSettings(serverHandle, fileName, data);
-      if (previousFile && !isSameFileName(previousFile, fileName)) await storage.removeMachineSettings(serverHandle, previousFile);
+      if (previousFile) await storage.removeMachineSettings(serverHandle, previousFile, { mode: data.machineMode, fileName });
       return 'saved';
     } catch (error) {
       return 'failed';
@@ -392,16 +496,16 @@
       next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
       await storage.writeMachineSettings(rootHandle, fileName, next);
-      if (previousFile && !isSameFileName(previousFile, fileName)) await storage.removeMachineSettings(rootHandle, previousFile);
+      if (previousFile) await storage.removeMachineSettings(rootHandle, previousFile, { mode, fileName });
       settings = next;
       storage.writeLocalSettings(settings);
       setDirty(false);
       const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, previousFile);
       renderMachine();
       renderPaths();
-      const rootLocation = getFileLocation(fullPathMap[CONFIG.ROOT_KEY], fileName);
+      const rootLocation = getFileLocation(fullPathMap[CONFIG.ROOT_KEY], fileName, mode);
       if (serverResult === 'saved') {
-        setStatus(TEXT.savedBoth + rootLocation + ' | ' + getFileLocation(fullPathMap[CONFIG.SERVER_KEY], fileName), false);
+        setStatus(TEXT.savedBoth + rootLocation + ' | ' + getFileLocation(fullPathMap[CONFIG.SERVER_KEY], fileName, mode), false);
       } else if (serverResult === 'skipped') {
         setStatus(TEXT.savedRootOnly + rootLocation + TEXT.serverNotSet, false);
       } else {
@@ -429,6 +533,7 @@
     renderMachine();
     renderPaths();
     setDirty(false);
+    await initRestoreBanner();
     if (!storage.isFolderAccessSupported()) setStatus(TEXT.unsupported, true);
   }
 

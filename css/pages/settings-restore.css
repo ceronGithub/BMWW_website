@@ -1,0 +1,10 @@
+/*
+ * FILE    : css/pages/settings-restore.css
+ * PURPOSE : Style ng banner na Ibalik ang settings sa Settings page, naka-scope sa .page-settings
+ * DEPENDS : css/base.css, css/components.css
+ * VERSION : v10 | 2026-11-22 | bagong file
+ */
+.page-settings .restore-banner { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-primary); border-radius: var(--radius); background: var(--color-primary-soft); }
+.page-settings .restore-banner[hidden] { display: none; }
+.page-settings .restore-banner-text { flex: 1 1 16rem; margin: 0; color: var(--color-text); }
+.page-settings .restore-banner .btn { min-height: 44px; }
