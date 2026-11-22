@@ -2,6 +2,7 @@
  * FILE    : css/pages/master.css
  * PURPOSE : Style ng master page (naka-scope): date row, result, status badge, table, chart
  * DEPENDS : css/components.css
+ * VERSION : v11.5 | 2026-11-22 | Layout ng Repeatability: ang Files panel ay nasa TAAS ng chart (order: -1), 1 column kada row sa lahat ng laki ng screen, at scrollable (file-list max-height 13rem)
  * VERSION : v2.21 | 2026-11-21 | barcode-link, is-selected (row, point, label) para sa pagpili ng barcode
  * VERSION : v2.17 | 2026-11-21 | ayos: itim na text ng chart (ang class na chart-grid ng container ay nagmamana ng stroke sa text); line.chart-grid at div.chart-grid na lang
  * VERSION : v2.3 | 2026-11-20 | bagong file
@@ -92,10 +93,10 @@
 .page-master .chart-legend-note { color: var(--color-muted); font-size: 0.8125rem; }
 .page-master .range-chart-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; margin-bottom: var(--space-4); }
 .page-master .range-chart-layout .chart-box-wide { max-width: none; margin: 0; }
-.page-master .file-panel { padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.page-master .file-panel { order: -1; padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .page-master .file-panel-title { margin: 0 0 var(--space-1); font-size: 0.875rem; }
 .page-master .file-panel-note, .page-master .file-panel-summary { margin: 0 0 var(--space-2); color: var(--color-muted); font-size: 0.6875rem; }
-.page-master .file-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 22rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.page-master .file-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 13rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .page-master .file-item-master { display: flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-2); font-weight: 700; }
 .page-master .file-label { display: flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; transition: background-color 150ms ease; }
 .page-master .file-label:hover { background: var(--color-primary-soft); }
@@ -123,7 +124,6 @@
   .page-master .stat-list { grid-template-columns: 1fr 1fr 1fr; }
   .page-master div.chart-grid { grid-template-columns: 1fr 1fr; align-items: start; }
   .page-master div.chart-grid .chart-box { max-width: none; margin-bottom: 0; }
-  .page-master .range-chart-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
 }
 
 /* v2.21: pindutin ang barcode (table o chart) para laki-an ang point nito */

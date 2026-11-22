@@ -1,3 +1,9 @@
+INSTRUCTIONS v11.5 (Layout: Files panel sa taas ng chart ng Calibration Repeatability at Master Repeatability)
+1. Backup muna. Palitan ang 2 binagong file: css/pages/calibration-repeatability.css, css/pages/master.css (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
+2. TEST STEPS v11.5: Calibration > Calibration Repeatability > Run, at Master > Master Repeatability > Run: DAPAT ang panel na 'Files' (MASTER at mga file na may checkbox) ay nasa TAAS ng chart, buong lapad, isang file kada row, at may scroll kapag maraming file (mga 13rem ang taas). DAPAT nasa ilalim ang chart. Mag-uncheck ng file: DAPAT mawala pa rin ang linya nito sa chart. Phone: DAPAT pareho (isang column).
+   HINDI nasubukan sa totoong Chrome/Edge (CSS lang ang binago). Kung ayaw mo sa taas ng panel (13rem), palitan ang max-height ng .file-list sa dalawang CSS file.
+
+--- LUMANG INSTRUCTIONS (v11.4) ---
 INSTRUCTIONS v11.4 (Calibration Repeatability: tamang barcode, nilalaktawan ang hindi tugmang file)
 1. Backup muna. Palitan ang 2 binagong file: js/core/calibration-repeatability.js, js/core/calibration-repeatability-config.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
 2. TEST STEPS v11.4: Data source 1 na may CalibSts_261115090645.csv (30 slider) at ang mga file na 5AHG447, Range na sumasaklaw sa 11/15: DAPAT 5AHG459 ang table (30 barcode, hindi na 15 na 5AHG447); ang 'CSV files' ay lahat ng file sa saklaw pero ang '(calibration files: n)' ay mas kaunti na (hindi kasama ang 447); ang chart ay may linya ng calibration record. DAPAT HINDI na lumabas ang 5AHG447 sa table. Kung 29-slider at 30-slider ang magkasama: DAPAT 30 barcode, at blangko ang 5AHG459A08 sa 29-slider. Calibration Correl, Compare, Master at Dashboard: DAPAT gumagana pa rin.
