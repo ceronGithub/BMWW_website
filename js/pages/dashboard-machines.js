@@ -2,9 +2,10 @@
  * FILE    : js/pages/dashboard-machines.js
  * PURPOSE : Dashboard: role badge (LEAD PC = monitor only, MACHINE = sender), at listahan ng machine na nagpapadala (LEAD PC)
  *           o status ng sariling Data source (machine)
- * DEPENDS : js/core/preview-tab.js, js/core/trend-tile.js (kung naka-load), js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js
+ * DEPENDS : js/core/preview-tab.js, js/core/trend-tile.js (kung naka-load), js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js, js/core/calibration-tile.js, js/core/dashboard-options.js (kung naka-load)
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v12 | 2026-11-22 | Task 1: tile ng Sender at LEAD PC: Master Correl, Calibration Correl (bago), Worst slider (nasa itaas na ng Trend), Trend; ang Master Repeatability at Calibration Repeatability ay opsyonal na (checkbox sa #dm-options, default OFF; dashboard-options.js). Slot ng Master Unit Correl (future upgrade) ay nasa pagitan ng Calibration Correl at Worst slider. Bago: buildCalibrationBlock, isOptionShown, mountOptions
  * VERSION : v11 | 2026-11-22 | Task 1: OUTDATED badge sa bawat block (Correl, Repeatability, Trend, Compare) kapag galing sa nakaraang shift (withFreshness, shift-freshness.js); kusang refresh kapag nagpalit ng shift (stopShiftWatch); kapag walang file sa folder ng ngayon, tinitingnan din ang folder ng kahapon (readWithYesterday)
  * VERSION : v9.4 | 2026-11-22 | Trend block sa tile (buildTrendBlock; LEAD PC: item.trend galing sa Server path; Sender: ownTrend galing sa Saving path); ang tile at Preview ay nasa js/core/trend-tile.js
  * VERSION : v8.13 | 2026-11-21 | FAIL ng Master Repeatability: naka-highlight ang tile (dm-tile-alert), chip na Repeatability fail sa buod, at nauuna sa pagkakasunod (hasRepeatabilityFail)
@@ -141,7 +142,7 @@
 
   // FAIL ba ang huling Master Repeatability ng machine (galing sa Excel sa <Server path>\\master-repeatability)?
   function hasRepeatabilityFail(item) {
-    return Boolean(item.repeatability) && item.repeatability.status === CONFIG.MASTER.STATUS.fail;
+    return isOptionShown('masterRepeatability') && Boolean(item.repeatability) && item.repeatability.status === CONFIG.MASTER.STATUS.fail;
   }
 
   // Ranggo ng machine item para sa pagkakasunod (alert, Correl FAIL o Repeatability FAIL muna, tapos ongoing; no status sa huli).
@@ -453,13 +454,34 @@
     return root.trendTile ? root.trendTile.buildBlock(trendInfo, machineName) : document.createDocumentFragment();
   }
 
+  // Block ng Calibration Correl o Calibration Repeatability (kind = 'correl' | 'repeatability'); ang gawa ay nasa js/core/calibration-tile.js. Walang laman kung hindi nai-load ang module.
+  function buildCalibrationBlock(kind, details, nowMs, machineName, isSender) {
+    if (!root.calibrationTile) return document.createDocumentFragment();
+    return withFreshness(root.calibrationTile.buildBlock(kind, details || null, nowMs, machineName, isSender), details && details.modifiedMs, nowMs);
+  }
+
+  // Ipinapakita ba ang opsyonal na block (field: masterRepeatability | calibrationRepeatability)? Default OFF kapag wala ang dashboard-options.js.
+  function isOptionShown(field) {
+    return Boolean(root.dashboardOptions) && root.dashboardOptions.get()[field] === true;
+  }
+
+  // Mga block ng tile sa iisang pagkakasunod (Sender at LEAD PC): Master Correl, Calibration Correl, [Master Unit Correl: future upgrade], Worst slider, Trend, tapos ang opsyonal na Master Repeatability at Calibration Repeatability.
+  function buildTileBlocks(data, nowMs, machineName, isSender) {
+    const blockList = [buildCorrelBlock(data.correl, nowMs), buildCalibrationBlock('correl', data.calibrationCorrel, nowMs, machineName, isSender)];
+    // Dito ilalagay ang Master Unit Correl (future upgrade).
+    if (data.compare && data.compare.status.detected && data.compare.status.worst) blockList.push(buildAlertBlock(data.compare, nowMs, machineName));
+    blockList.push(withFreshness(buildTrendBlock(data.trend || null, machineName), data.trend && data.trend.modifiedMs, nowMs));
+    if (isOptionShown('masterRepeatability')) blockList.push(withFreshness(root.repeatabilityTile.buildBlock(data.repeatability || null, nowMs, machineName, isSender), data.repeatability && data.repeatability.modifiedMs, nowMs));
+    if (isOptionShown('calibrationRepeatability')) blockList.push(buildCalibrationBlock('repeatability', data.calibrationRepeatability, nowMs, machineName, isSender));
+    return blockList;
+  }
+
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, buildCorrelBlock(item.correl, nowMs), withFreshness(root.repeatabilityTile.buildBlock(item.repeatability || null, nowMs, item.machineName, false), item.repeatability && item.repeatability.modifiedMs, nowMs), withFreshness(buildTrendBlock(item.trend || null, item.machineName), item.trend && item.trend.modifiedMs, nowMs));
-    if (hasAlert(item)) tile.append(buildAlertBlock(item.compare, nowMs, item.machineName));
+    tile.append(head, ...buildTileBlocks(item, nowMs, item.machineName, false));
 
     const presenceRow = createElementWith('p', 'dm-presence');
     presenceRow.append(createElementWith('span', 'dm-dot'), createElementWith('span', 'dm-presence-label', DM.LABEL.presence[item.presence]));
@@ -523,6 +545,7 @@
     const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
     await root.repeatabilityTile.attachToItems(snapshot.handle, snapshot.machineItemList);
     if (root.trendTile) await root.trendTile.attachToItems(snapshot.handle, snapshot.machineItemList);
+    if (root.calibrationTile) await root.calibrationTile.attachToItems(snapshot.handle, snapshot.machineItemList, isOptionShown('calibrationRepeatability'));
     if (!query(SEL.section)) return;
     renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length, snapshot.machineItemList.filter(hasRepeatabilityFail).length);
     const sortedList = sortItems(snapshot.machineItemList);
@@ -562,9 +585,8 @@
     const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence.active);
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), buildCorrelBlock(ownCorrel, nowMs), withFreshness(root.repeatabilityTile.buildBlock(ownRepeatability, nowMs, settings.machineName, true), ownRepeatability && ownRepeatability.modifiedMs, nowMs), withFreshness(buildTrendBlock(ownTrend, settings.machineName), ownTrend && ownTrend.modifiedMs, nowMs));
-    // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>.
-    if (ownCompare && ownCompare.status.detected && ownCompare.status.worst) tile.append(buildAlertBlock(ownCompare, nowMs, settings.machineName));
+    // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>; nasa itaas ng Trend (buildTileBlocks).
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), ...buildTileBlocks({ correl: ownCorrel, calibrationCorrel: ownCalibrationCorrel, compare: ownCompare, trend: ownTrend, repeatability: ownRepeatability, calibrationRepeatability: ownCalibrationRepeatability }, nowMs, settings.machineName, true));
     const isRunning = monitorState.state === MONITOR.STATE.running;
     if (isRunning) {
       const overall = getOwnOverallState(monitorState.sources);
@@ -642,6 +664,8 @@
   let ownCorrel = null;
   let ownCompare = null;
   let ownRepeatability = null;
+  let ownCalibrationCorrel = null;
+  let ownCalibrationRepeatability = null;
   let ownTrend = null;
   let isOwnReading = false;
   async function readOwnCorrel(settings) {
@@ -650,14 +674,18 @@
     isOwnReading = true;
     try {
       const machineName = typeof settings.machineName === 'string' ? settings.machineName.trim() : '';
-      if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
+      if (!machineName) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; ownCalibrationCorrel = null; ownCalibrationRepeatability = null; return; }
       const rootHandle = await root.storage.loadHandle(CONFIG.HANDLE_KEY[CONFIG.ROOT_KEY]);
-      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; return; }
+      if (!rootHandle || !(await root.storage.hasPermission(rootHandle, false))) { ownCorrel = null; ownCompare = null; ownRepeatability = null; ownTrend = null; ownCalibrationCorrel = null; ownCalibrationRepeatability = null; return; }
       ownCorrel = await readWithYesterday((dayName) => root.correlExcelReader.readLatestInSavingPath(rootHandle, machineName, dayName));
       ownCompare = await readWithYesterday((dayName) => root.correlExcelReader.readLatestCompareInSavingPath(rootHandle, machineName, dayName));
       ownRepeatability = await readWithYesterday((dayName) => root.repeatabilityReader.readInSavingPath(rootHandle, dayName));
       ownTrend = root.trendTile ? await root.trendTile.readOwn(rootHandle) : null;
+      ownCalibrationCorrel = root.calibrationTile ? await readWithYesterday((dayName) => root.calibrationTile.readInSavingPath(rootHandle, machineName, dayName, 'correl')) : null;
+      ownCalibrationRepeatability = root.calibrationTile && isOptionShown('calibrationRepeatability') ? await readWithYesterday((dayName) => root.calibrationTile.readInSavingPath(rootHandle, machineName, dayName, 'repeatability')) : null;
     } catch (error) {
+      ownCalibrationCorrel = null;
+      ownCalibrationRepeatability = null;
       ownCorrel = null;
       ownCompare = null;
       ownRepeatability = null;
@@ -680,10 +708,24 @@
     }
   }
 
+  // Inilalagay ang checkbox ng opsyonal na Repeatability sa #dm-options; kapag may binago, refresh agad. Walang epekto kung wala ang container o ang dashboard-options.js.
+  function mountOptions() {
+    const container = root.calibrationTileConfig ? query(root.calibrationTileConfig.SELECTOR.options) : null;
+    if (!container || !root.dashboardOptions) return;
+    // Kapag abala pa ang kasalukuyang refresh, ulitin pagkaraan ng sandali (hanggang 10 beses) para hindi mawala ang pagbabago.
+    const rerender = (attempt) => {
+      if (!query(SEL.section)) return;
+      if (isBusy && attempt < 10) window.setTimeout(() => rerender(attempt + 1), 300);
+      else refresh(false);
+    };
+    root.dashboardOptions.mount(container, () => rerender(0));
+  }
+
   // Init ng page, tinatawag ng dashboard.js.
   function init() {
     stopTimer();
     isBusy = false;
+    mountOptions();
     const grantButton = query(SEL.grant);
     if (grantButton) grantButton.addEventListener('click', handleGrantClick);
     refresh(false);

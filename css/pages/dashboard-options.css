@@ -1,0 +1,11 @@
+/*
+ * FILE    : css/pages/dashboard-options.css
+ * PURPOSE : Style ng opsyon ng Dashboard (checkbox ng opsyonal na Repeatability); naka-scope sa .page-dashboard
+ * DEPENDS : css/base.css, css/theme.css
+ * VERSION : v12 | 2026-11-22 | bagong file (Task 1)
+ */
+.page-dashboard .dm-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin: 0 0 var(--space-4); }
+.page-dashboard .dm-options-legend { font-size: var(--font-size-label); font-weight: 700; color: var(--color-muted); letter-spacing: 0.04em; }
+.page-dashboard .dm-option { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
+.page-dashboard .dm-option input { width: 1.125rem; height: 1.125rem; }
+.page-dashboard .dm-option input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

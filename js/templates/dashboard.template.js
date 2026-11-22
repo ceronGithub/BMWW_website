@@ -2,6 +2,7 @@
  * FILE    : js/templates/dashboard.template.js
  * PURPOSE : Kopya ng pages/dashboard.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v12 | 2026-11-22 | kasabay ng pages/dashboard.html (Calibration Correl at opsyonal na Repeatability: #dm-options, dashboard-options.css, 3 bagong script)
  * VERSION : v11 | 2026-11-22 | kasabay ng pages/dashboard.html (OUTDATED indicator: shift-freshness.css at 2 bagong script)
  * VERSION : v9.4 | 2026-11-22 | kasabay ng pages/dashboard.html (Trend block: trend-tile.css at 3 bagong script)
  * VERSION : v8.12 | 2026-11-21 | kasabay ng pages/dashboard.html (Master Repeatability: 5 bagong script)
@@ -22,6 +23,7 @@
 <link rel="stylesheet" href="css/pages/dashboard-machines.css">
 <link rel="stylesheet" href="css/pages/trend-tile.css">
 <link rel="stylesheet" href="css/pages/shift-freshness.css">
+<link rel="stylesheet" href="css/pages/dashboard-options.css">
 <section class="page page-dashboard" data-page="dashboard">
   <h1 class="page-title">Dashboard</h1>
   <div class="card-grid">
@@ -35,6 +37,7 @@
       <h2 id="dm-title" class="dm-title"></h2>
       <p id="dm-updated" class="card-note"></p>
     </div>
+    <div id="dm-options" class="dm-options"></div>
     <div id="dm-summary"></div>
     <div id="dm-pinned" class="dm-pinned"></div>
     <div id="dm-grid" class="dm-grid"></div>
@@ -102,6 +105,9 @@
 <script src="js/core/repeatability-tile-config.js"></script>
 <script src="js/core/repeatability-reader.js"></script>
 <script src="js/core/repeatability-tile.js"></script>
+<script src="js/core/calibration-tile-config.js"></script>
+<script src="js/core/calibration-tile.js"></script>
+<script src="js/core/dashboard-options.js"></script>
 <script src="js/core/trend-export-config.js"></script>
 <script src="js/core/trend-sync.js"></script>
 <script src="js/core/trend-tile.js"></script>

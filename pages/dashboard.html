@@ -2,6 +2,7 @@
   FILE    : pages/dashboard.html
   PURPOSE : Dashboard page
   DEPENDS : css/pages/dashboard.css, css/pages/dashboard-events.css, js/pages/dashboard.js, js/pages/dashboard-events.js, css/pages/dashboard-machines.css, js/core/dashboard-machines-config.js, js/pages/dashboard-machines.js
+  VERSION : v12 | 2026-11-22 | Task 1: Calibration Correl at opsyonal na Repeatability sa tile: #dm-options, link ng dashboard-options.css, script ng calibration-tile-config, calibration-tile, dashboard-options
   VERSION : v11 | 2026-11-22 | OUTDATED indicator (shift): link ng shift-freshness.css at script ng shift-freshness-config, shift-freshness
   VERSION : v9.4 | 2026-11-22 | Trend block sa tile: link ng trend-tile.css at script ng trend-export-config, trend-sync, trend-tile
   VERSION : v8.12 | 2026-11-21 | Master Repeatability sa tile ng Dashboard at Preview: dagdag na script ng master-shift-config, repeatability-sync-config, repeatability-tile-config, repeatability-reader at repeatability-tile
@@ -20,6 +21,7 @@
 <link rel="stylesheet" href="css/pages/dashboard-machines.css">
 <link rel="stylesheet" href="css/pages/trend-tile.css">
 <link rel="stylesheet" href="css/pages/shift-freshness.css">
+<link rel="stylesheet" href="css/pages/dashboard-options.css">
 <section class="page page-dashboard" data-page="dashboard">
   <h1 class="page-title">Dashboard</h1>
   <div class="card-grid">
@@ -33,6 +35,7 @@
       <h2 id="dm-title" class="dm-title"></h2>
       <p id="dm-updated" class="card-note"></p>
     </div>
+    <div id="dm-options" class="dm-options"></div>
     <div id="dm-summary"></div>
     <div id="dm-pinned" class="dm-pinned"></div>
     <div id="dm-grid" class="dm-grid"></div>
@@ -100,6 +103,9 @@
 <script type="module" src="js/core/repeatability-tile-config.js"></script>
 <script type="module" src="js/core/repeatability-reader.js"></script>
 <script type="module" src="js/core/repeatability-tile.js"></script>
+<script type="module" src="js/core/calibration-tile-config.js"></script>
+<script type="module" src="js/core/calibration-tile.js"></script>
+<script type="module" src="js/core/dashboard-options.js"></script>
 <script type="module" src="js/core/trend-export-config.js"></script>
 <script type="module" src="js/core/trend-sync.js"></script>
 <script type="module" src="js/core/trend-tile.js"></script>
