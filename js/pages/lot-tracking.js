@@ -1,10 +1,11 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: Barcode uppercase, check ng Operator, Esc sa Operator = Cancel, beep sa END, Data source 2 at 3 lang (lotConfig.SOURCE.KEYS)
+ * VERSION : v2.8 | 2026-11-23 | Yugto 2: monitoring (row sa pag-scan, LOT Unit, auto-DONE kapag END, iba ang barcode o NEW LOTE), JSON at Excel sa Saving path at Server path
  */
 (function () {
   'use strict';
@@ -20,6 +21,8 @@
   const activeStore = root.lotActiveStore;
   const validation = root.lotValidation;
   const beep = root.lotBeep;
+  const monitor = root.lotMonitoringStore;
+  const MONITORING = LOT_CONFIG.MONITORING;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -28,6 +31,8 @@
   let isScanning = false;
   let firstSeenMap = {};
   let currentMachine = '';
+  let monitorWarningList = [];
+  let lastScan = { rowList: [], warningList: [] };
 
   // Walang laman na lote (barcode, operator, simula, wakas sa milliseconds).
   function createEmptyLote() {
@@ -166,6 +171,7 @@
 
   // Humihingi ng permission sa bawat Data source. Tinatawag lang kapag may kilos ng user (Enter).
   async function requestAccess() {
+    await monitor.requestAccess();
     for (const source of sourceList) {
       try {
         await storage.hasPermission(source.handle, true);
@@ -195,7 +201,7 @@
       ? TEXT.waiting + formatDateTime(lote.startMs)
       : rowList.length + TEXT.found + formatDateTime(lote.startMs);
     if (rowList.length > LOT.MAX_ROWS) note += ' | ' + TEXT.showing + LOT.MAX_ROWS + '.';
-    warningList.forEach((warning) => { note += ' | ' + warning; });
+    warningList.concat(monitorWarningList).forEach((warning) => { note += ' | ' + warning; });
     setResultNote(note);
   }
 
@@ -204,6 +210,33 @@
     const body = query('resultBody');
     if (body) body.replaceChildren();
     setResultNote('');
+  }
+
+  // Hinihintay ang tumatakbong hanap (hanggang FINISH_WAIT_MAX_MS) para kasama ang huling unit bago tapusin ang lote.
+  async function waitForScan() {
+    let waitedMs = 0;
+    while (isScanning && waitedMs < MONITORING.FINISH_WAIT_MAX_MS) {
+      await new Promise((resolve) => { window.setTimeout(resolve, MONITORING.FINISH_WAIT_MS); });
+      waitedMs += MONITORING.FINISH_WAIT_MS;
+    }
+  }
+
+  // Sine-save ang monitoring ng lote na nagsimula sa startMs; ang mga babala ay ipinapakita sa tala ng RESULT.
+  function persistMonitoring(startMs) {
+    return monitor.save({ startMs }).then((warningList) => {
+      monitorWarningList = warningList;
+      if (lote.startMs === startMs && query('resultBody')) renderResults(lastScan.rowList, lastScan.warningList);
+    });
+  }
+
+  // Itinatala sa monitoring ang mga bagong LOT Unit ng aktibong lote (pinakaunang nakita muna). Ibinabalik true kung may nagbago.
+  function recordNewUnits(rowList) {
+    const unitList = rowList.filter((row) => row.unitName).sort((first, second) => first.firstSeenMs - second.firstSeenMs);
+    let isChanged = false;
+    unitList.forEach((unitRow) => {
+      if (monitor.recordUnit(lote, unitRow)) isChanged = true;
+    });
+    return isChanged;
   }
 
   // Isang beses na hanap ng bagong file/folder sa lahat ng Data source.
@@ -229,6 +262,8 @@
       if (!query('resultBody')) { stopTimer(); return; }
       const collected = unitCollector.collectUnits(itemList, firstSeenMap, Date.now());
       if (collected.isFirstSeenChanged && isActive()) saveActive();
+      lastScan = { rowList: collected.rowList, warningList };
+      if (isActive() && await monitor.prepare(currentMachine, lote.startMs) && recordNewUnits(collected.rowList)) persistMonitoring(lote.startMs);
       renderResults(collected.rowList, warningList);
     } catch (error) {
       setResultNote(TEXT.scanError);
@@ -250,14 +285,19 @@
     timerId = null;
   }
 
-  // Tinatapos ang aktibong lote: End Date/Time = ngayon, huling hanap, tigil ang timer.
+  // Tinatapos ang aktibong lote: tigil ang timer, huling hanap (habang aktibo pa), End Date/Time = ngayon, I-DONE ang mga unit sa monitoring.
   async function endLote() {
     stopTimer();
+    await waitForScan();
+    await refreshResults();
+    const startMs = lote.startMs;
+    await monitor.prepare(currentMachine, startMs);
     lote.endMs = Date.now();
+    monitor.finishBlock(lote, lote.endMs);
     activeStore.clear();
     renderLote();
     setStatus(TEXT.ended + lote.barcode + '.', false);
-    await refreshResults();
+    await persistMonitoring(startMs);
   }
 
   // Sinisimulan ang bagong lote: Start Date/Time = ngayon, clear ang End, simula ng bantay.
@@ -270,8 +310,11 @@
     clearResults();
     setStatus(TEXT.started + lote.barcode + '.', false);
     query('barcode').focus();
+    monitorWarningList = [];
     await requestAccess();
+    if (await monitor.prepare(currentMachine, lote.startMs)) monitor.startBlock(lote);
     startTimer();
+    persistMonitoring(lote.startMs);
     await refreshResults();
   }
 
@@ -279,6 +322,7 @@
   async function handleBarcode() {
     const barcodeValue = validation.normalizeBarcode(query('barcode').value);
     if (!barcodeValue) return;
+    await requestAccess();
     if (isActive()) {
       const isSameBarcode = barcodeValue === lote.barcode.toUpperCase();
       await endLote();
@@ -322,9 +366,13 @@
   function onNewLote() {
     if ((lote.barcode || pendingBarcode) && !window.confirm(TEXT.confirmNew)) return;
     stopTimer();
-    const keptEndMs = isActive() ? Date.now() : lote.endMs;
+    const wasActive = isActive();
+    const finishedLote = lote;
+    const keptEndMs = wasActive ? Date.now() : lote.endMs;
+    if (wasActive) monitor.finishBlock(finishedLote, keptEndMs);
     lote = { barcode: '', operator: '', startMs: 0, endMs: keptEndMs };
     firstSeenMap = {};
+    monitorWarningList = [];
     activeStore.clear();
     pendingBarcode = '';
     query('barcode').value = '';
@@ -333,6 +381,7 @@
     clearResults();
     setStatus(TEXT.newReady, false);
     query('barcode').focus();
+    if (wasActive) monitor.save(finishedLote).then((warningList) => { if (warningList.length) setStatus(warningList.join(' | '), true); });
   }
 
   // Enter key lang ang tinatanggap (hindi habang nagko-compose ng IME).
@@ -374,6 +423,7 @@
     if (!storage.isFolderAccessSupported()) setStatus(CONFIG.TEXT.unsupported, true);
     else setStatus(TEXT.scanBarcode, false);
     await loadSources();
+    if (isActive()) await monitor.prepare(currentMachine, lote.startMs);
     if (isActive()) startTimer();
     if (lote.startMs) refreshResults();
     barcodeInput.focus();

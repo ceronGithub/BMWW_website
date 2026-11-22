@@ -1,3 +1,19 @@
+INSTRUCTIONS v16 (LOT Tracking Yugto 2: monitoring JSON at Excel, Shift, monitoring day, Lot Duration, auto-DONE)
+1. Backup muna. Ilagay muna ang v15 (Yugto 0) at v14 (Yugto 1) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-shift.js, js/core/lot-monitoring-store.js, js/core/lot-monitoring-export.js. BINAGONG file: js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa iba. Buksan ang index.html gaya ng dati (python -m http.server o double-click) at i-refresh nang malakas (Ctrl+F5).
+2. TEST STEPS v16 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings (naka-save); Chrome o Edge.
+   - Scan ng Barcode (hal. abc12) at Operator, Enter: DAPAT may row agad sa <Saving path>\monitoring\ddmmyyyy_MONITORING.json at .xlsx at sa <Server path>\monitoring\<machine>\ (parehong pangalan). Row: walang LOT Unit, Status ONGOING, Sent Status NOT SENT, Shift ayon sa oras, Machine, Start-Time.
+   - Maglagay ng 4A25C20A.csv at 4A25C20A_Time.csv sa Data source 2: DAPAT ang row ay mapupunan (Wafer 4A25C, Blk A, Layer No. 20, LOT Unit 4A25C20A, File Path). Maglagay ng 4A25C21A.csv: DAPAT bagong row sa ilalim, parehong Barcode at Start.
+   - I-refresh ang page habang aktibo ang lote: DAPAT HINDI madoble ang row at HINDI mawala ang mga row (pindutin ang Enter sa Barcode kung humingi ng permission; may babala sa RESULT kung kailangan).
+   - Scan ng parehong barcode (END): DAPAT may beep, ang lahat ng ONGOING na row ng block ay DONE (berde sa Excel), may End-Time at Lot Duration (min). Ang 30 segundo ay 0.5.
+   - Scan ng barcode A, tapos B habang aktibo ang A: DAPAT DONE na ang A bago magsimula ang B (hiwalay na block).
+   - NEW LOTE (Oo) habang aktibo: DAPAT DONE ang mga row ng lote.
+   - Buksan ang .xlsx: DAPAT 16 na column, Barcode at Wafer isang beses kada block, Status na may kulay (DONE berde, ONGOING kahel). Kung bukas ang .xlsx sa Excel habang may sulat: DAPAT may babala pero naisusulat pa rin ang JSON.
+   - Shift: Start 08:00 = Day, 20:00 = Night. Palitan ang oras sa Settings (hal. Night simula 18:00), mag-scan ulit: DAPAT sumunod ang Shift. Ang Start na bago mag-07:30 (o ang Day simula sa Settings) ay DAPAT sa file ng NAKARAANG araw (ddmmyyyy ng kahapon).
+   - Patayin o alisin ang Server path sa Settings (o gawing walang permission): DAPAT may babala sa RESULT, pero tuloy ang lote at naisusulat ang Saving path.
+   - DAPAT HINDI makita: dobleng row ng parehong LOT Unit, binagong file sa folder ng machine (basa lang ang mga Data source), JSON na walang version.
+   Nasubukan sa Node lang. HINDI nasubukan sa totoong Chrome/Edge: ang pag-click, permission at pagsulat sa totoong folder. Ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v15) ---
 INSTRUCTIONS v15 (Yugto 0: global na shift sa Settings)
 1. Backup muna. Ilagay muna ang v14 (Yugto 1) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/shift-times.js, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/shift-settings.css. BINAGONG file: index.html, js/core/master-shift-config.js, js/core/shift-freshness-config.js, js/pages/settings.js, pages/settings.html, js/templates/settings.template.js (magkapareho palagi), README.txt, 00_INSTRUCTIONS.txt. Ctrl+F5.
 2. TEST STEPS v15 (Settings at shift):

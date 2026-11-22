@@ -1,3 +1,4 @@
+v16 | 2026-11-23 | LOT Tracking Yugto 2 (batay sa LOT Tracking Spec v2): monitoring. (1) Pag-scan ng lote (Operator Enter) = gumagawa agad ng row na walang LOT Unit (ONGOING, NOT SENT, Shift, Machine, Start). (2) Bawat bagong LOT Unit sa RESULT ay itinatala nang isang beses: ang unang unit ay pumupuno sa row na iyon, ang susunod ay bagong row sa ilalim ng block (Wafer, Blk, Layer No., LOT Unit, File Path). (3) Auto-DONE: kapag END MEASUREMENT, iba ang na-scan na barcode, o NEW LOTE: ang ONGOING na row ng block ay DONE, End-Time = ngayon, Lot Duration (min, 2 decimal). (4) Shift (Day mula sa simula ng Day hanggang bago ang simula ng Night ng Settings; ang iba ay Night) at monitoring day (nagpapalit sa simula ng Day sa Settings, hindi sa hatinggabi; ang Start na 06:30 ay sa file ng nakaraang araw). (5) Imbakan: JSON (source of truth, version 1) at Excel sa <Saving path>\monitoring\ddmmyyyy_MONITORING.json/.xlsx at <Server path>\monitoring\<machine>\ddmmyyyy_MONITORING.json/.xlsx; kusang sulat kada pagbabago. (6) Humihingi ng permission ang Enter sa Barcode (Saving path, Server path at mga Data source). Bago: js/core/lot-shift.js, js/core/lot-monitoring-store.js, js/core/lot-monitoring-export.js. Binago (may permission mo, 'go'): js/core/lot-config.js (v3), js/pages/lot-tracking.js (v2.8), pages/lot-tracking.html, js/templates/lot-tracking.template.js (v2.8, magkapareho), README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa config.js, css, index.html, xlsx-writer.js, shift-times.js, storage.js at Settings.
 v15 | 2026-11-22 | Yugto 0: global na shift sa Settings. Bagong card na 'Shift' sa Settings (Day/Morning simula at wakas, Night simula at wakas; default 07:30, 18:30, 19:30, 06:30) na isinasave sa settings ng machine (field shiftTimes). Ang LOT Tracking (susunod na yugto), Master, Calibration, Trend at OUTDATED ay sumusunod na sa Settings sa pamamagitan ng root.shiftTimes; ang master-shift-config.js at shift-freshness-config.js ay gumagamit na ng getter (walang binago sa mga gumagamit nito). Walang pagbabago sa gawi kung hindi babaguhin ang default. Bagong file: shift-times.js (naka-load sa index.html), shift-settings-config.js, shift-settings.js, css/pages/shift-settings.css.
 v14 | 2026-11-22 | LOT Tracking Yugto 1 (natitira): (1) Ang Barcode ay ginagawang uppercase (lotValidation.normalizeBarcode). (2) Ang Operator ay 2 hanggang 30 na titik, numero, espasyo, ., - o _ (lotValidation.isValidOperator); kapag mali, may mensahe at nananatili ang Barcode. (3) Esc sa Operator = Cancel: nililinis ang Barcode, Operator at RESULT, walang lote na sinimulan. (4) Beep (lotBeep.playBeep) kapag END MEASUREMENT (parehong barcode). (5) Data source 2 at 3 lang ang binabantayan ng LOT (lotConfig.SOURCE.KEYS; File Path 1 = Data source 2, File Path 2 = Data source 3, kapareho ng Search Files). (6) Nilalaktawan na ang file/folder na hindi tumama sa pangalan ng LOT Unit (SHOW_UNMATCHED = false). (7) Tinanggal ang CONFIG.LOT.SOURCE_KEYS at CONFIG.LOT.PATH_COLUMN sa config.js. Bagong file: lot-validation.js, lot-beep.js.
 v13 | 2026-11-22 | LOT Tracking Yugto 1 (batay sa LOT Tracking Spec BMWW web): isang row kada LOT Unit sa RESULT (ang X.csv at X_Time.csv ay iisang unit; pangunahing file = hindi _Time, kung pareho ang uri ay ang pinakaluma; Date = pinakabagong oras ng mga file ng unit), bagong column na LOT Unit at Unang nakita (oras na unang nakita ng scanner ang unit), at ang aktibong lote ay naka-save sa localStorage bmww.activeLote kaya hindi nawawala kapag nag-refresh ang page (END at NEW LOTE ang nagbubura). Bago: js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js. Binago (may permission mo, 'go'): js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js (mga file na ito ay v2.6), README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa config.js, css, index.html, settings, at iba pang page. Date Modified ang gamit sa filter (hindi mababasa ng browser ang Date Created). Nasubukan sa Node lang (13 kaso); hindi pa sa totoong Chrome/Edge.
@@ -1369,3 +1370,66 @@ PAGE CONTRACT (settings, dagdag v15): INPUT: apat na oras sa card ng Shift | OUT
   2026-11-22 | [v15] Ang wakas ng Day at Night ay ginagamit ng Master Repeatability lang (may puwang na hindi isinasama). Ang OUTDATED at LOT ay gumagamit ng simula lang (tuloy-tuloy).
   2026-11-22 | [v15] Ang mga lumang settings na walang shiftTimes ay gagamit ng default (07:30, 18:30, 19:30, 06:30), kaya walang magbabago hanggang may i-save.
   2026-11-22 | [v15] Hindi pa ginagamit ng LOT Tracking ang shift (Yugto 2: Shift column at monitoring day = simula ng Day).
+
+=== [v16] LOT TRACKING YUGTO 2: MONITORING (OVERVIEW) ===
+Ang mga linya ng LOT Tracking sa itaas (v2.5) ay luma na sa ilang bahagi; ang nasa ibaba ang tama. Dagdag lang ang pagbabago.
+
+A. FILES
+js/core/lot-shift.js | Shift (Day/Night), monitoring day, 'ddmmyyyy' ng file, format ng petsa at oras
+js/core/lot-monitoring-store.js | monitoring ng araw sa memorya: row kada LOT Unit, auto-DONE, sulat ng JSON at Excel sa Saving path at Server path
+js/core/lot-monitoring-export.js | ginagawang Excel (.xlsx, 16 na column, kulay ng Status) ang monitoring doc
+js/core/lot-config.js (v3) | dagdag na SHIFT at MONITORING
+js/pages/lot-tracking.js (v2.8) | tumatawag sa lotMonitoringStore
+
+B. FUNCTIONS
+lotShift.getShift(ms) | ms -> 'Day' | 'Night' | Day kung minuto ng araw >= dayStart at < nightStart (shiftTimes.getMinutes()); Night ang iba | Tinatawag ng: lot-monitoring-store.createRow
+lotShift.getMonitoringDay(ms) | ms -> { iso: 'yyyy-mm-dd', key: 'ddmmyyyy' } | kung bago mag-dayStart ang oras, kahapon ang araw | Tinatawag ng: lot-monitoring-store (buildDocKey, createEmptyDoc, readFromTarget)
+lotShift.toFileKey(isoDay) | 'yyyy-mm-dd' -> 'ddmmyyyy' | Tinatawag ng: lot-monitoring-store.writeTarget
+lotShift.formatDateTime(ms) | ms -> 'yyyy-mm-dd hh:mm:ss' (walang laman kung 0) | Tinatawag ng: lot-monitoring-export.buildCell
+lotShift.pad(n), getMinuteOfDay(date) (panloob) | lot-shift.js
+lotMonitoringStore.prepare(machine, startMs) | -> Promise<bool> | binabasa ang JSON ng araw (Saving path muna, tapos Server path) at itinatago sa memorya; false kung may folder na naka-set pero walang permission (hindi itinatago para hindi mapatungan ang file; susubukan ulit) | Tinatawag ng: lot-tracking.js (startLote, endLote, refreshResults, init)
+lotMonitoringStore.requestAccess() | -> Promise | humihingi ng permission sa Saving path at Server path (kilos ng user) | Tinatawag ng: lot-tracking.requestAccess
+lotMonitoringStore.startBlock(lote) | -> bool | gumagawa ng row na walang LOT Unit kung wala pang block | Tinatawag ng: startLote
+lotMonitoringStore.recordUnit(lote, unitRow) | -> bool | itinatala ang LOT Unit nang isang beses (puno sa row na walang unit, o bagong row sa dulo ng block) | Tinatawag ng: lot-tracking.recordNewUnits
+lotMonitoringStore.finishBlock(lote, endMs) | -> bool | ONGOING -> DONE, End-Time, Lot Duration (min) | Tinatawag ng: endLote, onNewLote
+lotMonitoringStore.save(lote) | -> Promise<string[]> | pinipila ang sulat ng JSON at Excel; hindi nagtatapon ng error; ibinabalik ang listahan ng babala | Tinatawag ng: persistMonitoring, onNewLote
+lot-monitoring-store.js (panloob) | buildDocKey, createEmptyDoc, normalizeRow, normalizeDoc, loadHandles, getMachineFolderName, getTargetFolder, readFromTarget, getDoc, getBlockIndexList, createRow, ensureBlock, writeFile, writeTarget, writeAll, runWriteLoop
+lotMonitoringExport.buildBlob(doc) | doc -> Blob (.xlsx) | Tinatawag ng: lot-monitoring-store.writeAll
+lot-monitoring-export.js (panloob) | getStatusStyle, isBlockStart, buildCell, buildSheet
+lot-tracking.js (bago o binago) | waitForScan() | persistMonitoring(startMs) | recordNewUnits(rowList) | cancelOperator() [v2.7] | endLote() [LUMA v2.5: ngayon ay huling hanap muna habang aktibo, saka End at I-DONE] | startLote(operator) [dagdag: prepare, startBlock, persistMonitoring] | handleBarcode() [dagdag: requestAccess sa Enter] | onNewLote() [dagdag: finishBlock at save kapag aktibo] | refreshResults() [dagdag: prepare at recordNewUnits] | renderResults() [dagdag: babala ng monitoring] | init() [dagdag: prepare ng naibalik na lote]
+
+C. VARIABLES / CONSTANTS
+lotConfig.SHIFT = { DAY: 'Day', NIGHT: 'Night' } | lot-config.js
+lotConfig.MONITORING = { VERSION 1, FOLDER 'monitoring', JSON_SUFFIX '_MONITORING.json', XLSX_SUFFIX '_MONITORING.xlsx', JSON_INDENT, SHEET_NAME 'LOT_TRACKING', TEXT_MAX 300, ROWS_MAX 20000, MS_PER_MINUTE, DURATION_DECIMALS 2, FINISH_WAIT_MS, FINISH_WAIT_MAX_MS, STATUS { ongoing, done }, SENT { notSent, sent }, COLUMN_LIST (16: field, header, type), TARGET { saving { handleKey 'root' }, server { handleKey 'server' } }, COLOR, AUTOFIT, TEXT }
+docMap, writeStateMap, handleMap, isHandleLoaded, machineName | lot-monitoring-store.js | let/const (loob ng IIFE) | doc ng bawat araw ng machine, pila ng sulat, handle ng Saving path at Server path
+monitorWarningList, lastScan | lot-tracking.js | let (loob ng IIFE) | mga babala ng monitoring at huling resulta ng hanap (para sa tala ng RESULT)
+monitor, MONITORING | lot-tracking.js | const | shortcut sa lotMonitoringStore at lotConfig.MONITORING
+
+D. EVENTS (listener): walang bago. Ang Enter sa Barcode ay tumatawag na ng requestAccess (permission ng Saving path, Server path at Data source).
+
+E. STORAGE / API
+JSON | <Saving path>\monitoring\ddmmyyyy_MONITORING.json at <Server path>\monitoring\<machine>\ddmmyyyy_MONITORING.json | { version 1, machine, monitoringDay 'yyyy-mm-dd', updatedMs, rows[] } | source of truth; row = 16 field: wafer, barcode, lotUnit, blk, layerNo, startMs, endMs, operator, machine, filePath, status, sentStatus, shift, remarks, sentMs, lotDurationMin
+Excel | katabi ng bawat JSON, .xlsx | para sa pagtingin at pag-print (Barcode at Wafer isang beses kada block; kulay ng Status)
+localStorage bmww.activeLote | walang pagbabago (v13)
+IndexedDB handle | CONFIG.HANDLE_KEY.root (Saving path) at .server (Server path) | binabasa lang ng store; hindi sinusulat
+Ang folder na monitoring sa Server path ay hiwalay sa settings\machines\monitoring ng Settings.
+
+F. CSS VARIABLES: walang bago.
+
+G. DEPENDENCY MAP
+pages/lot-tracking.html -> xlsx-writer.js, lot-shift.js, lot-monitoring-export.js, lot-monitoring-store.js -> lot-tracking.js
+lot-tracking.js -> lotMonitoringStore (prepare, startBlock, recordUnit, finishBlock, save, requestAccess)
+lot-monitoring-store.js -> lotShift, lotMonitoringExport, storage (loadHandle, hasPermission, toMachineFileName), shiftTimes (sa pamamagitan ng lotShift)
+lot-monitoring-export.js -> xlsx (buildWorkbook, computeColumnWidths, STYLE), lotShift.formatDateTime
+
+PAGE CONTRACT (lot-tracking, dagdag v16): INPUT: Barcode, Operator, mga file sa Data source 2 at 3, Saving path at Server path (handle), oras ng shift (Settings) | OUTPUT: monitoring JSON at Excel (Saving path at Server path), mga babala sa tala ng RESULT | HTML ID: walang bago | DEPENDS: lotMonitoringStore, lotShift
+
+=== [v16] KNOWN ISSUES / TODO ===
+  2026-11-23 | [v16] Nasubukan sa Node (mga kaso: shift, monitoring day, 30 segundo = 0.5 min, unit nang isang beses, bagong row, JSON sa Saving at Server, Excel na nabubuksan sa openpyxl). HINDI nasubukan sa totoong Chrome/Edge: ang pag-click, permission, at pagsulat sa totoong folder.
+  2026-11-23 | [v16] Ang File Path sa monitoring ay ang relative na path na nakikita ng browser (pangalan ng source folder/subfolder/file), hindi buong path ng drive; hindi ito kayang basahin ng browser.
+  2026-11-23 | [v16] Ang Barcode at Wafer sa Excel ay isang beses kada block (hindi tunay na merge; hindi kaya ng xlsx-writer.js, na hindi ginalaw). Ang Lot Duration ay numero (0.5 ang nakikita para sa 0.50).
+  2026-11-23 | [v16] Kapag bukas ang Excel file ng monitoring sa Excel, hindi ito maisusulat (may babala); ang JSON ay naisusulat pa rin. Isang machine = isang file, walang lock.
+  2026-11-23 | [v16] Kapag may Saving path o Server path na walang permission pagkatapos mag-refresh, hindi pa nababasa ang file ng araw hangga't walang Enter sa Barcode (para hindi mapatungan); may babala sa tala ng RESULT.
+  2026-11-23 | [v16] Ang lote na tumawid sa 7:30 AM ay nananatili sa file ng araw ng Start nito. Ang End-Time ng bawat unit ay End ng lote (hindi ang pinakabagong file ng unit).
+  2026-11-23 | [v16] Shift: Day mula sa simula ng Day hanggang bago ang simula ng Night (kaya ang 18:30 hanggang 19:30 ay Day); hindi ginagamit ang dayEnd at nightEnd (kapareho ng OUTDATED).
+  2026-11-23 | [v16] Wala pa: Remarks at On hold (Yugto 3), Send (Yugto 4), LEAD PC view (Yugto 5), pagbabantay kapag walang lote (Yugto 6). Ang NEW LOTE ay window.confirm pa rin.

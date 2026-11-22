@@ -1,10 +1,11 @@
 /*
  * FILE    : js/templates/lot-tracking.template.js
  * PURPOSE : Kopya ng pages/lot-tracking.html bilang template string, para gumana sa double-click (file://)
- * DEPENDS : js/core/registry.js, js/pages/lot-tracking.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js
+ * DEPENDS : js/core/registry.js, js/pages/lot-tracking.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/xlsx-writer.js, js/core/lot-shift.js, js/core/lot-monitoring-export.js, js/core/lot-monitoring-store.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: column na LOT Unit at Unang nakita, script ng lot-config, lot-unit-collector at lot-active-store
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: script ng lot-validation at lot-beep
+ * VERSION : v2.8 | 2026-11-23 | Yugto 2: script ng xlsx-writer, lot-shift, lot-monitoring-export at lot-monitoring-store
  */
 (function () {
   'use strict';
@@ -84,6 +85,10 @@
 <script src="js/core/lot-active-store.js"></script>
 <script src="js/core/lot-validation.js"></script>
 <script src="js/core/lot-beep.js"></script>
+<script src="js/core/xlsx-writer.js"></script>
+<script src="js/core/lot-shift.js"></script>
+<script src="js/core/lot-monitoring-export.js"></script>
+<script src="js/core/lot-monitoring-store.js"></script>
 <script src="js/pages/lot-tracking.js"></script>
 `);
 })();
