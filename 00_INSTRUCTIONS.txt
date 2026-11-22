@@ -1,3 +1,17 @@
+INSTRUCTIONS v14 (LOT Tracking Yugto 1: Barcode uppercase, check ng Operator, Esc = Cancel, beep sa END, Data source 2 at 3 lang)
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-validation.js, js/core/lot-beep.js. BINAGONG file: js/core/lot-config.js, js/core/config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js (magkapareho palagi), README.txt, 00_INSTRUCTIONS.txt. Ctrl+F5.
+2. TEST STEPS v14 (LOT Tracking): may Machine name at Data source sa Settings. Sa LOT Tracking:
+   - Mag-scan ng barcode na lowercase (hal. abc12): DAPAT maging ABC12.
+   - Operator na 1 letra lang, o may @ (hal. Juan@x): DAPAT may mensahe ng error, nananatili ang Barcode, at WALANG lote na nagsimula.
+   - Operator na Juan: DAPAT magsimula ang lote.
+   - Habang naghihintay ng Operator, pindutin ang Esc: DAPAT malinis ang Barcode, Operator at RESULT, may mensaheng 'Kinansela', at WALANG lote kahit mag-refresh (F5).
+   - Mag-scan ng parehong barcode ng aktibong lote (kahit iba ang laki ng letra): DAPAT END at ISANG beep, at nananatili ang RESULT. HINDI dapat mag-beep sa pagsisimula ng lote o kapag ibang barcode ang na-scan.
+   - Maglagay ng file na may LOT Unit na pangalan (hal. 4A25C20A.csv) sa Data source 1 habang may lote: DAPAT HINDI lumabas sa RESULT. Sa Data source 2 at 3: DAPAT lumabas.
+   - Maglagay ng file na hindi tumama sa pangalan (hal. notes.txt): DAPAT HINDI lumabas sa RESULT.
+   - Para patayin ang beep: lotConfig.BEEP.ENABLED = false sa js/core/lot-config.js.
+   Nasubukan sa Node at jsdom (29 kaso). HINDI nasubukan sa totoong Chrome/Edge, totoong tunog at totoong Data source.
+
+--- LUMANG INSTRUCTIONS (v13) ---
 INSTRUCTIONS v13 (LOT Tracking Yugto 1: isang row kada LOT Unit, Unang nakita, at pag-save ng aktibong lote)
 1. Backup muna. BAGONG file: js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js. BINAGONG file: js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Buksan ang index.html (double-click o local server, hal. python -m http.server) sa Chrome o Edge. Ctrl+F5.
 2. TEST STEPS v13 (LOT Tracking): sa Settings, ilagay ang Machine name at pumili ng Data source (at i-save). Sa LOT Tracking:

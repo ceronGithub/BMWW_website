@@ -3,6 +3,7 @@
  * PURPOSE : Lahat ng constants, selectors at text
  * DEPENDS : wala
  * VERSION : v9.3 | 2026-11-22 | PAGE_LIST at LEAD_BLOCKED_PAGES: dagdag na page na trend (Trend, binabasa ang Data source 1)
+ * VERSION : v10.2 | 2026-11-22 | LOT Yugto 1: tinanggal ang LOT.SOURCE_KEYS (lumipat sa lotConfig.SOURCE.KEYS) at LOT.PATH_COLUMN; text ng operatorInvalid at enterOperator; bagong operatorCancelled
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v3 | 2026-11-20 | EVENTS (constants ng Dashboard events), SELECTOR.events, TEXT.events
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module); window.BMWW namespace; dagdag SIDEBAR_TEMPLATE
@@ -185,7 +186,6 @@
     },
     LOT: {
       PAGE: 'lot-tracking',
-      SOURCE_KEYS: ['source1', 'source2', 'source3'],
       SOURCE_LABEL: { source1: 'Data source 1', source2: 'Data source 2', source3: 'Data source 3' },
       REFRESH_MS: 3000,
       START_TOLERANCE_MS: 1000,
@@ -197,7 +197,6 @@
       IGNORED_PREFIX: '~$',
       NAME_PATTERN: /^([A-Z0-9]{5})([0-9]{1,3})([A-Z])/i,
       TYPE: { file: 'File', folder: 'Folder' },
-      PATH_COLUMN: 3,
       EMPTY_CELL: '-',
       SELECTOR: {
         machine: '#lot-machine', barcode: '#lot-barcode', operator: '#lot-operator',
@@ -209,9 +208,10 @@
         stateOngoing: 'ONGOING', stateDone: 'DONE', stateIdle: 'Walang lote',
         machineMissing: 'Walang Machine name. Itakda muna ito sa Settings, tapos bumalik dito.',
         scanBarcode: 'I-scan o i-type ang Barcode, tapos Enter.',
-        enterOperator: 'Ilagay ang Operator, tapos Enter.',
+        enterOperator: 'Ilagay ang Operator, tapos Enter (Esc para i-cancel).',
         barcodeFirst: 'I-scan muna ang Barcode.',
-        operatorInvalid: 'Operator: 2 hanggang 30 characters.',
+        operatorInvalid: 'Operator: 2 hanggang 30 na character; titik, numero, espasyo, ., - o _ lang.',
+        operatorCancelled: 'Kinansela. Walang lote na sinimulan.',
         started: 'Nagsimula ang lote ', ended: 'Natapos ang lote ',
         confirmNew: 'I-clear ang lote? Hindi na ito mababawi.',
         newReady: 'Handa na para sa susunod na lote.',

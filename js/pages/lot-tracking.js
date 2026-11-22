@@ -1,9 +1,10 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
+ * VERSION : v2.7 | 2026-11-22 | Yugto 1: Barcode uppercase, check ng Operator, Esc sa Operator = Cancel, beep sa END, Data source 2 at 3 lang (lotConfig.SOURCE.KEYS)
  */
 (function () {
   'use strict';
@@ -17,6 +18,8 @@
   const LOT_CONFIG = root.lotConfig;
   const unitCollector = root.lotUnitCollector;
   const activeStore = root.lotActiveStore;
+  const validation = root.lotValidation;
+  const beep = root.lotBeep;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -151,7 +154,7 @@
   async function loadSources() {
     sourceList = [];
     if (!storage.isFolderAccessSupported()) return;
-    for (const key of LOT.SOURCE_KEYS) {
+    for (const key of LOT_CONFIG.SOURCE.KEYS) {
       try {
         const handle = await storage.loadHandle(CONFIG.HANDLE_KEY[key]);
         if (handle) sourceList.push({ key, label: LOT.SOURCE_LABEL[key], handle });
@@ -274,12 +277,15 @@
 
   // Enter sa Barcode: parehong barcode ng aktibong lote = tapusin; iba o bago = hingin ang Operator.
   async function handleBarcode() {
-    const barcodeValue = sanitizeInput(query('barcode').value, LOT.BARCODE_MAX);
+    const barcodeValue = validation.normalizeBarcode(query('barcode').value);
     if (!barcodeValue) return;
     if (isActive()) {
-      const isSameBarcode = barcodeValue.toUpperCase() === lote.barcode.toUpperCase();
+      const isSameBarcode = barcodeValue === lote.barcode.toUpperCase();
       await endLote();
-      if (isSameBarcode) return;
+      if (isSameBarcode) {
+        beep.playBeep();
+        return;
+      }
     }
     pendingBarcode = barcodeValue;
     query('barcode').value = barcodeValue;
@@ -288,11 +294,27 @@
     query('operator').focus();
   }
 
-  // Enter sa Operator: i-validate, tapos simulan ang lote.
+  // Esc sa Operator = Cancel: nililinis ang Barcode at RESULT. Ang End ng naunang lote (kung meron) ay iniiwan.
+  function cancelOperator() {
+    if (!pendingBarcode) return;
+    stopTimer();
+    lote = { barcode: '', operator: '', startMs: 0, endMs: lote.endMs };
+    firstSeenMap = {};
+    activeStore.clear();
+    pendingBarcode = '';
+    query('barcode').value = '';
+    query('operator').value = '';
+    renderLote();
+    clearResults();
+    setStatus(TEXT.operatorCancelled, false);
+    query('barcode').focus();
+  }
+
+  // Enter sa Operator: i-validate (haba at tanggap na character), tapos simulan ang lote.
   function handleOperator() {
-    const operatorValue = sanitizeInput(query('operator').value, LOT.OPERATOR_MAX);
+    const operatorValue = validation.normalizeOperator(query('operator').value);
     if (!pendingBarcode) { setStatus(TEXT.barcodeFirst, true); query('barcode').focus(); return; }
-    if (operatorValue.length < LOT.OPERATOR_MIN) { setStatus(TEXT.operatorInvalid, true); return; }
+    if (!validation.isValidOperator(operatorValue)) { setStatus(TEXT.operatorInvalid, true); return; }
     startLote(operatorValue).catch(() => setStatus(TEXT.scanError, true));
   }
 
@@ -336,6 +358,11 @@
       handleBarcode().catch(() => setStatus(TEXT.scanError, true));
     });
     operatorInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !event.isComposing) {
+        event.preventDefault();
+        cancelOperator();
+        return;
+      }
       if (!isEnterKey(event)) return;
       event.preventDefault();
       handleOperator();
