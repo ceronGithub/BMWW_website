@@ -5,6 +5,7 @@
  * VERSION : v1 | 2026-11-22 | bagong file (Yugto 1)
  * VERSION : v2 | 2026-11-22 | Yugto 1: SOURCE (Data source 2 at 3), SHOW_UNMATCHED = false, VALIDATION (Operator), BEEP
  * VERSION : v3 | 2026-11-23 | Yugto 2: SHIFT at MONITORING (imbakan ng monitoring: JSON at Excel, column, status, kulay, text)
+ * VERSION : v4 | 2026-11-23 | Yugto 3: REMARKS (dialog, 9 na opsyon, Manual input) at ONHOLD (hold file sa Server path at Saving path)
  */
 (function () {
   'use strict';
@@ -97,6 +98,62 @@
         excelError: ': hindi maisulat ang monitoring Excel (baka bukas ito sa Excel).',
         buildError: 'Hindi magawa ang monitoring Excel.',
         notLoaded: 'Monitoring: hindi pa nababasa ang file ng araw na ito (walang permission sa folder). Pindutin ang Enter sa Barcode para humingi ulit.'
+      })
+    }),
+    REMARKS: Object.freeze({
+      // Mga opsyon ng Remarks dialog (ayos ng macro). type: text = ang label ang isusulat; manual = may input; hold = On hold.
+      OPTION_LIST: Object.freeze([
+        Object.freeze({ key: 'first', label: '1st Meas.', type: 'text' }),
+        Object.freeze({ key: 'second', label: '2nd Meas.', type: 'text' }),
+        Object.freeze({ key: 'firstRelap', label: '1st Re-lap', type: 'text' }),
+        Object.freeze({ key: 'secondRelap', label: '2nd Re-lap', type: 'text' }),
+        Object.freeze({ key: 'firstRemeasure', label: '1st Re-measure', type: 'text' }),
+        Object.freeze({ key: 'secondRemeasure', label: '2nd Re-measure', type: 'text' }),
+        Object.freeze({ key: 'final', label: 'Final Meas.', type: 'text' }),
+        Object.freeze({ key: 'manual', label: 'Manual input', type: 'manual' }),
+        Object.freeze({ key: 'hold', label: 'On hold', type: 'hold' })
+      ]),
+      FINAL_KEY: 'final',
+      MANUAL_MAX: 100,
+      // Hindi puwedeng maging unang letra ng Manual input (iwas formula sa Excel).
+      FORBIDDEN_FIRST: Object.freeze(['=', '+', '-', '@']),
+      // Talaan ng mga unit na natanong na (para hindi maulit kahit mag-refresh ang page o Cancel ang sagot).
+      ASKED_STORE: Object.freeze({ KEY: 'bmww.lotRemarksAsked', VERSION: 1, MAX_UNITS: 500 }),
+      SELECTOR: Object.freeze({
+        dialog: '#lot-remarks-dialog', unit: '#lot-remarks-unit', options: '#lot-remarks-options',
+        manual: '#lot-remarks-manual', error: '#lot-remarks-error', ok: '#lot-remarks-ok', cancel: '#lot-remarks-cancel'
+      }),
+      RADIO_NAME: 'lot-remarks-choice',
+      TEXT: Object.freeze({
+        chooseFirst: 'Pumili muna ng Remarks.',
+        manualEmpty: 'Isulat ang Remarks.',
+        manualForbidden: 'Hindi puwedeng magsimula ang Remarks sa =, +, - o @.',
+        unitLabel: 'LOT Unit: ',
+        finalWarning: ': may Final Meas. na ang wafer na ito sa monitoring ng araw na ito. Hindi na dapat i-measure ulit.',
+        noDialog: 'Hindi mabuksan ang Remarks dialog.',
+        saved: 'Remarks ng '
+      })
+    }),
+    ONHOLD: Object.freeze({
+      FOLDER: 'onhold',
+      SEPARATOR: '__',
+      EXTENSION: '.txt',
+      LINE_END: '\r\n',
+      // Mga character na bawal sa pangalan ng file ay ginagawang _.
+      UNSAFE_PATTERN: /[\\/:*?"<>|\u0000-\u001F]/g,
+      // handleKey = susi sa CONFIG.HANDLE_KEY (root = Saving path, server = Server path).
+      TARGET: Object.freeze({
+        server: Object.freeze({ handleKey: 'server', label: 'Server path' }),
+        saving: Object.freeze({ handleKey: 'root', label: 'Saving path' })
+      }),
+      FIELD: Object.freeze({ barcode: 'Barcode', lotUnit: 'LOT Unit', wafer: 'Wafer', operator: 'Operator', machine: 'Machine', time: 'Time', pcName: 'PC name' }),
+      TEXT: Object.freeze({
+        noFolder: ': walang folder na naka-set sa Settings, hindi naisulat ang hold file.',
+        noPermission: ': walang permission sa folder, hindi naisulat ang hold file.',
+        writeError: ': hindi maisulat ang hold file.',
+        removeError: ': hindi natanggal ang hold file.',
+        prefix: 'On hold',
+        written: 'Naisulat ang hold file sa Server path at Saving path.'
       })
     })
   });

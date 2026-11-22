@@ -2,7 +2,9 @@
  * FILE    : js/core/lot-monitoring-store.js
  * PURPOSE : Monitoring ng LOT Tracking: isang row kada LOT Unit; JSON (source of truth) at Excel sa Saving path at Server path
  * DEPENDS : js/core/config.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-shift.js, js/core/lot-monitoring-export.js
+ * USED BY : js/pages/lot-tracking.js
  * VERSION : v1 | 2026-11-23 | bagong file (Yugto 2)
+ * VERSION : v2 | 2026-11-23 | Yugto 3: dagdag na getUnitList, setRemarks, hasFinalMeas (para sa Remarks at On hold)
  */
 (function () {
   'use strict';
@@ -217,6 +219,54 @@
     return isChanged;
   }
 
+  /**
+   * PARA SAAN    : ibigay ang mga LOT Unit ng block ng lote at ang Remarks nila (para sa Remarks dialog)
+   * GINAGAWA     : kinokopya ang unit, wafer at remarks ng bawat row ng block na may LOT Unit
+   * INPUT/OUTPUT : lote { barcode, startMs } -> [{ lotUnit, wafer, remarks }]
+   * TINATAWAG NG : lot-tracking.js askPendingRemarks
+   * TUMATAWAG SA : lot-monitoring-store.js getDoc, getBlockIndexList
+   */
+  function getUnitList(lote) {
+    const doc = getDoc(lote);
+    if (!doc) return [];
+    return getBlockIndexList(doc, lote)
+      .map((index) => doc.rows[index])
+      .filter((row) => row.lotUnit !== '')
+      .map((row) => ({ lotUnit: row.lotUnit, wafer: row.wafer, remarks: row.remarks }));
+  }
+
+  /**
+   * PARA SAAN    : isulat ang Remarks ng isang LOT Unit sa monitoring
+   * GINAGAWA     : hinahanap ang row ng unit sa block ng lote at nilalagay ang text (hanggang TEXT_MAX); hindi ito nagse-save sa file
+   * INPUT/OUTPUT : (lote, unitName, text) -> bool (true kung may nagbago)
+   * TINATAWAG NG : lot-tracking.js applyRemark
+   * TUMATAWAG SA : lot-monitoring-store.js getDoc, getBlockIndexList
+   */
+  function setRemarks(lote, unitName, text) {
+    const doc = getDoc(lote);
+    if (!doc) return false;
+    const index = getBlockIndexList(doc, lote).find((rowIndex) => doc.rows[rowIndex].lotUnit === unitName);
+    if (index === undefined) return false;
+    const value = String(text).slice(0, MON.TEXT_MAX);
+    if (doc.rows[index].remarks === value) return false;
+    doc.rows[index].remarks = value;
+    return true;
+  }
+
+  /**
+   * PARA SAAN    : may Final Meas. na ba ang wafer sa ibang row ng monitoring ng araw na ito
+   * GINAGAWA     : hinahanap sa doc ng araw ng lote ang row na iba ang LOT Unit, pareho ang wafer at Remarks = Final Meas.
+   * INPUT/OUTPUT : (lote, wafer, unitName) -> bool
+   * TINATAWAG NG : lot-tracking.js applyRemark
+   * TUMATAWAG SA : lot-monitoring-store.js getDoc
+   */
+  function hasFinalMeas(lote, wafer, unitName) {
+    const doc = getDoc(lote);
+    if (!doc || !wafer) return false;
+    const finalLabel = root.lotConfig.REMARKS.OPTION_LIST.find((option) => option.key === root.lotConfig.REMARKS.FINAL_KEY).label;
+    return doc.rows.some((row) => row.wafer === wafer && row.lotUnit !== unitName && row.remarks === finalLabel);
+  }
+
   // Isinusulat ang isang file (text o Blob) sa folder; kapag pumalya, inaabort ang sulat at ipinapasa ang error.
   async function writeFile(folder, fileName, content) {
     const fileHandle = await folder.getFileHandle(fileName, { create: true });
@@ -314,5 +364,5 @@
     return state.promise;
   }
 
-  root.lotMonitoringStore = Object.freeze({ prepare, requestAccess, startBlock, recordUnit, finishBlock, save });
+  root.lotMonitoringStore = Object.freeze({ prepare, requestAccess, startBlock, recordUnit, finishBlock, getUnitList, setRemarks, hasFinalMeas, save });
 })();

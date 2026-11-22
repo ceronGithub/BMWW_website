@@ -1,3 +1,20 @@
+INSTRUCTIONS v17 (LOT Tracking Yugto 3: Remarks dialog, Final Meas. babala, On hold sa Server path at Saving path)
+1. Backup muna. Ilagay muna ang v16 (Yugto 2) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-remarks.js, js/core/lot-onhold.js. BINAGONG file: js/core/lot-config.js, js/core/lot-monitoring-store.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw.
+2. TEST STEPS v17 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings (naka-save); Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file.
+   - Mag-scan ng barcode at Operator, tapos maglagay ng 4A25C20A.csv sa Data source 2: DAPAT lumabas ang dialog na 'Remarks' na may 9 na opsyon at 'LOT Unit: 4A25C20A'.
+   - Pindutin ang OK na walang pinili: DAPAT may mensaheng 'Pumili muna ng Remarks.' at bukas pa ang dialog.
+   - Piliin ang '1st Meas.' at OK: DAPAT nasa column na Remarks ng monitoring (JSON at Excel, Saving path at Server path) ang '1st Meas.' at may status na 'Remarks ng 4A25C20A: 1st Meas.'.
+   - Maglagay ng 4A25C21A.csv at piliin ang 'Manual input': DAPAT bukas ang input. Subukan ang '=1+1', '@x', '-x', '+x': DAPAT may mensahe at bukas pa ang dialog. Ang 'check probe' ay DAPAT matanggap. Ang higit sa 100 letra ay pinuputol sa 100.
+   - Maglagay ng 4A25C22A.csv, pindutin ang Cancel (o Esc): DAPAT walang Remarks ang row, at HINDI na itatanong ulit ang unit na iyon (kahit mag-refresh ang page).
+   - Final Meas.: piliin ang 'Final Meas.' sa isang unit; sa isa pang unit ng PAREHONG wafer (parehong unang 5 character, hal. 4A25C20A at 4A25C21A) piliin din ang 'Final Meas.': DAPAT may babala na may Final Meas. na ang wafer. Ang Remarks ay nasusulat pa rin.
+   - On hold: piliin ang 'On hold' sa isang unit: DAPAT may file na <Barcode>__<LOT Unit>.txt sa <Server path>\onhold\ AT sa <Saving path>\onhold\ (Barcode, LOT Unit, Wafer, Operator, Machine, Time, PC name). Ang Remarks sa monitoring ay 'On hold'.
+   - Gawing walang permission o alisin ang Server path, tapos On hold ulit: DAPAT may babala kung alin ang pumalya (Server path), ang Saving path ay naisusulat pa rin, tuloy ang lote at 'On hold' pa rin sa monitoring.
+   - I-END ang lote (parehong barcode), tapos mag-scan ulit ng parehong barcode at Operator: DAPAT mawala ang hold file ng barcode na iyon sa DALAWANG folder. Ang hold file ng ibang barcode ay DAPAT nananatili.
+   - Mag-scan ng barcode A at B habang aktibo ang A: DAPAT nakasara ang dialog bago ang bagong lote; ang monitoring ng A ay DONE.
+   - DAPAT HINDI makita: dalawang dialog nang sabay, window.prompt, pagtatanong ulit ng unit na natanong na, pagbabago ng file sa folder ng machine (basa lang ang mga Data source), hold file na may pangalang may \ / : * ? " < > |.
+   Nasubukan sa Node (fake folder handles) at jsdom (dialog). HINDI nasubukan sa totoong Chrome/Edge: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v16) ---
 INSTRUCTIONS v16 (LOT Tracking Yugto 2: monitoring JSON at Excel, Shift, monitoring day, Lot Duration, auto-DONE)
 1. Backup muna. Ilagay muna ang v15 (Yugto 0) at v14 (Yugto 1) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-shift.js, js/core/lot-monitoring-store.js, js/core/lot-monitoring-export.js. BINAGONG file: js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa iba. Buksan ang index.html gaya ng dati (python -m http.server o double-click) at i-refresh nang malakas (Ctrl+F5).
 2. TEST STEPS v16 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings (naka-save); Chrome o Edge.

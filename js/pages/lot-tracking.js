@@ -1,11 +1,13 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js
+ * USED BY : pages/lot-tracking.html (script tag), js/templates/lot-tracking.template.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: Barcode uppercase, check ng Operator, Esc sa Operator = Cancel, beep sa END, Data source 2 at 3 lang (lotConfig.SOURCE.KEYS)
  * VERSION : v2.8 | 2026-11-23 | Yugto 2: monitoring (row sa pag-scan, LOT Unit, auto-DONE kapag END, iba ang barcode o NEW LOTE), JSON at Excel sa Saving path at Server path
+ * VERSION : v2.9 | 2026-11-23 | Yugto 3: Remarks dialog kada LOT Unit, babala sa Final Meas., On hold (hold file sa Server path at Saving path), tanggal ng hold kapag nagsimula ulit ang barcode
  */
 (function () {
   'use strict';
@@ -23,6 +25,9 @@
   const beep = root.lotBeep;
   const monitor = root.lotMonitoringStore;
   const MONITORING = LOT_CONFIG.MONITORING;
+  const REMARKS = LOT_CONFIG.REMARKS;
+  const remarks = root.lotRemarks;
+  const onhold = root.lotOnhold;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -33,6 +38,7 @@
   let currentMachine = '';
   let monitorWarningList = [];
   let lastScan = { rowList: [], warningList: [] };
+  let isAskingRemarks = false;
 
   // Walang laman na lote (barcode, operator, simula, wakas sa milliseconds).
   function createEmptyLote() {
@@ -239,6 +245,67 @@
     return isChanged;
   }
 
+  /**
+   * PARA SAAN    : susi ng lote para sa talaan ng mga unit na natanong na
+   * GINAGAWA     : Barcode at Start ng lote
+   * INPUT/OUTPUT : lote -> text
+   * TINATAWAG NG : lot-tracking.js askPendingRemarks
+   * TUMATAWAG SA : wala
+   */
+  function getLoteKey(currentLote) {
+    return currentLote.barcode + '|' + currentLote.startMs;
+  }
+
+  /**
+   * PARA SAAN    : ilapat ang sagot sa Remarks dialog
+   * GINAGAWA     : babala kung may Final Meas. na ang wafer; isinusulat ang Remarks sa monitoring; kung On hold, isinusulat ang hold file sa Server path at Saving path; tapos sine-save ang monitoring at ipinapakita ang status
+   * INPUT/OUTPUT : (loteSnapshot, unit { lotUnit, wafer }, answer { key, type, text }) -> Promise<void>
+   * TINATAWAG NG : lot-tracking.js askPendingRemarks
+   * TUMATAWAG SA : lotMonitoringStore (hasFinalMeas, setRemarks), lotOnhold.write, persistMonitoring, setStatus
+   */
+  async function applyRemark(loteSnapshot, unit, answer) {
+    const warningList = [];
+    if (answer.key === REMARKS.FINAL_KEY && monitor.hasFinalMeas(loteSnapshot, unit.wafer, unit.lotUnit)) warningList.push(unit.lotUnit + REMARKS.TEXT.finalWarning);
+    monitor.setRemarks(loteSnapshot, unit.lotUnit, answer.text);
+    let message = REMARKS.TEXT.saved + unit.lotUnit + ': ' + answer.text;
+    if (answer.type === 'hold') {
+      const holdWarningList = await onhold.write({
+        barcode: loteSnapshot.barcode, lotUnit: unit.lotUnit, wafer: unit.wafer, operator: loteSnapshot.operator,
+        machine: currentMachine, pcName: currentMachine, timeMs: Date.now()
+      });
+      holdWarningList.forEach((warning) => warningList.push(REMARKS.TEXT.unitLabel.trim() + ' ' + unit.lotUnit + ' ' + LOT_CONFIG.ONHOLD.TEXT.prefix + warning));
+      if (holdWarningList.length === 0) message = LOT_CONFIG.ONHOLD.TEXT.written;
+    }
+    persistMonitoring(loteSnapshot.startMs);
+    if (warningList.length > 0) setStatus(warningList.join(' | '), true);
+    else setStatus(message, false);
+  }
+
+  /**
+   * PARA SAAN    : itanong ang Remarks ng bawat bagong LOT Unit, isang beses kada unit
+   * GINAGAWA     : habang may unit na walang Remarks at hindi pa natatanong, binubuksan ang dialog; Cancel = walang Remarks at hindi na uulitin; isa lang ang tumatakbo nang sabay
+   * INPUT/OUTPUT : wala -> Promise<void> (hindi nagtatapon ng error sa tumatawag)
+   * TINATAWAG NG : lot-tracking.js refreshResults
+   * TUMATAWAG SA : lotMonitoringStore.getUnitList, lotRemarks (isAsked, markAsked, ask), lot-tracking.js applyRemark
+   */
+  async function askPendingRemarks() {
+    if (isAskingRemarks || !isActive()) return;
+    isAskingRemarks = true;
+    const loteSnapshot = lote;
+    const loteKey = getLoteKey(loteSnapshot);
+    try {
+      while (lote === loteSnapshot && isActive()) {
+        const pendingUnit = monitor.getUnitList(loteSnapshot).find((unit) => unit.remarks === '' && !remarks.isAsked(loteKey, unit.lotUnit));
+        if (!pendingUnit) break;
+        remarks.markAsked(loteKey, pendingUnit.lotUnit);
+        const answer = await remarks.ask(pendingUnit.lotUnit);
+        if (!answer.isCancelled) await applyRemark(loteSnapshot, pendingUnit, answer);
+      }
+    } finally {
+      isAskingRemarks = false;
+    }
+  }
+
   // Isang beses na hanap ng bagong file/folder sa lahat ng Data source.
   async function refreshResults() {
     if (isScanning || !lote.startMs) return;
@@ -265,6 +332,7 @@
       lastScan = { rowList: collected.rowList, warningList };
       if (isActive() && await monitor.prepare(currentMachine, lote.startMs) && recordNewUnits(collected.rowList)) persistMonitoring(lote.startMs);
       renderResults(collected.rowList, warningList);
+      askPendingRemarks().catch(() => setStatus(TEXT.scanError, true));
     } catch (error) {
       setResultNote(TEXT.scanError);
     } finally {
@@ -312,6 +380,7 @@
     query('barcode').focus();
     monitorWarningList = [];
     await requestAccess();
+    onhold.removeByBarcode(lote.barcode).then((holdWarningList) => { if (holdWarningList.length > 0) setStatus(holdWarningList.join(' | '), true); });
     if (await monitor.prepare(currentMachine, lote.startMs)) monitor.startBlock(lote);
     startTimer();
     persistMonitoring(lote.startMs);
