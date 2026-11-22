@@ -2,7 +2,9 @@
  * FILE    : js/core/lot-unit-collector.js
  * PURPOSE : Pinagsasama ang mga nakitang file/folder sa isang LOT Unit (X.csv at X_Time.csv = isang row) at nilalagyan ng "unang nakita" na oras
  * DEPENDS : js/core/lot-config.js
+ * USED BY : js/pages/lot-tracking.js
  * VERSION : v1 | 2026-11-22 | bagong file (Yugto 1)
+ * VERSION : v2 | 2026-11-23 | Yugto 4: bawat row ay may itemList (lahat ng file/folder ng unit, may handle) para sa Send
  */
 (function () {
   'use strict';
@@ -36,7 +38,7 @@
   }
 
   // Gumagawa ng isang row ng RESULT mula sa pangunahing item.
-  function buildRow(primary, unitName, modifiedMs, firstSeenMs) {
+  function buildRow(primary, unitName, modifiedMs, firstSeenMs, itemList) {
     return {
       unitName,
       sourceLabel: primary.sourceLabel,
@@ -47,7 +49,8 @@
       blk: primary.blk,
       layer: primary.layer,
       modifiedMs,
-      firstSeenMs
+      firstSeenMs,
+      itemList
     };
   }
 
@@ -61,7 +64,7 @@
       if (!item.wafer) {
         if (!UNIT.SHOW_UNMATCHED) return;
         const itemKey = 'item|' + item.sourceLabel + '|' + item.path;
-        rowList.push(buildRow(item, '', item.modifiedMs, resolveFirstSeen(firstSeenMap, itemKey, nowMs, state)));
+        rowList.push(buildRow(item, '', item.modifiedMs, resolveFirstSeen(firstSeenMap, itemKey, nowMs, state), [item]));
         return;
       }
       const unitName = buildUnitName(item);
@@ -71,7 +74,7 @@
     groupMap.forEach((groupItemList, unitName) => {
       const newestMs = Math.max(...groupItemList.map((item) => item.modifiedMs));
       const unitKey = 'unit|' + unitName;
-      rowList.push(buildRow(pickPrimary(groupItemList), unitName, newestMs, resolveFirstSeen(firstSeenMap, unitKey, nowMs, state)));
+      rowList.push(buildRow(pickPrimary(groupItemList), unitName, newestMs, resolveFirstSeen(firstSeenMap, unitKey, nowMs, state), groupItemList));
     });
     rowList.sort((first, second) => second.modifiedMs - first.modifiedMs);
     return { rowList, isFirstSeenChanged: state.isChanged };

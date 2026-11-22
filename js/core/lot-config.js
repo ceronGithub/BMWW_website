@@ -6,6 +6,7 @@
  * VERSION : v2 | 2026-11-22 | Yugto 1: SOURCE (Data source 2 at 3), SHOW_UNMATCHED = false, VALIDATION (Operator), BEEP
  * VERSION : v3 | 2026-11-23 | Yugto 2: SHIFT at MONITORING (imbakan ng monitoring: JSON at Excel, column, status, kulay, text)
  * VERSION : v4 | 2026-11-23 | Yugto 3: REMARKS (dialog, 9 na opsyon, Manual input) at ONHOLD (hold file sa Server path at Saving path)
+ * VERSION : v5 | 2026-11-23 | Yugto 4: SEND (SERVER lang: text, label ng button, lalim ng kopya ng folder)
  */
 (function () {
   'use strict';
@@ -154,6 +155,28 @@
         removeError: ': hindi natanggal ang hold file.',
         prefix: 'On hold',
         written: 'Naisulat ang hold file sa Server path at Saving path.'
+      })
+    }),
+    SEND: Object.freeze({
+      // Send sa SERVER lang (walang SEND PC). Ang destination ay mismong Server path (susi sa CONFIG.HANDLE_KEY.server).
+      BUTTON_LABEL: 'SERVER',
+      SENT_LABEL: 'SENT',
+      COLUMN_HEADER: 'Send',
+      // Pinakamataas na lalim ng subfolder kapag nagkokopya ng folder ng unit.
+      MAX_DEPTH: 8,
+      TEXT: Object.freeze({
+        busy: 'May ipinapadala pa. Hintayin muna.',
+        unsupported: 'Hindi suportado ng browser na ito ang pag-access sa folder. Gamitin ang Chrome o Edge.',
+        noServer: 'Walang Server path na naka-set sa Settings. Hindi naipadala.',
+        noPermission: 'Walang permission sa Server path. Hindi naipadala.',
+        isSource: 'Ang Server path ay Data source (o nasa loob nito). Hindi magkokopya sa sarili.',
+        noItem: 'Walang mapapadalang file o folder para sa unit na ito.',
+        confirmOverwrite: 'May {n} na kapangalan na sa Server path. Papalitan ba? (Hindi = walang ipapadala)',
+        notReplaced: 'Hindi pinalitan ang kapangalan, walang ipinadala (NOT SENT).',
+        sending: 'Ipinapadala ang ',
+        sent: 'Naipadala sa Server path: ',
+        failed: 'Hindi naipadala (NOT SENT): ',
+        error: 'May error sa pagpapadala. Nananatiling NOT SENT.'
       })
     })
   });

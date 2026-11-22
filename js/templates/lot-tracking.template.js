@@ -1,12 +1,13 @@
 /*
  * FILE    : js/templates/lot-tracking.template.js
  * PURPOSE : Kopya ng pages/lot-tracking.html bilang template string, para gumana sa double-click (file://)
- * DEPENDS : js/core/registry.js, js/pages/lot-tracking.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/xlsx-writer.js, js/core/lot-shift.js, js/core/lot-monitoring-export.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js
+ * DEPENDS : js/core/registry.js, js/pages/lot-tracking.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/xlsx-writer.js, js/core/lot-shift.js, js/core/lot-monitoring-export.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: column na LOT Unit at Unang nakita, script ng lot-config, lot-unit-collector at lot-active-store
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: script ng lot-validation at lot-beep
  * VERSION : v2.8 | 2026-11-23 | Yugto 2: script ng xlsx-writer, lot-shift, lot-monitoring-export at lot-monitoring-store
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: dialog ng Remarks at script ng lot-remarks at lot-onhold
+ * VERSION : v3.0 | 2026-11-23 | Yugto 4: column na Send (SERVER button) at script ng lot-send
  */
 (function () {
   'use strict';
@@ -74,6 +75,7 @@
             <th scope="col">Blk</th>
             <th scope="col">Layer No.</th>
             <th scope="col">File Name</th>
+            <th scope="col">Send</th>
           </tr>
         </thead>
         <tbody id="lot-result-body"></tbody>
@@ -107,6 +109,7 @@
 <script src="js/core/lot-monitoring-export.js"></script>
 <script src="js/core/lot-remarks.js"></script>
 <script src="js/core/lot-onhold.js"></script>
+<script src="js/core/lot-send.js"></script>
 <script src="js/core/lot-monitoring-store.js"></script>
 <script src="js/pages/lot-tracking.js"></script>
 `);

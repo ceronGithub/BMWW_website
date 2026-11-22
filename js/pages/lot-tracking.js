@@ -1,12 +1,13 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js
  * USED BY : pages/lot-tracking.html (script tag), js/templates/lot-tracking.template.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: Barcode uppercase, check ng Operator, Esc sa Operator = Cancel, beep sa END, Data source 2 at 3 lang (lotConfig.SOURCE.KEYS)
  * VERSION : v2.8 | 2026-11-23 | Yugto 2: monitoring (row sa pag-scan, LOT Unit, auto-DONE kapag END, iba ang barcode o NEW LOTE), JSON at Excel sa Saving path at Server path
+ * VERSION : v3.0 | 2026-11-23 | Yugto 4: SERVER button sa bawat unit ng RESULT (Send sa Server path), Sent Status at Sent Time sa monitoring; handle sa bawat item ng RESULT
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: Remarks dialog kada LOT Unit, babala sa Final Meas., On hold (hold file sa Server path at Saving path), tanggal ng hold kapag nagsimula ulit ang barcode
  */
 (function () {
@@ -28,6 +29,8 @@
   const REMARKS = LOT_CONFIG.REMARKS;
   const remarks = root.lotRemarks;
   const onhold = root.lotOnhold;
+  const send = root.lotSend;
+  const SEND = LOT_CONFIG.SEND;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -39,6 +42,7 @@
   let monitorWarningList = [];
   let lastScan = { rowList: [], warningList: [] };
   let isAskingRemarks = false;
+  let isSending = false;
 
   // Walang laman na lote (barcode, operator, simula, wakas sa milliseconds).
   function createEmptyLote() {
@@ -132,9 +136,9 @@
   }
 
   // Gumagawa ng isang item ng RESULT.
-  function buildItem(sourceLabel, modifiedMs, path, name, type) {
+  function buildItem(sourceLabel, modifiedMs, path, name, type, handle) {
     const parts = parseName(name);
-    return { sourceLabel, modifiedMs, path, type, fileName: name, wafer: parts.wafer, blk: parts.blk, layer: parts.layer };
+    return { sourceLabel, modifiedMs, path, type, handle, fileName: name, wafer: parts.wafer, blk: parts.blk, layer: parts.layer };
   }
 
   // Binabasa ang folder at mga subfolder (hanggang MAX_DEPTH) at kinukuha ang bagong file/folder.
@@ -148,11 +152,11 @@
           if (entry.name.startsWith(LOT.IGNORED_PREFIX)) continue;
           const modifiedMs = (await entry.getFile()).lastModified;
           if (modifiedMs > newestMs) newestMs = modifiedMs;
-          if (modifiedMs >= earliestMs) itemList.push(buildItem(sourceLabel, modifiedMs, entryPath, entry.name, LOT.TYPE.file));
+          if (modifiedMs >= earliestMs) itemList.push(buildItem(sourceLabel, modifiedMs, entryPath, entry.name, LOT.TYPE.file, entry));
         } else if (depth < LOT.MAX_DEPTH) {
           const folderNewestMs = await scanDirectory(entry, sourceLabel, entryPath, depth + 1, earliestMs, itemList);
           if (folderNewestMs > newestMs) newestMs = folderNewestMs;
-          if (folderNewestMs >= earliestMs) itemList.push(buildItem(sourceLabel, folderNewestMs, entryPath, entry.name, LOT.TYPE.folder));
+          if (folderNewestMs >= earliestMs) itemList.push(buildItem(sourceLabel, folderNewestMs, entryPath, entry.name, LOT.TYPE.folder, entry));
         }
       }
     } catch (error) {
@@ -187,6 +191,66 @@
     }
   }
 
+  /**
+   * PARA SAAN    : ipadala ang isang LOT Unit sa Server path (SERVER button)
+   * GINAGAWA     : kinukuha ang Server path, humihingi ng write permission (galing sa click), sinusuri na hindi ito Data source, tinatanong kung papalitan ang kapangalan, kinokopya ang file/folder ng unit; kapag naipadala lahat: Sent Status = SENT at Sent Time sa monitoring
+   * INPUT/OUTPUT : (unitRow { unitName, itemList }) -> Promise<void> (hindi nagtatapon ng error)
+   * TINATAWAG NG : event click sa .lot-send-button (renderResults)
+   * TUMATAWAG SA : storage.loadHandle, fileSender (ensureWriteAccess, isInsideSource), lotSend (buildSendList, countExisting, sendUnit), monitor.markSent, persistMonitoring, renderResults, setStatus
+   */
+  async function onSendClick(unitRow) {
+    if (isSending) { setStatus(SEND.TEXT.busy, true); return; }
+    if (!storage.isFolderAccessSupported()) { setStatus(SEND.TEXT.unsupported, true); return; }
+    isSending = true;
+    try {
+      const destination = await storage.loadHandle(CONFIG.HANDLE_KEY.server);
+      if (!destination) { setStatus(SEND.TEXT.noServer, true); return; }
+      if (!(await root.fileSender.ensureWriteAccess(destination))) { setStatus(SEND.TEXT.noPermission, true); return; }
+      if (await root.fileSender.isInsideSource(destination, sourceList.map((source) => source.handle))) { setStatus(SEND.TEXT.isSource, true); return; }
+      const sendList = send.buildSendList(unitRow);
+      if (sendList.length === 0) { setStatus(SEND.TEXT.noItem, true); return; }
+      const existingCount = await send.countExisting(sendList, destination);
+      if (existingCount > 0 && !window.confirm(SEND.TEXT.confirmOverwrite.replace('{n}', String(existingCount)))) { setStatus(SEND.TEXT.notReplaced, true); return; }
+      setStatus(SEND.TEXT.sending + unitRow.unitName + '...', false);
+      const summary = await send.sendUnit(sendList, destination, existingCount > 0);
+      if (!summary.isSent) { setStatus(SEND.TEXT.failed + unitRow.unitName + '.', true); return; }
+      monitor.markSent(lote, unitRow.unitName, Date.now());
+      setStatus(SEND.TEXT.sent + unitRow.unitName + '.', false);
+      await persistMonitoring(lote.startMs);
+      if (query('resultBody')) renderResults(lastScan.rowList, lastScan.warningList);
+    } catch (error) {
+      setStatus(SEND.TEXT.error, true);
+    } finally {
+      isSending = false;
+    }
+  }
+
+  /**
+   * PARA SAAN    : gumawa ng cell ng Send para sa isang row ng RESULT
+   * GINAGAWA     : button na SERVER (at salitang SENT kapag naipadala na); textContent lang; walang inline onclick
+   * INPUT/OUTPUT : unitRow -> Element (td)
+   * TINATAWAG NG : lot-tracking.js renderResults
+   * TUMATAWAG SA : monitor.getSentStatus, lot-tracking.js onSendClick (sa click)
+   */
+  function buildSendCell(unitRow) {
+    const cell = document.createElement('td');
+    if (!unitRow.unitName) { cell.textContent = LOT.EMPTY_CELL; return cell; }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn lot-send-button';
+    button.textContent = SEND.BUTTON_LABEL;
+    button.setAttribute('aria-label', SEND.BUTTON_LABEL + ' ' + unitRow.unitName);
+    button.addEventListener('click', () => { onSendClick(unitRow); });
+    cell.append(button);
+    if (monitor.getSentStatus(lote, unitRow.unitName) === MONITORING.SENT.sent) {
+      const mark = document.createElement('span');
+      mark.className = 'lot-sent-mark';
+      mark.textContent = SEND.SENT_LABEL;
+      cell.append(mark);
+    }
+    return cell;
+  }
+
   // Inilalagay ang mga row (isa kada LOT Unit) sa talaan (textContent lang, walang innerHTML).
   function renderResults(rowList, warningList) {
     const shownList = rowList.slice(0, LOT.MAX_ROWS);
@@ -200,6 +264,7 @@
         if (index === LOT_CONFIG.RESULT.PATH_COLUMN) cell.className = 'lot-path';
         tableRow.append(cell);
       });
+      tableRow.append(buildSendCell(item));
       fragment.append(tableRow);
     });
     query('resultBody').replaceChildren(fragment);

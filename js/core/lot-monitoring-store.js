@@ -5,6 +5,7 @@
  * USED BY : js/pages/lot-tracking.js
  * VERSION : v1 | 2026-11-23 | bagong file (Yugto 2)
  * VERSION : v2 | 2026-11-23 | Yugto 3: dagdag na getUnitList, setRemarks, hasFinalMeas (para sa Remarks at On hold)
+ * VERSION : v3 | 2026-11-23 | Yugto 4: dagdag na markSent at getSentStatus (Sent Status at Sent Time)
  */
 (function () {
   'use strict';
@@ -267,6 +268,37 @@
     return doc.rows.some((row) => row.wafer === wafer && row.lotUnit !== unitName && row.remarks === finalLabel);
   }
 
+  /**
+   * PARA SAAN    : itala na naipadala sa Server path ang isang LOT Unit
+   * GINAGAWA     : Sent Status = SENT at Sent Time = sentMs sa row ng unit; hindi ito nagse-save sa file
+   * INPUT/OUTPUT : (lote, unitName, sentMs) -> bool (true kung may nagbago)
+   * TINATAWAG NG : lot-tracking.js onSendClick
+   * TUMATAWAG SA : lot-monitoring-store.js getDoc, getBlockIndexList
+   */
+  function markSent(lote, unitName, sentMs) {
+    const doc = getDoc(lote);
+    if (!doc) return false;
+    const index = getBlockIndexList(doc, lote).find((rowIndex) => doc.rows[rowIndex].lotUnit === unitName);
+    if (index === undefined) return false;
+    doc.rows[index].sentStatus = MON.SENT.sent;
+    doc.rows[index].sentMs = sentMs;
+    return true;
+  }
+
+  /**
+   * PARA SAAN    : alamin ang Sent Status ng isang LOT Unit (para sa button sa RESULT)
+   * GINAGAWA     : binabasa ang row ng unit sa block ng lote
+   * INPUT/OUTPUT : (lote, unitName) -> 'SENT' | 'NOT SENT' | '' (walang doc o walang row)
+   * TINATAWAG NG : lot-tracking.js renderResults
+   * TUMATAWAG SA : lot-monitoring-store.js getDoc, getBlockIndexList
+   */
+  function getSentStatus(lote, unitName) {
+    const doc = getDoc(lote);
+    if (!doc) return '';
+    const index = getBlockIndexList(doc, lote).find((rowIndex) => doc.rows[rowIndex].lotUnit === unitName);
+    return index === undefined ? '' : doc.rows[index].sentStatus;
+  }
+
   // Isinusulat ang isang file (text o Blob) sa folder; kapag pumalya, inaabort ang sulat at ipinapasa ang error.
   async function writeFile(folder, fileName, content) {
     const fileHandle = await folder.getFileHandle(fileName, { create: true });
@@ -364,5 +396,5 @@
     return state.promise;
   }
 
-  root.lotMonitoringStore = Object.freeze({ prepare, requestAccess, startBlock, recordUnit, finishBlock, getUnitList, setRemarks, hasFinalMeas, save });
+  root.lotMonitoringStore = Object.freeze({ prepare, requestAccess, startBlock, recordUnit, finishBlock, getUnitList, setRemarks, hasFinalMeas, markSent, getSentStatus, save });
 })();

@@ -4,6 +4,7 @@
  * DEPENDS : css/base.css, css/components.css
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: style ng Remarks dialog (.lot-remarks-dialog)
+ * VERSION : v3.0 | 2026-11-23 | Yugto 4: style ng SERVER button (.lot-send-button) at .lot-sent-mark
  */
 .page-lot-tracking .lot-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .page-lot-tracking .lot-grid .form-group { margin-top: 0; }
@@ -32,3 +33,6 @@
 .page-lot-tracking .lot-remarks-option:hover { background: var(--color-primary-soft); }
 .page-lot-tracking .lot-remarks-option:focus-within { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 .page-lot-tracking .lot-remarks-body .status { min-height: 1.25rem; margin: var(--space-2) 0 0; }
+/* Send (pages/lot-tracking.html, column na Send ng RESULT): SERVER button at tatak na SENT */
+.page-lot-tracking .lot-send-button { min-height: 2.75rem; min-width: 5.5rem; }
+.page-lot-tracking .lot-sent-mark { margin-left: var(--space-2); font-weight: 700; color: var(--color-success, #16a34a); white-space: nowrap; }

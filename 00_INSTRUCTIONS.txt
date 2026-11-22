@@ -1,4 +1,18 @@
-INSTRUCTIONS v17 (LOT Tracking Yugto 3: Remarks dialog, Final Meas. babala, On hold sa Server path at Saving path)
+INSTRUCTIONS v18 (LOT Tracking Yugto 4: Send sa SERVER lang, Sent Status at Sent Time)
+1. Backup muna. Ilagay muna ang v17 (Yugto 3) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-send.js. BINAGONG file: js/core/lot-unit-collector.js, js/core/lot-monitoring-store.js, js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw (hindi ginalaw ang file-sender.js at Search Files).
+2. TEST STEPS v18 (LOT Tracking). Kailangan: Machine name, Saving path, Server path (may write permission) at Data source 2 o 3 sa Settings; Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file.
+   - Mag-scan ng barcode at Operator; maglagay ng 4A25C20A.csv at 4A25C20A_Time.csv sa Data source 2. Sagutin ang Remarks dialog. DAPAT may isang row ng unit sa RESULT na may column na Send at button na SERVER.
+   - Pindutin ang SERVER: DAPAT lumabas ang 4A25C20A.csv AT 4A25C20A_Time.csv sa mismong Server path, ang status ay 'Naipadala sa Server path: 4A25C20A.', may salitang SENT sa tabi ng button, at sa monitoring (JSON at Excel) ang Sent Status ay SENT at may Sent Time.
+   - Pindutin ulit ang SERVER: DAPAT magtanong kung papalitan ang 2 kapangalan. Hindi: DAPAT walang ipapadala at may mensahe na NOT SENT. Oo: DAPAT mapalitan ang mga file (baguhin muna ang laman ng source para makita).
+   - Kung ang unit ay folder (hal. folder na 4A25C21A na may subfolder): DAPAT makopya ang buong folder pati subfolder.
+   - I-END ang lote (parehong barcode): DAPAT nananatili ang RESULT at ang mga SERVER button, at gumagana pa ang Send.
+   - Alisin o gawing walang permission ang Server path sa Settings: DAPAT may mensahe ('Walang Server path...' o 'Walang permission...'), nananatiling NOT SENT, at walang error sa page.
+   - Gawing Server path ang mismong Data source: DAPAT may mensaheng hindi magkokopya sa sarili.
+   - DAPAT HINDI makita: pagbabago o pagbura ng file sa Data source (basa lang), SEND PC button, dobleng row, Sent Status na SENT kapag pumalya ang kopya.
+   Nasubukan sa Node (fake folder handles) lang. HINDI nasubukan sa totoong Chrome/Edge: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v17) ---
+--PLACEHOLDER--LOT Tracking Yugto 3: Remarks dialog, Final Meas. babala, On hold sa Server path at Saving path)
 1. Backup muna. Ilagay muna ang v16 (Yugto 2) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-remarks.js, js/core/lot-onhold.js. BINAGONG file: js/core/lot-config.js, js/core/lot-monitoring-store.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw.
 2. TEST STEPS v17 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings (naka-save); Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file.
    - Mag-scan ng barcode at Operator, tapos maglagay ng 4A25C20A.csv sa Data source 2: DAPAT lumabas ang dialog na 'Remarks' na may 9 na opsyon at 'LOT Unit: 4A25C20A'.
