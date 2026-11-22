@@ -1,3 +1,10 @@
+INSTRUCTIONS v11.4 (Calibration Repeatability: tamang barcode, nilalaktawan ang hindi tugmang file)
+1. Backup muna. Palitan ang 2 binagong file: js/core/calibration-repeatability.js, js/core/calibration-repeatability-config.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
+2. TEST STEPS v11.4: Data source 1 na may CalibSts_261115090645.csv (30 slider) at ang mga file na 5AHG447, Range na sumasaklaw sa 11/15: DAPAT 5AHG459 ang table (30 barcode, hindi na 15 na 5AHG447); ang 'CSV files' ay lahat ng file sa saklaw pero ang '(calibration files: n)' ay mas kaunti na (hindi kasama ang 447); ang chart ay may linya ng calibration record. DAPAT HINDI na lumabas ang 5AHG447 sa table. Kung 29-slider at 30-slider ang magkasama: DAPAT 30 barcode, at blangko ang 5AHG459A08 sa 29-slider. Calibration Correl, Compare, Master at Dashboard: DAPAT gumagana pa rin.
+   Nasubukan sa Node. Hindi pa sa totoong Chrome/Edge. Ang listahan ng nilaktawang file ay nasa result.skippedFileList pero WALA pa sa screen (kailangan ng permission na galawin ang calibration-repeatability-ui.js).
+   Kung gusto mong baguhin ang higpit ng pagtutugma: RANGE.MIN_BARCODE_OVERLAP sa calibration-repeatability-config.js (0.5 = kalahati).
+
+--- LUMANG INSTRUCTIONS (v11.3) ---
 INSTRUCTIONS v11.3 (Calibration Repeatability: bawat record vs sariling Master)
 1. Palitan ang 1 binagong file: js/core/calibration-repeatability.js (kasama ang README.txt, 00_INSTRUCTIONS.txt). Ctrl+F5.
 2. TEST STEPS v11.3: Calibration Repeatability sa CalibSts.csv (15 barcode, 11/15 hanggang 11/16): DAPAT pareho ang Avg diff at Repeatability % sa dati (pareho ang Master ng 2 record). Kung may mga record na magkaiba ang Master, DAPAT magbago ang Avg diff (bawat record vs sariling Master) at ang Master column ay ang sa pinakabago. Correl, Compare at Dashboard: DAPAT gumagana pa rin.
