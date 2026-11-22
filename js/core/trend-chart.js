@@ -1,7 +1,8 @@
 /*
  * FILE    : js/core/trend-chart.js
  * PURPOSE : SVG line chart ng isang value ng Trend (Day at Night point kada petsa) na may UCL, CL, LCL, pulang point kapag labas sa limit, at marker kapag nagpalit ng cantilever. Walang library
- * DEPENDS : js/core/trend-config.js, trend-limits.js, trend-reader.js
+ * DEPENDS : js/core/trend-config.js, trend-limits.js, trend-reader.js, trend-day-config.js (opsyonal)
+ * VERSION : v9.6 | 2026-11-22 | clickable ang point at label ng petsa (data-day, role button, tabindex, hit circle) kapag naka-load ang trend-day-config.js
  * VERSION : v9.3 | 2026-11-22 | bagong file (hindi ginalaw ang chart-draw.js)
  */
 (function () {
@@ -11,6 +12,8 @@
   const CHART = TREND.CHART;
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
   const { trendLimits, trendReader } = root;
+  // Config ng clickable na petsa (js/core/trend-day-config.js); kung hindi naka-load, hindi clickable ang chart.
+  const DAY = root.trendDayConfig || null;
 
   // Gumagawa ng SVG element (walang innerHTML).
   function svgElement(name, attributeMap, text) {
@@ -64,6 +67,15 @@
     return text.length > CHART.MAX_LABEL_CHARS ? text.slice(0, CHART.MAX_LABEL_CHARS - 1) + '…' : text;
   }
 
+  // Ginagawang clickable (click o Enter) ang elemento: petsa sa data-day, button role, nakaka-focus. Hawak ng trend.js ang click.
+  function makeClickable(attributeMap, dayKey, ariaLabel) {
+    attributeMap[DAY.ATTRIBUTE] = dayKey;
+    attributeMap.class += ' ' + DAY.CLASS.clickable;
+    attributeMap.tabindex = '0';
+    attributeMap.role = 'button';
+    attributeMap['aria-label'] = ariaLabel;
+  }
+
   // Text ng tooltip ng point.
   function buildTooltip(point, metric, value, state) {
     const parts = [trendReader.formatPointLabel(point), point.record.cantilever || '-', metric.label + ' ' + (value === null ? '-' : value.toFixed(metric.digits))];
@@ -104,7 +116,9 @@
     pointList.forEach((point, index) => {
       const labelX = xAt(index);
       const labelY = height - pad.bottom + 16;
-      svg.append(svgElement('text', { x: labelX, y: labelY, class: 'trend-text trend-xlabel', 'text-anchor': 'end', transform: 'rotate(' + CHART.LABEL_SLANT + ' ' + labelX + ' ' + labelY + ')' }, trendReader.formatPointLabel(point)));
+      const labelAttributes = { x: labelX, y: labelY, class: 'trend-text trend-xlabel', 'text-anchor': 'end', transform: 'rotate(' + CHART.LABEL_SLANT + ' ' + labelX + ' ' + labelY + ')' };
+      if (DAY) makeClickable(labelAttributes, point.shiftDay, DAY.TEXT.labelAria + point.shiftDay);
+      svg.append(svgElement('text', labelAttributes, trendReader.formatPointLabel(point)));
     });
 
     // Marker ng pagpalit ng cantilever: patayong linya sa pagitan ng dalawang point, at pangalan ng bagong cantilever. Ang una ay may pangalan din.
@@ -141,8 +155,11 @@
       if (value === null) return;
       const state = trendLimits.classify(value, limit);
       const isOut = state === TREND.POINT_STATE.above || state === TREND.POINT_STATE.below;
-      const group = svgElement('g', { class: 'trend-point' + (isOut ? ' is-out' : '') + (point.isOverride ? ' is-override' : '') });
+      const groupAttributes = { class: 'trend-point' + (isOut ? ' is-out' : '') + (point.isOverride ? ' is-override' : '') };
+      if (DAY) makeClickable(groupAttributes, point.shiftDay, DAY.TEXT.pointAria + point.shiftDay);
+      const group = svgElement('g', groupAttributes);
       group.append(svgElement('title', {}, buildTooltip(point, metric, value, state)));
+      if (DAY) group.append(svgElement('circle', { cx: xAt(index), cy: yAt(value), r: DAY.HIT_RADIUS, class: DAY.CLASS.hit }));
       if (point.isOverride) group.append(svgElement('circle', { cx: xAt(index), cy: yAt(value), r: CHART.OVERRIDE_RADIUS, class: 'trend-point-ring' }));
       group.append(svgElement('circle', { cx: xAt(index), cy: yAt(value), r: CHART.POINT_RADIUS, class: 'trend-point-dot' }));
       svg.append(group);

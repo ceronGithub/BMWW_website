@@ -2,6 +2,7 @@
  * FILE    : js/templates/trend.template.js
  * PURPOSE : Kopya ng pages/trend.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v9.6 | 2026-11-22 | dagdag na script ng trend-day-config at trend-day-search (clickable na petsa at point)
  * VERSION : v9.4 | 2026-11-22 | kasabay ng pages/trend.html (Export to Excel at 5 bagong script)
  * VERSION : v9.3 | 2026-11-22 | bagong file (kasabay ng pages/trend.html)
  */
@@ -71,7 +72,9 @@
 <script src="js/core/trend-limits.js"></script>
 <script src="js/core/trend-overrides.js"></script>
 <script src="js/core/trend-reader.js"></script>
+<script src="js/core/trend-day-config.js"></script>
 <script src="js/core/trend-chart.js"></script>
+<script src="js/core/trend-day-search.js"></script>
 <script src="js/core/xlsx-writer.js"></script>
 <script src="js/core/trend-export-config.js"></script>
 <script src="js/core/trend-sync.js"></script>

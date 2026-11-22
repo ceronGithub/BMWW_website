@@ -2,6 +2,7 @@
   FILE    : pages/trend.html
   PURPOSE : Trend page: Mean Offset, Stdev, CV, Slope, Intercept, R2 ng master (Day at Night shift kada petsa) na may UCL, CL, LCL
   DEPENDS : css/pages/trend.css, js/pages/trend.js, js/core/trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, master-shift-config.js, master-shift.js
+  VERSION : v9.6 | 2026-11-22 | dagdag na script ng trend-day-config (bago trend-chart) at trend-day-search (clickable na petsa at point)
   VERSION : v9.4 | 2026-11-22 | button na Export to Excel (#trend-export, #trend-export-status) at script ng xlsx-writer, trend-export-config, trend-sync, trend-image, trend-export
   VERSION : v9.3 | 2026-11-22 | bagong file
 -->
@@ -69,7 +70,9 @@
 <script src="js/core/trend-limits.js"></script>
 <script src="js/core/trend-overrides.js"></script>
 <script src="js/core/trend-reader.js"></script>
+<script src="js/core/trend-day-config.js"></script>
 <script src="js/core/trend-chart.js"></script>
+<script src="js/core/trend-day-search.js"></script>
 <script src="js/core/xlsx-writer.js"></script>
 <script src="js/core/trend-export-config.js"></script>
 <script src="js/core/trend-sync.js"></script>

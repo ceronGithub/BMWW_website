@@ -2,6 +2,8 @@
  * FILE    : css/pages/trend.css
  * PURPOSE : Style ng Trend page (naka-scope sa .page-trend): date row, buod, chart (6 na chart na may scroll), limit lines, point, marker ng cantilever, listahan ng record ng araw
  * DEPENDS : css/base.css, css/components.css
+ * VERSION : v9.6 | 2026-11-22 | style ng clickable na point at petsa ng chart (is-clickable, is-selected, trend-point-hit)
+ * VERSION : v9.5 | 2026-11-22 | 1 col per row sa lahat ng laki ng screen (tinanggal ang 2 column sa 1280px pataas)
  * VERSION : v9.3 | 2026-11-22 | bagong file
  */
 .page-trend {
@@ -58,6 +60,14 @@
 .page-trend .trend-point-ring { fill: none; stroke: var(--trend-set); stroke-width: 2.5; }
 .page-trend .trend-change-line { stroke: var(--trend-change); stroke-width: 2; stroke-dasharray: 5 4; }
 .page-trend .trend-change-label { fill: var(--trend-change); font-size: 12px; font-weight: 700; }
+/* [v9.6] Clickable na point at petsa ng chart: pindutin para buksan ang mga record ng petsa. */
+.page-trend .trend-point-hit { fill: transparent; stroke: none; }
+.page-trend .is-clickable { cursor: pointer; }
+.page-trend .trend-xlabel.is-clickable:hover, .page-trend .trend-xlabel.is-clickable:focus-visible { fill: var(--color-primary); font-weight: 700; text-decoration: underline; }
+.page-trend .trend-point.is-clickable:hover .trend-point-dot, .page-trend .trend-point.is-clickable:focus-visible .trend-point-dot { stroke: var(--color-text); stroke-width: 3; }
+.page-trend .trend-point.is-selected .trend-point-dot { stroke: var(--color-text); stroke-width: 3; }
+.page-trend .trend-xlabel.is-selected { fill: var(--color-text); font-weight: 700; }
+.page-trend .is-clickable:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .page-trend .table-wrap { overflow-x: auto; margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .page-trend .result-table { width: 100%; border-collapse: collapse; }
 .page-trend .result-table th, .page-trend .result-table td { padding: var(--space-2) var(--space-3); text-align: center; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
@@ -69,9 +79,6 @@
 .page-trend .trend-action { min-height: 2.25rem; padding: 0 var(--space-3); }
 @media (min-width: 768px) {
   .page-trend .stat-list { grid-template-columns: repeat(5, 1fr); }
-}
-@media (min-width: 1280px) {
-  .page-trend .trend-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-color-scheme: dark) {
   .page-trend { --trend-ucl: #f87171; --trend-lcl: #fbbf24; --trend-cl: #4ade80; --trend-line: #60a5fa; --trend-out: #f87171; --trend-set: #c084fc; --trend-change: #22d3ee; }

@@ -2,6 +2,7 @@
  * FILE    : js/core/trend-export-config.js
  * PURPOSE : Constants ng Trend export: Excel (Saving path lang), picture ng 6 chart (Saving path at Server path), meta file, Trend block sa Dashboard at lahat ng text
  * DEPENDS : js/core/config.js, js/core/trend-config.js
+ * VERSION : v9.5 | 2026-11-22 | SHEET (data, charts), CHART.ROWS_PER_CHART (26 row = 480px + espasyo; pumalit sa ANCHOR_ROW) at IMAGE.COLUMNS = 1 (1 col per row)
  * VERSION : v9.4 | 2026-11-22 | bagong file (Export to Excel sa Trend page, picture papunta sa LEAD PC, UPDATED badge sa Dashboard)
  */
 (function () {
@@ -27,13 +28,13 @@
     // Alaala ng huling nakita ng browser na ito (para sa UPDATED badge): { "<key>": "<updatedAt>" } sa localStorage.
     SEEN: { KEY: 'bmww.trendSeen', MAX: 200, OWN_KEY: '@own' },
     SELECTOR: { exportButton: '#trend-export', exportStatus: '#trend-export-status' },
-    // Excel. Kulay ay hex na walang #. Isang chart lang kada sheet ang kaya ng xlsx-writer, kaya may sheet ang bawat value.
+    // Excel: sheet Data (pababa ang talaan) at sheet Charts (lahat ng chart). Kulay ay hex na walang #.
     XLSX: {
       COLOR: { header: 'FFFFFF', cell: 'FFFFFF', border: 'D1D5DB', green: '16A34A', yellow: 'EAB308', red: 'DC2626' },
       AUTOFIT: { MIN: 8, MAX: 45, EXTRA: 3, BOLD_FACTOR: 1.15 },
-      SHEET: { summary: 'Summary', points: 'Points' },
+      SHEET: { data: 'Data', charts: 'Charts' },
       CHART: {
-        WIDTH_PIXELS: 1000, HEIGHT_PIXELS: 480, ANCHOR_ROW: 6, Y_PAD_RATIO: 0.12,
+        WIDTH_PIXELS: 1000, HEIGHT_PIXELS: 480, ROWS_PER_CHART: 26, Y_PAD_RATIO: 0.12,
         LINE_WIDTH: 19050, LIMIT_WIDTH: 19050, MARKER_SIZE: 5, LIMIT_MARKER_SIZE: 2,
         COLOR: { line: '2563EB', ucl: 'DC2626', cl: '15803D', lcl: 'D97706' },
         X_TITLE: 'Point', Y_TITLE: 'Value'
@@ -47,7 +48,7 @@
     },
     // Picture (PNG) ng 6 chart: iginuguhit sa canvas, walang library. COLUMNS = ilang chart kada row.
     IMAGE: {
-      MIME: 'image/png', COLUMNS: 2, CHART_WIDTH: 760, CHART_HEIGHT: 310, GAP: 16, MARGIN: 24, HEADER_HEIGHT: 78,
+      MIME: 'image/png', COLUMNS: 1, CHART_WIDTH: 760, CHART_HEIGHT: 310, GAP: 16, MARGIN: 24, HEADER_HEIGHT: 78,
       PADDING: { top: 52, right: 74, bottom: 66, left: 70 },
       TICK_COUNT: 5, PAD_RATIO: 0.12, POINT_RADIUS: 3.5, OVERRIDE_RADIUS: 6, LINE_WIDTH: 2, LIMIT_WIDTH: 1.5, MAX_X_LABELS: 12, LABEL_ANGLE_DEGREES: -40, MAX_LABEL_CHARS: 14,
       FONT_FAMILY: '"Segoe UI", Roboto, Arial, sans-serif',

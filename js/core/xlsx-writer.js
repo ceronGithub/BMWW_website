@@ -2,6 +2,7 @@
  * FILE    : js/core/xlsx-writer.js
  * PURPOSE : Gumagawa ng .xlsx (Excel) file nang walang library at offline: simpleng ZIP (store) + XML
  * DEPENDS : wala (window.BMWW lang)
+ * VERSION : v9.5 | 2026-11-22 | maraming chart sa isang sheet (sheet.chartList; bawat chart may anchor at opsyonal na dataSheet; chart.byColumn = pababa ang data); ang sheet.chart (isa) ay pareho pa rin ang resulta
  * VERSION : v2.8 | 2026-11-20 | bagong file (para sa Export to Excel ng Master Repeatability)
  * VERSION : v2.13 | 2026-11-21 | line chart sa worksheet (sheet.chart): drawing at chart XML
  * VERSION : v2.21 | 2026-11-21 | scatter: opsyonal na chart.hideLegend (walang legend sa chart)
@@ -141,13 +142,19 @@
   // XML ng isang linya (series) ng chart.
   function buildSeriesXml(series, index, sheetRef, chart) {
     const fill = '<a:solidFill><a:srgbClr val="' + series.color + '"/></a:solidFill>';
-    const rangeText = (row) => sheetRef + '!' + absoluteRef(chart.firstColumn, row) + ':' + absoluteRef(chart.lastColumn, row);
+    // [v9.5] chart.byColumn: pababa ang data (series.column; pangalan sa chart.headerRow; categories sa chart.categoryColumn; chart.firstRow hanggang chart.lastRow). Kung wala, pakanan ang data gaya ng dati.
+    const rangeText = chart.byColumn
+      ? (column) => sheetRef + '!' + absoluteRef(column, chart.firstRow) + ':' + absoluteRef(column, chart.lastRow)
+      : (row) => sheetRef + '!' + absoluteRef(chart.firstColumn, row) + ':' + absoluteRef(chart.lastColumn, row);
+    const nameRef = chart.byColumn ? absoluteRef(series.column, chart.headerRow) : absoluteRef(chart.nameColumn, series.row);
+    const seriesKey = chart.byColumn ? series.column : series.row;
+    const categoryKey = chart.byColumn ? chart.categoryColumn : chart.categoryRow;
     return '<c:ser><c:idx val="' + index + '"/><c:order val="' + index + '"/>'
-      + '<c:tx><c:strRef><c:f>' + sheetRef + '!' + absoluteRef(chart.nameColumn, series.row) + '</c:f>' + buildStringCache([series.name]) + '</c:strRef></c:tx>'
+      + '<c:tx><c:strRef><c:f>' + sheetRef + '!' + nameRef + '</c:f>' + buildStringCache([series.name]) + '</c:strRef></c:tx>'
       + '<c:spPr><a:ln w="' + series.width + '" cap="rnd">' + fill + '<a:round/></a:ln></c:spPr>'
       + '<c:marker><c:symbol val="circle"/><c:size val="' + series.markerSize + '"/><c:spPr>' + fill + '<a:ln><a:noFill/></a:ln></c:spPr></c:marker>'
-      + '<c:cat><c:strRef><c:f>' + rangeText(chart.categoryRow) + '</c:f>' + buildStringCache(chart.categoryList) + '</c:strRef></c:cat>'
-      + '<c:val><c:numRef><c:f>' + rangeText(series.row) + '</c:f>' + buildNumberCache(series.values) + '</c:numRef></c:val>'
+      + '<c:cat><c:strRef><c:f>' + rangeText(categoryKey) + '</c:f>' + buildStringCache(chart.categoryList) + '</c:strRef></c:cat>'
+      + '<c:val><c:numRef><c:f>' + rangeText(seriesKey) + '</c:f>' + buildNumberCache(series.values) + '</c:numRef></c:val>'
       + '<c:smooth val="0"/></c:ser>';
   }
 
@@ -230,31 +237,45 @@
 
   // XML ng drawing: saan nakalagay ang chart sa sheet. anchor: { column, row, widthPixels, heightPixels }.
   // oneCellAnchor = fixed ang laki (hindi lumiliit o lumalaki kapag binago ang lapad ng column o taas ng row).
-  function buildDrawingXml(anchor) {
+  // [v9.5] Isang anchor ng chart (index = pang-ilan sa sheet, 0 = una) para sa drawing na may isa o maraming chart.
+  function buildAnchorXml(anchor, index) {
     const widthEmu = Math.round(anchor.widthPixels * EMU_PER_PIXEL);
     const heightEmu = Math.round(anchor.heightPixels * EMU_PER_PIXEL);
-    return XML_HEADER + '<xdr:wsDr xmlns:xdr="' + DRAWING_NS + '" xmlns:a="' + DRAWINGML_NS + '"><xdr:oneCellAnchor>'
+    return '<xdr:oneCellAnchor>'
       + '<xdr:from><xdr:col>' + anchor.column + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + anchor.row + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
       + '<xdr:ext cx="' + widthEmu + '" cy="' + heightEmu + '"/>'
-      + '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="' + widthEmu + '" cy="' + heightEmu + '"/></xdr:xfrm>'
-      + '<a:graphic><a:graphicData uri="' + CHART_NS + '"><c:chart xmlns:c="' + CHART_NS + '" xmlns:r="' + REL_NS + '" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
+      + '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="' + (index + 2) + '" name="Chart ' + (index + 1) + '"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="' + widthEmu + '" cy="' + heightEmu + '"/></xdr:xfrm>'
+      + '<a:graphic><a:graphicData uri="' + CHART_NS + '"><c:chart xmlns:c="' + CHART_NS + '" xmlns:r="' + REL_NS + '" r:id="rId' + (index + 1) + '"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:oneCellAnchor>';
   }
 
-  // Relationships file na may isang target.
-  function buildRelsXml(type, target) {
-    return XML_HEADER + '<Relationships xmlns="' + PACKAGE_REL_NS + '"><Relationship Id="rId1" Type="' + REL_NS + '/' + type + '" Target="' + target + '"/></Relationships>';
+  // XML ng drawing ng isang sheet: isa o maraming anchor. Kapag isa lang ang chart, kapareho ng dati ang resulta.
+  function buildDrawingXml(anchorList) {
+    return XML_HEADER + '<xdr:wsDr xmlns:xdr="' + DRAWING_NS + '" xmlns:a="' + DRAWINGML_NS + '">' + anchorList.map(buildAnchorXml).join('') + '</xdr:wsDr>';
+  }
+
+  // Relationships file: isang Relationship kada target (rId1, rId2, ...).
+  function buildRelsXml(type, targetList) {
+    return XML_HEADER + '<Relationships xmlns="' + PACKAGE_REL_NS + '">'
+      + targetList.map((target, index) => '<Relationship Id="rId' + (index + 1) + '" Type="' + REL_NS + '/' + type + '" Target="' + target + '"/>').join('') + '</Relationships>';
+  }
+
+  // [v9.5] Mga chart ng sheet: sheet.chartList (maraming chart) o sheet.chart (isa, gaya ng dati).
+  function getSheetCharts(sheet) {
+    return sheet.chartList || (sheet.chart ? [sheet.chart] : []);
   }
 
   // Lahat ng bahagi ng .xlsx package bilang { name, bytes }.
   function buildPackageEntries(sheetList, colorMap) {
     const sheetCount = sheetList.length;
-    const chartSheetList = sheetList.filter((sheet) => sheet.chart);
+    const chartSheetList = sheetList.filter((sheet) => getSheetCharts(sheet).length);
+    const totalChartCount = sheetList.reduce((total, sheet) => total + getSheetCharts(sheet).length, 0);
     const contentTypes = XML_HEADER + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
       + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
       + '<Default Extension="xml" ContentType="application/xml"/>'
       + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
       + sheetList.map((sheet, index) => '<Override PartName="/xl/worksheets/sheet' + (index + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')
-      + chartSheetList.map((sheet, index) => '<Override PartName="/xl/drawings/drawing' + (index + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/charts/chart' + (index + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>').join('')
+      + chartSheetList.map((sheet, index) => '<Override PartName="/xl/drawings/drawing' + (index + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>').join('')
+      + Array.from({ length: totalChartCount }, (unused, index) => '<Override PartName="/xl/charts/chart' + (index + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>').join('')
       + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
     const packageRels = XML_HEADER + '<Relationships xmlns="' + PACKAGE_REL_NS + '"><Relationship Id="rId1" Type="' + REL_NS + '/officeDocument" Target="xl/workbook.xml"/></Relationships>';
     const workbook = XML_HEADER + '<workbook xmlns="' + MAIN_NS + '" xmlns:r="' + REL_NS + '"><sheets>'
@@ -267,15 +288,22 @@
       { name: 'xl/workbook.xml', text: workbook }, { name: 'xl/_rels/workbook.xml.rels', text: workbookRels },
       { name: 'xl/styles.xml', text: buildStylesXml(colorMap) }
     ];
+    let drawingNumber = 0;
     let chartNumber = 0;
     sheetList.forEach((sheet, index) => {
-      entryList.push({ name: 'xl/worksheets/sheet' + (index + 1) + '.xml', text: buildSheetXml(sheet, Boolean(sheet.chart)) });
-      if (!sheet.chart) return;
-      chartNumber += 1;
-      entryList.push({ name: 'xl/worksheets/_rels/sheet' + (index + 1) + '.xml.rels', text: buildRelsXml('drawing', '../drawings/drawing' + chartNumber + '.xml') });
-      entryList.push({ name: 'xl/drawings/drawing' + chartNumber + '.xml', text: buildDrawingXml(sheet.chart.anchor) });
-      entryList.push({ name: 'xl/drawings/_rels/drawing' + chartNumber + '.xml.rels', text: buildRelsXml('chart', '../charts/chart' + chartNumber + '.xml') });
-      entryList.push({ name: 'xl/charts/chart' + chartNumber + '.xml', text: buildChartXml(sheet.name, sheet.chart) });
+      const chartList = getSheetCharts(sheet);
+      entryList.push({ name: 'xl/worksheets/sheet' + (index + 1) + '.xml', text: buildSheetXml(sheet, chartList.length > 0) });
+      if (!chartList.length) return;
+      drawingNumber += 1;
+      const chartTargetList = chartList.map(() => { chartNumber += 1; return '../charts/chart' + chartNumber + '.xml'; });
+      const firstChartNumber = chartNumber - chartList.length + 1;
+      entryList.push({ name: 'xl/worksheets/_rels/sheet' + (index + 1) + '.xml.rels', text: buildRelsXml('drawing', ['../drawings/drawing' + drawingNumber + '.xml']) });
+      entryList.push({ name: 'xl/drawings/drawing' + drawingNumber + '.xml', text: buildDrawingXml(chartList.map((chart) => chart.anchor)) });
+      entryList.push({ name: 'xl/drawings/_rels/drawing' + drawingNumber + '.xml.rels', text: buildRelsXml('chart', chartTargetList) });
+      // chart.dataSheet (opsyonal): pangalan ng sheet kung saan nakalagay ang data ng chart (kung hindi ito ang sheet na may chart).
+      chartList.forEach((chart, chartIndex) => {
+        entryList.push({ name: 'xl/charts/chart' + (firstChartNumber + chartIndex) + '.xml', text: buildChartXml(chart.dataSheet || sheet.name, chart) });
+      });
     });
     return entryList.map((entry) => ({ name: entry.name, bytes: encoder.encode(entry.text) }));
   }

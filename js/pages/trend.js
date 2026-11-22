@@ -1,7 +1,8 @@
 /*
  * FILE    : js/pages/trend.js
  * PURPOSE : Trend page: binabasa ang master CSV ng Data source 1, 6 na chart (Mean Offset, Stdev, CV, Slope, Intercept, R2) na may UCL, CL, LCL, marker ng pagpalit ng cantilever, at listahan ng record ng napiling araw na may Set / Reset
- * DEPENDS : js/core/config.js, storage.js, csv-reader.js, trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-export-config.js, trend-export.js
+ * DEPENDS : js/core/config.js, storage.js, csv-reader.js, trend-day-config.js, trend-day-search.js, trend-config.js, trend-limits.js, trend-overrides.js, trend-reader.js, trend-chart.js, trend-export-config.js, trend-export.js
+ * VERSION : v9.6 | 2026-11-22 | click sa point o petsa ng chart (onChartActivate) at pagpalit ng petsa (onDayDateChange) ay hinahanap sa Data source 1 (loadDay); walang min/max ang picker ng petsa
  * VERSION : v9.4 | 2026-11-22 | Export to Excel (onExport): Excel sa Saving path, picture sa Saving path at Server path; ito lang ang nagpapadala ng Trend sa Dashboard
  * VERSION : v9.3 | 2026-11-22 | bagong file
  */
@@ -14,12 +15,15 @@
   const SEL = TREND.SELECTOR;
   const TEXT = TREND.TEXT;
   const EXPORT = root.trendExportConfig;
+  const DAY = root.trendDayConfig;
   const { storage, csv, trendLimits, trendOverrides, trendReader, trendChart } = root;
 
   let sourceHandle = null;
   let isBusy = false;
   // Alaala ng huling resulta; nananatili habang bukas ang website (hindi nabubura kapag lumipat ng page).
-  const saved = { run: null, dayKey: '' };
+  // day: huling resulta ng paghahanap ng petsa sa Data source 1 ({ key, recordList, fileCount, masterFileCount }); dayToken: iwas lumang resulta kapag sunud-sunod ang click.
+  const saved = { run: null, dayKey: '', day: { key: '', recordList: null, fileCount: 0, masterFileCount: 0 } };
+  let dayToken = 0;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -154,6 +158,13 @@
     return list;
   }
 
+  // Minamarkahan sa chart ang point at label ng napiling petsa (is-selected).
+  function markSelectedDay() {
+    query('charts').querySelectorAll(DAY.SELECTOR.clickable).forEach((element) => {
+      element.classList.toggle(DAY.CLASS.selected, element.dataset[DAY.DATASET_KEY] === saved.dayKey);
+    });
+  }
+
   // Iginuguhit ang 6 na chart.
   function renderCharts(pointList, limitMap, changeList) {
     const host = query('charts');
@@ -168,6 +179,7 @@
       if (trendLimits.hasAny(limitMap[metric.key])) block.append(makeElement('p', 'trend-out-note', TEXT.outCount + trendChart.countOut(pointList, metric, limitMap[metric.key])));
       host.append(block);
     });
+    markSelectedDay();
   }
 
   // Text ng isang value ng record (4 o 5 decimal ayon sa config).
@@ -198,13 +210,15 @@
     const dayKey = dateInput.value;
     if (!csv.parseDateInput(dayKey)) { setStatusOf(statusElement, TEXT.dayPick, 'info'); return; }
     saved.dayKey = dayKey;
-    const recordList = trendReader.listRecordsOfDay(saved.run.recordList, dayKey);
+    const isSearched = saved.day.key === dayKey && Array.isArray(saved.day.recordList);
+    const recordList = isSearched ? saved.day.recordList : trendReader.listRecordsOfDay(saved.run.recordList, dayKey);
     if (!recordList.length) { setStatusOf(statusElement, TEXT.dayEmpty, 'info'); return; }
     setStatusOf(statusElement, '', '');
     const pointList = getPointList();
     const chosenMap = new Map(pointList.map((point) => [point.slotKey, point]));
     const limitMap = trendLimits.getLimits(storage.readLocalSettings());
     resultHost.append(makeElement('p', 'result-note', TEXT.dayNote));
+    if (isSearched) resultHost.append(makeElement('p', 'result-note', DAY.TEXT.found.replace('{files}', String(saved.day.masterFileCount)).replace('{records}', String(recordList.length))));
     const startKey = csv.formatDateInput(saved.run.startDate);
     const endKey = csv.formatDateInput(saved.run.endDate);
     const table = makeElement('table', 'result-table');
@@ -272,9 +286,10 @@
     const dateInput = query('dayDate');
     const startKey = csv.formatDateInput(saved.run.startDate);
     const endKey = csv.formatDateInput(saved.run.endDate);
-    dateInput.min = startKey;
-    dateInput.max = endKey;
-    if (saved.dayKey && saved.dayKey >= startKey && saved.dayKey <= endKey) {
+    // Walang min at max: puwedeng palitan ng user ang petsa kahit labas sa saklaw ng chart; hahanapin ito sa Data source 1.
+    dateInput.removeAttribute('min');
+    dateInput.removeAttribute('max');
+    if (saved.dayKey && csv.parseDateInput(saved.dayKey)) {
       dateInput.value = saved.dayKey;
       return;
     }
@@ -308,6 +323,7 @@
       const handle = await getReadyHandle();
       const result = await trendReader.readRecords(handle, range.startDate, range.endDate, (current, total, name) => setStatusOf(statusElement, TEXT.progress + current + '/' + total + ' ' + name, 'info'));
       saved.run = result;
+      saved.day = { key: '', recordList: null, fileCount: 0, masterFileCount: 0 };
       pickDayDate();
       setStatusOf(statusElement, '', '');
       renderAll();
@@ -337,6 +353,55 @@
     } finally {
       setBusy(false);
     }
+  }
+
+  // Hinahanap sa Data source 1 ang petsa at ipinapakita ang mga record nito sa "Mga record ng araw".
+  // Kapag pumalya ang paghahanap, ipinapakita ang mga record mula sa huling Run Trend kasama ang mensahe.
+  async function loadDay(dayKey, shouldScroll) {
+    if (!saved.run) return;
+    const dateInput = query('dayDate');
+    const statusElement = query('dayStatus');
+    if (!csv.parseDateInput(dayKey)) { renderDay(); return; }
+    dateInput.value = dayKey;
+    saved.dayKey = dayKey;
+    markSelectedDay();
+    if (shouldScroll) {
+      const card = dateInput.closest(DAY.SCROLL.cardSelector);
+      const behavior = window.matchMedia(CONFIG.REDUCED_MOTION_QUERY).matches ? CONFIG.SCROLL_BEHAVIOR.reduced : CONFIG.SCROLL_BEHAVIOR.normal;
+      if (card) card.scrollIntoView({ behavior, block: DAY.SCROLL.block });
+    }
+    dayToken += 1;
+    const token = dayToken;
+    setStatusOf(statusElement, DAY.TEXT.searching, 'info');
+    let errorMessage = '';
+    try {
+      const handle = await getReadyHandle();
+      const result = await root.trendDaySearch.readDay(handle, dayKey, (current, total, name) => {
+        if (token === dayToken) setStatusOf(statusElement, DAY.TEXT.progress + current + '/' + total + ' ' + name, 'info');
+      });
+      if (token !== dayToken) return;
+      saved.day = { key: dayKey, recordList: result.recordList, fileCount: result.fileCount, masterFileCount: result.masterFileCount };
+    } catch (error) {
+      if (token !== dayToken) return;
+      saved.day = { key: '', recordList: null, fileCount: 0, masterFileCount: 0 };
+      errorMessage = error && error.code === 'noPermission' ? DAY.TEXT.error.noPermission : error && error.code === 'noSource' ? DAY.TEXT.error.noSource : DAY.TEXT.error.readFail;
+    }
+    renderDay();
+    if (errorMessage) setStatusOf(statusElement, errorMessage, 'error');
+  }
+
+  // Click o Enter / Space sa point o petsa ng chart: bubuksan ang petsa nito sa "Mga record ng araw".
+  function onChartActivate(event) {
+    if (event.type === 'keydown' && !DAY.ACTIVATE_KEYS.includes(event.key)) return;
+    const target = event.target.closest(DAY.SELECTOR.clickable);
+    if (!target || !saved.run) return;
+    if (event.type === 'keydown') event.preventDefault();
+    loadDay(target.dataset[DAY.DATASET_KEY], true);
+  }
+
+  // Pinalitan ng user ang petsa sa picker: hahanapin ito sa Data source 1.
+  function onDayDateChange() {
+    loadDay(query('dayDate').value, false);
   }
 
   // Set / Reset sa listahan ng araw (event delegation).
@@ -369,7 +434,9 @@
     const exportButton = document.querySelector(EXPORT.SELECTOR.exportButton);
     if (exportButton) exportButton.addEventListener('click', onExport);
     setExportDisabled(!saved.run);
-    query('dayDate').addEventListener('change', renderDay);
+    query('dayDate').addEventListener('change', onDayDateChange);
+    query('charts').addEventListener('click', onChartActivate);
+    query('charts').addEventListener('keydown', onChartActivate);
     query('dayResult').addEventListener('click', onDayClick);
     if (saved.run) {
       pickDayDate();

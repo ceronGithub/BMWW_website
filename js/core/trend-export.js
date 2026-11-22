@@ -1,9 +1,10 @@
 /*
  * FILE    : js/core/trend-export.js
- * PURPOSE : Export to Excel ng Trend: gumagawa ng Excel (Summary, Points at isang sheet na may chart kada value), ng picture ng 6 chart, at nagse-save: Excel sa Saving path lang; picture at meta sa Saving path at Server path
+ * PURPOSE : Export to Excel ng Trend: gumagawa ng Excel (sheet 1 Data na pababa ang talaan, sheet 2 Charts na lahat ng 6 chart sa iisang sheet, puti ang background), ng picture ng 6 chart, at nagse-save: Excel sa Saving path lang; picture at meta sa Saving path at Server path
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, xlsx-writer.js, trend-config.js, trend-limits.js, trend-reader.js, trend-chart.js, trend-image.js, trend-export-config.js, trend-sync.js
  * INPUT   : exportAll({ run, pointList, limitMap, changeList, machineName, settings }) mula sa click ng Export
  * OUTPUT  : Promise<{ message, kind }>; nagtatapon ng error (may code) kapag pumalya ang Saving path o ang paggawa ng file. getErrorMessage(error) ang friendly na mensahe
+ * VERSION : v9.5 | 2026-11-22 | Excel ay 2 sheet na lang: Data (pababa ang data, kasama ang UCL/CL/LCL column) at Charts (6 chart sa iisang sheet, isang column). Wala nang Summary, Points at sheet kada value
  * VERSION : v9.4 | 2026-11-22 | bagong file
  */
 (function () {
@@ -43,37 +44,28 @@
     return state === TREND.POINT_STATE.above || state === TREND.POINT_STATE.below;
   }
 
-  // Sheet 1: buod at talaan ng limit ng bawat value.
-  function buildSummarySheet(context, exportedAt, sourceText) {
-    const label = (text) => ({ v: text, s: STYLE.bold });
+  // Sheet 1 (Data): pababa ang pagtala ng data, isang point kada row. Mga column: Point, petsa, shift, cantilever, oras, file, Set, 6 na value,
+  // Labas sa limit, at sa dulo ang UCL / CL / LCL ng bawat value (ang naka-set lang) para magamit ng chart. Pula ang value na labas sa limit.
+  function buildDataSheet(context) {
     const header = (text) => ({ v: text, s: STYLE.header });
-    const outCount = trendImage.countOutAll(context.pointList, context.limitMap);
-    const rows = [
-      [label(LABEL.title)],
-      [label(LABEL.machine), context.machineName || '-'],
-      [label(LABEL.range), csv.formatDateInput(context.run.startDate) + ' - ' + csv.formatDateInput(context.run.endDate)],
-      [label(LABEL.points), context.pointList.length],
-      [label(LABEL.records), context.run.recordList.length],
-      [label(LABEL.files), context.run.masterFileCount],
-      [label(LABEL.out), outCount],
-      [label(LABEL.dataSource), sourceText],
-      [label(LABEL.exportedAt), formatDateTime(exportedAt)],
-      [],
-      [header(LABEL.value)].concat(TREND.LIMIT_FIELD_LIST.map((field) => header(field.label)), [header(LABEL.outColumn)])
-    ];
+    const infoLabelList = [LABEL.point, LABEL.shiftDay, LABEL.shift, LABEL.cantilever, LABEL.recordTime, LABEL.file, LABEL.set];
+    const metricColumn = {};
+    const limitColumn = {};
+    let nextColumn = infoLabelList.length;
+    TREND.METRIC_LIST.forEach((metric) => { metricColumn[metric.key] = nextColumn; nextColumn += 1; });
+    const outColumn = nextColumn;
+    nextColumn += 1;
+    const limitHeaderList = [];
     TREND.METRIC_LIST.forEach((metric) => {
-      const limit = context.limitMap[metric.key];
-      rows.push([metric.label].concat(TREND.LIMIT_FIELD_LIST.map((field) => numberCell(limit[field.key])), [root.trendChart.countOut(context.pointList, metric, limit)]));
+      limitColumn[metric.key] = {};
+      TREND.LIMIT_FIELD_LIST.forEach((field) => {
+        if (context.limitMap[metric.key][field.key] === null) return;
+        limitColumn[metric.key][field.key] = nextColumn;
+        limitHeaderList.push(metric.label + ' ' + field.label);
+        nextColumn += 1;
+      });
     });
-    return { name: SETTING.SHEET.summary, rows, columnWidths: computeColumnWidths(rows), showGridLines: false };
-  }
-
-  // Sheet 2: lahat ng point ng chart. Pula ang value na labas sa limit.
-  function buildPointsSheet(context) {
-    const header = (text) => ({ v: text, s: STYLE.header });
-    const headerRow = [LABEL.point, LABEL.shiftDay, LABEL.shift, LABEL.cantilever, LABEL.recordTime, LABEL.file, LABEL.set].map(header)
-      .concat(TREND.METRIC_LIST.map((metric) => header(metric.label)), [header(LABEL.outColumn)]);
-    const rows = [headerRow];
+    const rows = [infoLabelList.concat(TREND.METRIC_LIST.map((metric) => metric.label), [LABEL.outColumn], limitHeaderList).map(header)];
     context.pointList.forEach((point) => {
       const outList = [];
       const valueCellList = TREND.METRIC_LIST.map((metric) => {
@@ -83,12 +75,18 @@
         if (state === TREND.POINT_STATE.below) outList.push(metric.label + ' ' + LABEL.below);
         return numberCell(value, isOutOfLimit(value, context.limitMap[metric.key]) ? STYLE.red : STYLE.precise);
       });
+      const limitCellList = [];
+      TREND.METRIC_LIST.forEach((metric) => {
+        TREND.LIMIT_FIELD_LIST.forEach((field) => {
+          if (limitColumn[metric.key][field.key] !== undefined) limitCellList.push(numberCell(context.limitMap[metric.key][field.key]));
+        });
+      });
       rows.push([
         trendReader.formatPointLabel(point), point.shiftDay, trendReader.getShiftDisplay(point.shift), point.record.cantilever || '-',
         formatDateTime(new Date(point.record.time)), point.record.fileName, point.isOverride ? LABEL.yes : ''
-      ].concat(valueCellList, [outList.join(', ')]));
+      ].concat(valueCellList, [outList.join(', ')], limitCellList));
     });
-    return { name: SETTING.SHEET.points, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 1, columns: 1 } };
+    return { sheet: { name: SETTING.SHEET.data, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 1, columns: 1 } }, metricColumn, limitColumn, outColumn };
   }
 
   // Saklaw ng y-axis ng chart ng isang value (kasama ang limit), may espasyo. Walang laman kung walang value.
@@ -101,40 +99,43 @@
     return { yMin: low - pad, yMax: high + pad };
   }
 
-  // Sheet ng isang value: row ng value at ng UCL, CL, LCL (ang naka-set lang), at line chart sa ilalim ng table.
-  function buildMetricSheet(context, metric) {
+  // Chart ng isang value: ang data ay galing sa sheet na Data (pababa). anchor.row ang posisyon sa sheet na Charts.
+  function buildMetricChart(context, dataInfo, metric, chartIndex) {
     const chartSetting = SETTING.CHART;
     const limit = context.limitMap[metric.key];
     const labelList = context.pointList.map((point) => trendReader.formatPointLabel(point));
     const valueList = context.pointList.map((point) => point.record.valueMap[metric.key]);
-    const rows = [[{ v: LABEL.point, s: STYLE.header }].concat(labelList.map((text) => ({ v: text, s: STYLE.header })))];
-    rows.push([{ v: metric.label, s: STYLE.bold }].concat(valueList.map((value, index) => numberCell(value, isOutOfLimit(value, limit) ? STYLE.red : STYLE.precise))));
-    const seriesList = [{ name: metric.label, row: 1, values: valueList, color: chartSetting.COLOR.line, width: chartSetting.LINE_WIDTH, markerSize: chartSetting.MARKER_SIZE }];
+    const seriesList = [{ name: metric.label, column: dataInfo.metricColumn[metric.key], values: valueList, color: chartSetting.COLOR.line, width: chartSetting.LINE_WIDTH, markerSize: chartSetting.MARKER_SIZE }];
     const allValueList = valueList.slice();
     TREND.LIMIT_FIELD_LIST.forEach((field) => {
       const limitValue = limit[field.key];
       if (limitValue === null) return;
-      const limitValues = labelList.map(() => limitValue);
-      rows.push([{ v: field.label, s: STYLE.bold }].concat(limitValues.map((value) => numberCell(value))));
-      seriesList.push({ name: field.label, row: rows.length - 1, values: limitValues, color: chartSetting.COLOR[field.key], width: chartSetting.LIMIT_WIDTH, markerSize: chartSetting.LIMIT_MARKER_SIZE });
+      seriesList.push({ name: metric.label + ' ' + field.label, column: dataInfo.limitColumn[metric.key][field.key], values: labelList.map(() => limitValue), color: chartSetting.COLOR[field.key], width: chartSetting.LIMIT_WIDTH, markerSize: chartSetting.LIMIT_MARKER_SIZE });
       allValueList.push(limitValue);
     });
     const range = getAxisRange(allValueList);
-    const sheet = { name: metric.label, rows, columnWidths: computeColumnWidths(rows), showGridLines: false, freeze: { rows: 1, columns: 1 } };
-    if (range && labelList.length) {
-      sheet.chart = {
-        yMin: range.yMin, yMax: range.yMax, title: (context.machineName ? context.machineName + ' ' : '') + metric.label + ' Trend', xTitle: chartSetting.X_TITLE, yTitle: chartSetting.Y_TITLE,
-        nameColumn: 0, categoryRow: 0, firstColumn: 1, lastColumn: labelList.length, categoryList: labelList, seriesList,
-        anchor: { column: 0, row: chartSetting.ANCHOR_ROW, widthPixels: chartSetting.WIDTH_PIXELS, heightPixels: chartSetting.HEIGHT_PIXELS }
-      };
-    }
-    return sheet;
+    if (!range) return null;
+    return {
+      byColumn: true, dataSheet: SETTING.SHEET.data, headerRow: 0, firstRow: 1, lastRow: labelList.length, categoryColumn: 0, categoryList: labelList, seriesList,
+      yMin: range.yMin, yMax: range.yMax, title: (context.machineName ? context.machineName + ' ' : '') + metric.label + ' Trend', xTitle: chartSetting.X_TITLE, yTitle: chartSetting.Y_TITLE,
+      anchor: { column: 0, row: chartIndex * chartSetting.ROWS_PER_CHART, widthPixels: chartSetting.WIDTH_PIXELS, heightPixels: chartSetting.HEIGHT_PIXELS }
+    };
   }
 
-  // Blob ng Excel file: Summary, Points at 6 na sheet ng value.
-  function buildBlob(context, exportedAt, sourceText) {
-    const sheetList = [buildSummarySheet(context, exportedAt, sourceText), buildPointsSheet(context)].concat(TREND.METRIC_LIST.map((metric) => buildMetricSheet(context, metric)));
-    return xlsx.buildWorkbook(sheetList, SETTING.COLOR);
+  // Sheet 2 (Charts): lahat ng 6 chart sa iisang sheet, isang column, pababa. Puti ang background (walang gridlines, puti ang chart).
+  function buildChartsSheet(context, dataInfo) {
+    const chartList = [];
+    TREND.METRIC_LIST.forEach((metric, index) => {
+      const chart = buildMetricChart(context, dataInfo, metric, index);
+      if (chart) chartList.push(chart);
+    });
+    return { name: SETTING.SHEET.charts, rows: [], showGridLines: false, chartList };
+  }
+
+  // Blob ng Excel file: sheet 1 Data at sheet 2 Charts.
+  function buildBlob(context) {
+    const dataInfo = buildDataSheet(context);
+    return xlsx.buildWorkbook([dataInfo.sheet, buildChartsSheet(context, dataInfo)], SETTING.COLOR);
   }
 
   // Pangalan ng file: trend_start_to_end_yyyymmdd-hhmmss.xlsx (hindi nao-overwrite ang luma).
@@ -171,12 +172,11 @@
     const serverFound = await findServer();
     const settings = context.settings || storage.readLocalSettings();
     const paths = settings[CONFIG.FOLDER_PATHS_FIELD] || {};
-    const sourceText = paths[TREND.SOURCE_KEY] || (settings.folderNames || {})[TREND.SOURCE_KEY] || '-';
     const exportedAt = new Date();
     const excelFileName = buildFileName(context.run, exportedAt);
     const parts = {
       dateFolderName: csv.formatDateInput(exportedAt), excelFileName,
-      excelBlob: buildBlob(context, exportedAt, sourceText),
+      excelBlob: buildBlob(context),
       imageBlob: await trendImage.buildBlob(context),
       metaText: JSON.stringify(buildMeta(context, exportedAt, excelFileName))
     };

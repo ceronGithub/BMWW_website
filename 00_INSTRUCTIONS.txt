@@ -1,3 +1,29 @@
+INSTRUCTIONS v9.6 (Trend: clickable na petsa at data point)
+1. Backup muna ng buong website folder. Ilagay ang 2 BAGONG file: js/core/trend-day-config.js, js/core/trend-day-search.js. Palitan ang binagong file: js/core/trend-chart.js, js/pages/trend.js, css/pages/trend.css, pages/trend.html, js/templates/trend.template.js (at README.txt, 00_INSTRUCTIONS.txt).
+2. Buksan ang index.html (double-click o python -m http.server 8000). Chrome o Edge. I-refresh nang Ctrl+F5. Kailangan ang Data source 1 sa Settings.
+3. TEST STEPS v9.6:
+   - Trend page, Run Trend (hal. 14 araw). Ilapit ang mouse sa isang point o petsa sa ilalim ng chart: DAPAT pointer na kamay at magbago ang itsura (diin/underline).
+   - Pindutin ang isang point: DAPAT mag-scroll sa 'Mga record ng araw', ang Petsa ay ang petsa ng point, may mensaheng 'Hinahanap ang petsa sa Data source 1...' tapos 'Hinanap sa Data source 1: ... master file, ... record', at lalabas ang table ng record na may file at 6 na value. DAPAT naka-diin ang point at petsa ng napili sa lahat ng 6 chart.
+   - Pindutin ang petsa (label sa X axis): DAPAT pareho ang resulta. Gamit ang Tab at Enter: DAPAT gumana rin.
+   - Palitan ang Petsa sa picker (kahit petsang labas sa Start/End): DAPAT hanapin sa Data source 1 at lumabas ang mga record; ang labas sa saklaw ay 'Labas sa saklaw' at walang Set button. Petsang walang record: DAPAT 'Walang record sa araw na ito.'
+   - Set at Reset sa petsang nasa saklaw: DAPAT gumana pa rin (nagbabago ang point sa chart).
+   - Kung hindi pinayagan ang access: DAPAT pulang mensahe at ang mga record ng huling Run Trend ang ipinapakita.
+   - Export to Excel (2 sheet), Dashboard, Master, Calibration at Settings: DAPAT gumagana pa rin.
+   - Nasubukan sa jsdom at Node. Hindi pa sa totoong Chrome/Edge; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.5) ---
+INSTRUCTIONS v9.5 (Trend: 1 col per row, Excel na 2 sheet)
+1. Backup muna ng buong website folder. Palitan ang 4 na binagong file: css/pages/trend.css, js/core/trend-export-config.js, js/core/trend-export.js, js/core/xlsx-writer.js (at README.txt, 00_INSTRUCTIONS.txt). Walang bagong file.
+2. Buksan ang index.html (double-click o python -m http.server 8000). Chrome o Edge. I-refresh nang Ctrl+F5.
+3. TEST STEPS v9.5:
+   - Trend page, Run Trend: DAPAT isa lang ang chart kada row (Mean Offset, Stdev, CV, Slope, Intercept, R2 na magkakasunod pababa), kahit malapad ang screen. DAPAT HINDI na 2 chart sa isang row.
+   - Export to Excel, buksan ang picture (trend_latest.png): DAPAT 6 na chart na magkakasunod pababa (1 col per row).
+   - Buksan ang Excel sa Saving path (trend\<petsa>\): DAPAT 2 sheet lang: Data at Charts. Data: pababa ang talaan (isang point kada row; Point, Petsa ng shift, Shift, Cantilever, Oras, File, Set ng user, 6 na value, Labas sa limit, UCL/CL/LCL). Charts: DAPAT lahat ng 6 chart nasa iisang sheet, magkakasunod pababa, puti ang background, walang gridlines. DAPAT HINDI may chart sa Data sheet.
+   - Baguhin ang UCL/CL/LCL sa Settings, Export ulit: DAPAT sumunod ang mga linya sa chart.
+   - Master, Calibration, Dashboard (UPDATED badge at Preview): DAPAT gumagana pa rin gaya ng dati.
+   - Nasubukan sa Node, openpyxl at LibreOffice. Hindi pa sa totoong Chrome/Edge; ang unang test ay sa device mo.
+
+--- LUMANG INSTRUCTIONS (v9.4) ---
 INSTRUCTIONS v9.4 (Trend: Export to Excel at Trend sa Dashboard)
 1. Backup muna ng buong website folder. Ilagay ang 6 BAGONG file: js/core/trend-export-config.js, trend-image.js, trend-sync.js, trend-export.js, trend-tile.js, css/pages/trend-tile.css. Palitan ang 6 na binagong file: pages/trend.html, js/templates/trend.template.js, js/pages/trend.js, pages/dashboard.html, js/templates/dashboard.template.js, js/pages/dashboard-machines.js (kasama ang README.txt at 00_INSTRUCTIONS.txt).
 2. Buksan ang index.html (double-click o python -m http.server 8000). Kailangan ng Chrome o Edge. I-refresh nang Ctrl+F5. Kailangan na naka-set ang Saving path (BMWW) at Server path sa Settings, at ang Data source 1.
