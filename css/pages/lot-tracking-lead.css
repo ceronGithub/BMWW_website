@@ -1,0 +1,23 @@
+/*
+ * FILE    : css/pages/lot-tracking-lead.css
+ * PURPOSE : Style ng LEAD PC view ng LOT Tracking (naka-scope sa .page-lot-tracking-lead)
+ * DEPENDS : css/base.css, css/components.css
+ * VERSION : v1 | 2026-11-23 | bagong file (Yugto 5)
+ */
+.page-lot-tracking-lead .lot-lead-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+.page-lot-tracking-lead .lot-lead-grid .form-group { margin-top: 0; }
+.page-lot-tracking-lead .lot-lead-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
+.page-lot-tracking-lead .lot-lead-machines { margin: var(--space-3) 0 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); }
+.page-lot-tracking-lead .lot-lead-machine { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-muted); overflow-wrap: anywhere; }
+.page-lot-tracking-lead .lot-lead-machine.is-ongoing { color: var(--color-text); border-color: var(--color-primary); background: var(--color-primary-soft); font-weight: 600; }
+.page-lot-tracking-lead .table-wrap { margin-top: var(--space-3); overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.page-lot-tracking-lead .lot-lead-table { width: 100%; min-width: 64rem; border-collapse: collapse; font-size: 0.875rem; }
+.page-lot-tracking-lead .lot-lead-table th,
+.page-lot-tracking-lead .lot-lead-table td { padding: var(--space-2) var(--space-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-border); }
+.page-lot-tracking-lead .lot-lead-table th { background: var(--color-primary-soft); font-weight: 700; white-space: nowrap; }
+.page-lot-tracking-lead .lot-lead-table tbody tr { transition: background var(--transition); }
+.page-lot-tracking-lead .lot-lead-table tbody tr:hover { background: var(--color-bg); }
+.page-lot-tracking-lead .lot-lead-table .lot-lead-path { color: var(--color-muted); overflow-wrap: anywhere; }
+@media (min-width: 768px) {
+  .page-lot-tracking-lead .lot-lead-grid { grid-template-columns: repeat(3, 1fr); }
+}

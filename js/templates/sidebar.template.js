@@ -7,6 +7,7 @@
  * VERSION : v2.5 | 2026-11-20 | kasabay ng components/sidebar.html (dagdag na link: LOT Tracking)
  * VERSION : v2.8 | 2026-11-20 | kasabay ng components/sidebar.html (dagdag na link: Search Files)
  * VERSION : v9.3 | 2026-11-22 | kasabay ng components/sidebar.html (dagdag na link: Trend)
+ * VERSION : v19 | 2026-11-23 | kasabay ng components/sidebar.html (Yugto 5: dagdag na link: LOT Monitoring)
  */
 (function () {
   'use strict';
@@ -15,6 +16,7 @@
   <ul class="sidebar-list">
     <li><a class="sidebar-link" href="#dashboard" data-page="dashboard">Dashboard</a></li>
     <li><a class="sidebar-link" href="#lot-tracking" data-page="lot-tracking">LOT Tracking</a></li>
+    <li><a class="sidebar-link" href="#lot-tracking-lead" data-page="lot-tracking-lead">LOT Monitoring</a></li>
     <li><a class="sidebar-link" href="#file-search" data-page="file-search">Search Files</a></li>
     <li><a class="sidebar-link" href="#calibration" data-page="calibration">Calibration</a></li>
     <li><a class="sidebar-link" href="#master" data-page="master">Master</a></li>

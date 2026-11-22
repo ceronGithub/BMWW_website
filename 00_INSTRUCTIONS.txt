@@ -1,3 +1,20 @@
+INSTRUCTIONS v19 (LOT Tracking Yugto 5: LEAD PC view, page na LOT Monitoring)
+1. Backup muna. Ilagay muna ang v18 (Yugto 4) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-lead-config.js, js/core/lot-monitoring-reader.js, js/pages/lot-tracking-lead.js, pages/lot-tracking-lead.html, js/templates/lot-tracking-lead.template.js, css/pages/lot-tracking-lead.css. BINAGONG file: js/core/config.js (PAGE_LIST lang), components/sidebar.html, js/templates/sidebar.template.js, index.html (isang script tag), README.txt, 00_INSTRUCTIONS.txt. Pindutin ang Ctrl+F5 sa browser pagkatapos.
+2. TEST STEPS v19 (LOT Monitoring). Kailangan: Chrome o Edge; Machine name, Saving path at Server path (may write permission) sa Settings ng Sender; para sa buong test, dalawang machine na pareho ang Server path. Puwede ring isang PC lang (Sender at ang LOT Monitoring sa iisang browser).
+   - Sa Sender: mag-scan ng Barcode at Operator (parang LOT Tracking). Buksan ang LOT Monitoring sa sidebar: DAPAT may card na 'Mga machine' na may linya ng machine mo na '1 ONGOING na lote (huling update ...)' at isang row sa table na Status ONGOING (LOT Unit at Wafer ay '-' pa). Kung may mensaheng walang permission: pindutin ang Refresh.
+   - Maglagay ng 4A25C20A.csv sa Data source 2: sa loob ng 10 segundo (o pindutin ang Refresh) DAPAT mapupunan ang row (LOT Unit 4A25C20A, Wafer 4A25C, Blk A, Layer No. 20, File Path).
+   - I-END ang lote (i-scan ulit ang parehong barcode): DAPAT maging DONE ang row, may End-Time at Lot Duration (min), at ang linya ng machine ay 'walang ONGOING na lote'.
+   - Filter Status: ONGOING at DONE ay DAPAT magpakita ng tamang mga row; 'Lahat' ay ibabalik ang lahat. Filter Machine: DAPAT iisang machine lang ang nasa table at sa buod.
+   - Palitan ang Monitoring day sa kahapon: DAPAT 'walang monitoring file para sa araw na ito' (o ang mga lote ng kahapon). Ibalik sa ngayon.
+   - Dalawang machine (isa pang PC o ibang Machine name): DAPAT makita ang mga lote ng pareho sa iisang table, nauuna ang ONGOING.
+   - I-refresh ang page (F5) at buksan ang LOT Monitoring: DAPAT may mensaheng walang permission kung nawala ito; pindutin ang Refresh at DAPAT lumabas ang data.
+   - Alisin ang Server path sa Settings: DAPAT may mensahe ('Walang Server path na naka-set...'), walang error sa page.
+   - Settings > Machine mode = LEAD PC: DAPAT makita pa rin ang LOT Monitoring sa sidebar at gumagana ito.
+   - Iwan itong bukas at maglipat ng ibang page at bumalik: DAPAT pareho pa rin ang refresh kada 10 segundo (hindi bumibilis).
+   - DAPAT HINDI makita: Send o Remarks button, pagbabago o pagbura ng file sa Server path (basa lang), error sa console o sa page, row na may HTML na tumatakbo (textContent lang).
+   Nasubukan sa Node at jsdom (fake folder handles, 42 kaso) lang. HINDI nasubukan sa totoong Chrome/Edge at totoong Server path: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v18) ---
 INSTRUCTIONS v18 (LOT Tracking Yugto 4: Send sa SERVER lang, Sent Status at Sent Time)
 1. Backup muna. Ilagay muna ang v17 (Yugto 3) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-send.js. BINAGONG file: js/core/lot-unit-collector.js, js/core/lot-monitoring-store.js, js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw (hindi ginalaw ang file-sender.js at Search Files).
 2. TEST STEPS v18 (LOT Tracking). Kailangan: Machine name, Saving path, Server path (may write permission) at Data source 2 o 3 sa Settings; Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file.

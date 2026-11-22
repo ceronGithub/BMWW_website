@@ -3,6 +3,7 @@
  * PURPOSE : Lahat ng constants, selectors at text
  * DEPENDS : wala
  * VERSION : v9.3 | 2026-11-22 | PAGE_LIST at LEAD_BLOCKED_PAGES: dagdag na page na trend (Trend, binabasa ang Data source 1)
+ * VERSION : v10.3 | 2026-11-23 | LOT Yugto 5: PAGE_LIST dagdag na lot-tracking-lead (LEAD PC view ng LOT Tracking)
  * VERSION : v10.2 | 2026-11-22 | LOT Yugto 1: tinanggal ang LOT.SOURCE_KEYS (lumipat sa lotConfig.SOURCE.KEYS) at LOT.PATH_COLUMN; text ng operatorInvalid at enterOperator; bagong operatorCancelled
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v3 | 2026-11-20 | EVENTS (constants ng Dashboard events), SELECTOR.events, TEXT.events
@@ -40,7 +41,7 @@
     SIDEBAR_TEMPLATE: 'sidebar',
     DEFAULT_PAGE: 'dashboard',
     NOT_FOUND_PAGE: '404',
-    PAGE_LIST: ['dashboard', 'lot-tracking', 'file-search', 'settings', 'calibration', 'master', 'trend'],
+    PAGE_LIST: ['dashboard', 'lot-tracking', 'lot-tracking-lead', 'file-search', 'settings', 'calibration', 'master', 'trend'],
     OPEN_CLASS: 'sidebar-open',
     ACTIVE_CLASS: 'is-active',
     STORAGE_KEY: 'bmww.settings',
