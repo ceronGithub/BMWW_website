@@ -2,6 +2,7 @@
  * FILE    : js/core/app.js
  * PURPOSE : Entry point: sidebar, menu, routing
  * DEPENDS : config.js, registry.js, security.js, router.js, monitor.js
+ * VERSION : v22 | 2026-11-24 | Batch B: sinisimulan ang accessGuard.start (autochecker ng folder) pagkatapos ng monitor
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | sidebar mula sa registry (walang fetch, walang import)
  * VERSION : v5.2 | 2026-11-21 | sinisimulan ang monitor (monitor.start) pagkatapos buksan ang unang page
@@ -59,6 +60,7 @@
     });
     await handleNavigate();
     root.monitor.start(false);
+    if (root.accessGuard) root.accessGuard.start();
   }
 
   initApp();

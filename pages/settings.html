@@ -2,6 +2,7 @@
   FILE    : pages/settings.html
   PURPOSE : Settings page: machine name at mga path
   DEPENDS : css/pages/shift-settings.css, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/settings-restore.css, js/core/settings-restore.js, css/pages/settings.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
+  VERSION : v21 | 2026-11-24 | Batch A: switch na Select 1 type only (#settings-type-lock), card ng instruction (#settings-guide-card), css/pages/settings-type.css, js/core/settings-type-config.js at settings-type.js
   VERSION : v1 | 2026-11-19 | unang bersyon
   VERSION : v2.2 | 2026-11-20 | bagong layout: page header, card head, path list, sticky save bar
   VERSION : v2.4 | 2026-11-20 | tinanggal ang lock badge; note ng path (full path)
@@ -17,6 +18,7 @@
 <link rel="stylesheet" href="css/pages/trend-settings.css">
 <link rel="stylesheet" href="css/pages/shift-settings.css">
 <link rel="stylesheet" href="css/pages/settings-restore.css">
+<link rel="stylesheet" href="css/pages/settings-type.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -43,6 +45,7 @@
       <label class="form-label" for="machine-name">Pangalan ng machine</label>
       <input id="machine-name" class="form-input" type="text" maxlength="30" autocomplete="off">
     </div>
+    <div id="settings-type-lock"></div>
   </div>
 
   <div class="card">
@@ -54,6 +57,8 @@
     </div>
     <ul id="path-list" class="path-list"></ul>
   </div>
+
+  <div id="settings-guide-card" class="card"></div>
 
   <div id="watcher-card" class="card"></div>
 
@@ -75,4 +80,6 @@
 <script src="js/core/shift-settings.js"></script>
 <script src="js/core/settings-restore-config.js"></script>
 <script src="js/core/settings-restore.js"></script>
+<script src="js/core/settings-type-config.js"></script>
+<script src="js/core/settings-type.js"></script>
 <script src="js/pages/settings.js"></script>

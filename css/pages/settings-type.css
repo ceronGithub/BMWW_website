@@ -1,0 +1,28 @@
+/*
+ * FILE     : css/pages/settings-type.css
+ * PURPOSE  : Style ng switch na "Select 1 type only", ng instruction card, at pagtatago ng path row sa Settings (naka-scope sa .page-settings)
+ * DEPENDS  : css/base.css (variables)
+ * USED BY  : pages/settings.html, js/templates/settings.template.js
+ * VERSION  : v21 | 2026-11-24 | bagong file (Batch A: Task 1, 3, 4)
+ */
+
+/* ===== SWITCH ===== (js/core/settings-type.js renderToggle) */
+.page-settings .type-lock-row { display: inline-flex; align-items: center; gap: var(--space-3); min-height: var(--touch-size); cursor: pointer; font-weight: 600; margin-top: var(--space-3); }
+.page-settings .type-lock-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.page-settings .type-lock-track { position: relative; width: 2.75rem; height: 1.5rem; flex: none; border-radius: 999px; background: var(--color-border); transition: background var(--transition); }
+.page-settings .type-lock-track::after { content: ""; position: absolute; top: 0.1875rem; left: 0.1875rem; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: var(--color-surface); box-shadow: var(--shadow); transition: transform var(--transition); }
+.page-settings .type-lock-input:checked + .type-lock-track { background: var(--color-cta); }
+.page-settings .type-lock-input:checked + .type-lock-track::after { transform: translateX(1.25rem); }
+.page-settings .type-lock-input:focus-visible + .type-lock-track { box-shadow: var(--ring); }
+.page-settings .type-lock-input:disabled + .type-lock-track { opacity: 0.5; }
+.page-settings .type-lock-note { margin-top: var(--space-1); }
+
+/* ===== PATH ROW NA NAKATAGO ===== (LEAD PC: Data source 1 hanggang 3; may display ang .path-row kaya kailangan ito) */
+.page-settings .path-row[hidden] { display: none; }
+
+/* ===== INSTRUCTION CARD ===== (js/core/settings-type.js renderGuide) */
+.page-settings .guide-list { margin: var(--space-3) 0 0; padding-left: var(--space-6); display: grid; gap: var(--space-2); line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-settings .type-lock-track, .page-settings .type-lock-track::after { transition: none; }
+}

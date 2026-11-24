@@ -3,6 +3,7 @@
  * PURPOSE : UCL, CL, LCL ng Trend: linis ng naka-save na limits, pagbasa ng numero mula sa text, tsek ng ayos, at kung labas ba sa limit ang isang value
  * DEPENDS : js/core/trend-config.js
  * VERSION : v9.3 | 2026-11-22 | bagong file
+ * VERSION : v21 | 2026-11-24 | getLimits: kapag walang naka-save na limit (wala o puro blangko), gamitin ang TREND.DEFAULT_LIMITS (getDefaults)
  */
 (function () {
   'use strict';
@@ -25,9 +26,15 @@
     return result;
   }
 
-  // Limits mula sa settings ng machine (localStorage o file).
+  // Ang default na limits (kopya, nalinis).
+  function getDefaults() {
+    return normalizeAll(TREND.DEFAULT_LIMITS);
+  }
+
+  // Limits mula sa settings ng machine (localStorage o file). Kapag wala pang naka-save na kahit isang limit, ang default ang ibibigay.
   function getLimits(settings) {
-    return normalizeAll(settings ? settings[TREND.STORAGE.LIMITS_FIELD] : null);
+    const saved = normalizeAll(settings ? settings[TREND.STORAGE.LIMITS_FIELD] : null);
+    return hasAnyInAll(saved) ? saved : getDefaults();
   }
 
   // Text ng input -> { ok, value }. Blangko ay ok na null; hindi numero ay ok = false.
@@ -66,5 +73,5 @@
     return TREND.POINT_STATE.ok;
   }
 
-  root.trendLimits = Object.freeze({ normalizeAll, getLimits, parseText, isOrdered, hasAny, hasAnyInAll, classify });
+  root.trendLimits = Object.freeze({ normalizeAll, getLimits, getDefaults, parseText, isOrdered, hasAny, hasAnyInAll, classify });
 })();

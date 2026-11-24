@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional)
+ * VERSION : v21 | 2026-11-24 | Batch A: settingsType (Select 1 type only: lock ng uri, hindi binubura ang file ng kabilang uri kapag OFF, itago ang Data source sa LEAD PC, full path mula sa clipboard); userInputName; applyTypeLock, handleTypeChange
  * VERSION : v15 | 2026-11-22 | Yugto 0: hook sa shiftSettings (card na Shift): init (sa init at applyRestoredSettings), tsek at save ng shiftTimes sa onSave
  * VERSION : v10.1 | 2026-11-22 | settings ay sa settings\machines\sender o monitoring: removeMachineSettings na may keep ({mode, fileName}) at laging tinatawag kapag may dating file (migration); getFileLocation ay may machines\<role>
  * VERSION : v10 | 2026-11-22 | ibalik ang settings mula sa BMWW\settings: applyRestoredSettings, restoreAfterPick (pagkapili ng BMWW), banner na Ibalik ang settings (initRestoreBanner, onRestoreClick)
@@ -30,7 +31,9 @@
   const rowMap = {};
   const INPUT = CONFIG.ROW_INPUT_CLASS;
   let isDirty = false;
+  let typedUserName = '';
   const RESTORE = root.settingsRestoreConfig;
+  const TYPE = root.settingsTypeConfig;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -62,10 +65,34 @@
   function renderMachine() {
     const mode = getSelectedMode();
     const input = query('nameInput');
+    if (input.value && input.value !== CONFIG.LEAD_PC_NAME) typedUserName = input.value;
     if (mode === CONFIG.MACHINE_MODE.LEAD_PC) input.value = CONFIG.LEAD_PC_NAME;
-    else if (input.value === CONFIG.LEAD_PC_NAME) input.value = '';
+    else if (input.value === CONFIG.LEAD_PC_NAME) input.value = getUserInputName();
     input.disabled = mode !== CONFIG.MACHINE_MODE.USER_INPUT;
     query('note').textContent = TEXT.machineNote;
+    applyTypeLock();
+  }
+
+  // Ang huling pangalan ng Sender (User input) na naka-save, para maibalik kapag bumalik mula sa LEAD PC.
+  function getUserInputName() {
+    if (typedUserName) return typedUserName;
+    const field = TYPE ? TYPE.FIELD.userInputName : '';
+    if (field && settings[field]) return settings[field];
+    return settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT ? settings.machineName || '' : '';
+  }
+
+  // Nilo-lock ang pagpili ng uri kapag naka-ON ang Select 1 type only at naka-save na ito (naka-ON pa lang ngunit hindi pa na-save = hindi pa lock).
+  function applyTypeLock() {
+    const field = TYPE ? TYPE.FIELD.selectOneTypeOnly : '';
+    const isLocked = Boolean(root.settingsType && root.settingsType.isOn() && settings[field] === true && settings.machineMode);
+    document.querySelectorAll(SEL.modeRadio).forEach((radio) => { radio.disabled = isLocked; });
+  }
+
+  // Kapag ginalaw ang switch na Select 1 type only: ina-update ang lock at path, at minamarkahang may pagbabago.
+  function handleTypeChange() {
+    renderMachine();
+    renderPaths();
+    setDirty(true);
   }
 
   // Sarado ba ang path? Ang mga gated na path ay bukas lang kapag may Saving path na.
@@ -222,6 +249,7 @@
       row.buttonElement.disabled = locked || !isSupported;
       row.rowElement.classList.toggle(CONFIG.ROW_CLASS.locked, locked);
     });
+    if (root.settingsType) root.settingsType.applyPathVisibility(rowMap, getSelectedMode());
     if (root.watcherInstall) root.watcherInstall.setUnlocked(Boolean(handleMap[CONFIG.ROOT_KEY]));
   }
 
@@ -253,7 +281,9 @@
 
   // Sinusuri lahat ng full path bago mag-save. Ibinibigay ang unang error (at hina-highlight ang row) o ''.
   function checkAllFullPaths(fullPathMap) {
+    const mode = getSelectedMode();
     for (const pathItem of CONFIG.PATH_LIST) {
+      if (root.settingsType && root.settingsType.isHiddenKey(pathItem.key, mode)) continue;
       const message = validateFullPath(pathItem.key, fullPathMap[pathItem.key]);
       if (message) {
         const row = rowMap[pathItem.key];
@@ -312,6 +342,7 @@
     query('nameInput').value = settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT ? settings.machineName || '' : '';
     if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
     if (root.shiftSettings) root.shiftSettings.init(settings, () => setDirty(true));
+    if (root.settingsType) root.settingsType.init(settings, handleTypeChange);
     renderMachine();
     renderPaths();
   }
@@ -399,7 +430,10 @@
       const isRestored = key === CONFIG.ROOT_KEY ? await restoreAfterPick(handle) : false;
       if (isRestored) hideRestoreBanner();
       // Awtomatikong full path (hula): ilalagay agad sa field at lalabas sa ilalim ng pangalan ng path (renderPaths).
-      const guessedPath = isRestored && getInputFullPath(key) ? '' : guessFullPath(key, handle.name);
+      const hasRestoredPath = isRestored && Boolean(getInputFullPath(key));
+      let clipboardPath = !hasRestoredPath && root.settingsType ? await root.settingsType.readClipboardPath(handle.name) : '';
+      if (clipboardPath === getInputFullPath(key)) clipboardPath = '';
+      const guessedPath = clipboardPath || (hasRestoredPath ? '' : guessFullPath(key, handle.name));
       if (guessedPath) {
         rowMap[key].inputElement.value = guessedPath;
         rowMap[key].inputElement.classList.remove(INPUT.error);
@@ -411,7 +445,9 @@
         return;
       }
       setDirty(true);
-      if (guessedPath) {
+      if (clipboardPath) {
+        setStatus(TYPE.TEXT.fullPathFromClipboard + clipboardPath + TYPE.TEXT.fullPathFromClipboardHint, false);
+      } else if (guessedPath) {
         setStatus(TEXT.fullPathAutoFilled + guessedPath + TEXT.fullPathAutoHint, false);
       } else {
         setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
@@ -441,13 +477,20 @@
     return String(first).toLowerCase() === String(second).toLowerCase();
   }
 
+  // Binubura ang lumang settings file ayon sa Select 1 type only (OFF = hindi ginagalaw ang file ng kabilang uri). Kung walang settingsType, lumang gawi.
+  async function removeOldSettingsFile(parentHandle, options) {
+    if (!options.previousFile) return false;
+    if (root.settingsType) return root.settingsType.removeOldFile(parentHandle, options);
+    return storage.removeMachineSettings(parentHandle, options.previousFile, { mode: options.mode, fileName: options.fileName });
+  }
+
   // Isinusulat ang settings sa Server path. Ibinibigay ang 'saved', 'skipped' (walang Server path) o 'failed'.
-  async function writeToServer(serverHandle, isAllowed, fileName, data, previousFile) {
+  async function writeToServer(serverHandle, isAllowed, fileName, data, removeOptions) {
     if (!serverHandle) return 'skipped';
     try {
       if (!isAllowed) return 'failed';
       await storage.writeMachineSettings(serverHandle, fileName, data);
-      if (previousFile) await storage.removeMachineSettings(serverHandle, previousFile, { mode: data.machineMode, fileName });
+      await removeOldSettingsFile(serverHandle, removeOptions);
       return 'saved';
     } catch (error) {
       return 'failed';
@@ -488,6 +531,9 @@
       const fileName = storage.toMachineFileName(name);
       const previousFile = settings[CONFIG.MACHINE_FILE_FIELD] || '';
       next[CONFIG.MACHINE_FILE_FIELD] = fileName;
+      const removeOptions = { isSingleType: root.settingsType ? root.settingsType.isOn() : true, previousFile, previousMode: settings.machineMode || '', mode, fileName };
+      next[TYPE.FIELD.selectOneTypeOnly] = removeOptions.isSingleType;
+      next[TYPE.FIELD.userInputName] = mode === CONFIG.MACHINE_MODE.USER_INPUT ? name : getUserInputName();
       const folderNames = {};
       CONFIG.PATH_LIST.forEach((pathItem) => {
         const folderName = handleMap[pathItem.key] ? handleMap[pathItem.key].name : getSavedName(pathItem.key);
@@ -501,11 +547,11 @@
       next[CONFIG.FOLDER_PATHS_FIELD] = fullPathMap;
       next.savedAt = new Date().toISOString();
       await storage.writeMachineSettings(rootHandle, fileName, next);
-      if (previousFile) await storage.removeMachineSettings(rootHandle, previousFile, { mode, fileName });
+      await removeOldSettingsFile(rootHandle, removeOptions);
       settings = next;
       storage.writeLocalSettings(settings);
       setDirty(false);
-      const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, previousFile);
+      const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, removeOptions);
       renderMachine();
       renderPaths();
       const rootLocation = getFileLocation(fullPathMap[CONFIG.ROOT_KEY], fileName, mode);
@@ -527,10 +573,11 @@
     buildPathRows();
     if (root.trendSettings) root.trendSettings.init(settings, () => setDirty(true));
     if (root.shiftSettings) root.shiftSettings.init(settings, () => setDirty(true));
+    if (root.settingsType) root.settingsType.init(settings, handleTypeChange);
     CONFIG.PATH_LIST.forEach((pathItem) => { rowMap[pathItem.key].inputElement.value = getSavedFullPath(pathItem.key); });
     document.querySelectorAll(SEL.modeRadio).forEach((radio) => {
       radio.checked = radio.value === settings.machineMode;
-      radio.addEventListener('change', () => { renderMachine(); setDirty(true); });
+      radio.addEventListener('change', () => { renderMachine(); renderPaths(); setDirty(true); });
     });
     query('saveButton').addEventListener('click', onSave);
     query('nameInput').addEventListener('input', () => setDirty(true));

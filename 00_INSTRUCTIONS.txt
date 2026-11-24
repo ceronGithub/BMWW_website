@@ -1,3 +1,31 @@
+INSTRUCTIONS v22 (Batch B: autochecker ng folder, isang click na Payagan lahat, desktop shortcut)
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy). Bagong: js/core/access-guard-config.js, js/core/access-guard.js, css/access-guard.css, tools/desktop-shortcut/. Ctrl+F5 pagkatapos.
+2. TEST STEPS v22 (Chrome o Edge; kailangan nang naka-Save ang Settings ng machine).
+   - Isara ang buong browser at buksan ulit ang BMWW: kung humihingi ng permission ang browser, DAPAT may pulang banner sa itaas na naglilista ng mga folder (Saving path, Server path, Data source 1 hanggang 3; LEAD PC: Saving at Server lang).
+   - Pindutin ang 'Payagan lahat' at piliin ang Allow sa tanong ng browser. Kung may 'Allow on every visit', piliin ito. DAPAT mawala ang banner. Isara at buksan ulit: DAPAT mas kaunti o wala nang tanong kapag napili ang 'Allow on every visit'.
+   - Kapag hindi napayagan ang ilan: DAPAT may mensahe at puwedeng pindutin ang 'Payagan' kada folder.
+   - Patayin o i-disconnect ang Server drive at maghintay ng hanggang 30 segundo (o bumalik sa tab): DAPAT lumabas ang 'Hindi mahanap ang folder' para sa Server path; ibalik ang drive at pindutin ang 'Suriin ulit': DAPAT mawala.
+   - Folder na hindi pa naka-set: DAPAT may 'Hindi pa naka-set' at link na 'Buksan ang Settings' (nasa Settings ang mga hakbang).
+   - Ibang browser o na-clear ang site data pero may BMWW folder na may settings: pagkapili ng BMWW sa Settings, o pagkapayag, DAPAT awtomatikong maibalik ang settings (hindi na kailangang pindutin ang 'Ibalik ang settings').
+   - Desktop shortcut: i-extract ang BUONG zip sa permanenteng folder, patakbuhin ang tools\desktop-shortcut\create-desktop-shortcut.bat. DAPAT may icon na BMWW sa Desktop; i-double click: DAPAT magbukas ang BM Analyzer na buo ang design at sidebar. HUWAG kopyahin ang index.html sa Desktop.
+   - DAPAT HINDI makita: banner kapag lahat ay ok, banner sa bagong install na wala pang settings.
+   Nasubukan sa Node at jsdom (fake handles) lang; hindi nasubukan ang PowerShell. HINDI nasubukan sa totoong Chrome/Edge: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v21) ---
+INSTRUCTIONS v21 (Settings Batch A: Select 1 type only, walang Data source sa LEAD PC, instruction ng setup, default na Trend limits)
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy). Bagong file: js/core/settings-type-config.js, js/core/settings-type.js, css/pages/settings-type.css. Pindutin ang Ctrl+F5 pagkatapos.
+2. TEST STEPS v21 (Chrome o Edge). Buksan ang Settings.
+   - DAPAT may switch na 'Select 1 type only' sa ilalim ng Machine name, at card na 'Paano i-setup ang mga folder' (6 na hakbang).
+   - Piliin ang Lead PC: DAPAT mawala ang Data source 1, 2 at 3. Piliin ang User input: DAPAT bumalik sila (at ang laman nila).
+   - Switch OFF: mag-save bilang User input (hal. MWW1), tapos Lead PC at mag-save. DAPAT may MWW1.json sa BMWW\settings\machines\sender at LEAD PC.json sa ...\monitoring (sa Saving path at Server path). DAPAT HINDI mabura ang isa kapag nagpalit.
+   - Bumalik sa User input: DAPAT bumalik ang pangalang MWW1.
+   - Switch ON at Save settings: DAPAT naka-lock (hindi mapipindot) ang radio ng uri. Switch OFF: DAPAT bukas ulit.
+   - Kopyahin muna sa File Explorer ang path ng BMWW folder (Ctrl+C sa address bar), pindutin ang Piliin sa Saving path at piliin ang BMWW: DAPAT awtomatikong mailagay ang Full path (kung pinayagan ang clipboard). Kung hindi, ang hula o i-paste mo.
+   - Trend limits card: kung wala pang naka-save, DAPAT may default: Mean Offset 1.2/0/-1.2, Stdev 3/1.5/0, CV 1.5/0.75/0, Slope 1.1/1/0.9, R2 1.01/0.99/0.97 (Intercept blangko). Ang Trend page ay DAPAT gumamit ng parehong limit.
+   - DAPAT HINDI makita: pagkabura ng file ng kabilang uri kapag OFF, error sa pag-save ng LEAD PC dahil sa Data source.
+   Nasubukan sa Node at jsdom (fake folders) lang. HINDI nasubukan sa totoong Chrome/Edge: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v20) ---
 INSTRUCTIONS v20 (LOT Tracking Yugto 6: bantay kapag walang aktibong lote)
 1. Backup muna. Ilagay muna ang v19 (Yugto 5) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-watch.js. BINAGONG file: js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw.
 2. TEST STEPS v20 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings; Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file. Pagkatapos mag-refresh, kung hindi pa napapayagan ang Data source, mag-scan muna ng isang barcode (ito ang humihingi ng permission) at i-END agad bago subukan ang bantay.

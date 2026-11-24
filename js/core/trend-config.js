@@ -3,6 +3,7 @@
  * PURPOSE : Constants ng Trend: column ng master CSV (Mean Offset, Stdev, CV, Slope, Intercept, R2), limits (UCL, CL, LCL), saklaw ng petsa, chart, selector, text
  * DEPENDS : js/core/config.js
  * VERSION : v9.3 | 2026-11-22 | bagong file (Trend page at Trend limits sa Settings)
+ * VERSION : v21 | 2026-11-24 | DEFAULT_LIMITS: default na UCL, CL, LCL ng Mean Offset, Stdev, CV, Slope, R2 (Intercept: walang default)
  */
 (function () {
   'use strict';
@@ -30,6 +31,14 @@
       { key: 'lcl', label: 'LCL' }
     ],
     LIMIT_MAX_LENGTH: 20,
+    // Default na limits kapag wala pang naka-save na limit sa settings (ucl, cl, lcl). Intercept: walang default.
+    DEFAULT_LIMITS: {
+      meanOffset: { ucl: 1.2, cl: 0, lcl: -1.2 },
+      stdev: { ucl: 3, cl: 1.5, lcl: 0 },
+      cv: { ucl: 1.5, cl: 0.75, lcl: 0 },
+      slope: { ucl: 1.1, cl: 1, lcl: 0.9 },
+      r2: { ucl: 1.01, cl: 0.99, lcl: 0.97 }
+    },
     NUMBER_PATTERN: /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/,
     // Saan naka-save: limits sa settings ng machine (<machine>.json at localStorage); ang mga Set ng user sa localStorage.
     STORAGE: { LIMITS_FIELD: 'trendLimits', OVERRIDE_KEY: 'bmww.trendOverrides', OVERRIDE_MAX: 500 },

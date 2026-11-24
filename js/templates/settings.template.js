@@ -2,6 +2,7 @@
  * FILE    : js/templates/settings.template.js
  * PURPOSE : Kopya ng pages/settings.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v21 | 2026-11-24 | kasabay ng pages/settings.html (switch na Select 1 type only, card ng instruction, settings-type css at script)
  * VERSION : v15 | 2026-11-22 | kasabay ng pages/settings.html (card na Shift)
  * VERSION : v10 | 2026-11-22 | kasabay ng pages/settings.html (banner na Ibalik ang settings, css at script)
  * VERSION : v9.3 | 2026-11-22 | kasabay ng pages/settings.html (card na Trend limits)
@@ -19,6 +20,7 @@
 <link rel="stylesheet" href="css/pages/trend-settings.css">
 <link rel="stylesheet" href="css/pages/shift-settings.css">
 <link rel="stylesheet" href="css/pages/settings-restore.css">
+<link rel="stylesheet" href="css/pages/settings-type.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -45,6 +47,7 @@
       <label class="form-label" for="machine-name">Pangalan ng machine</label>
       <input id="machine-name" class="form-input" type="text" maxlength="30" autocomplete="off">
     </div>
+    <div id="settings-type-lock"></div>
   </div>
 
   <div class="card">
@@ -56,6 +59,8 @@
     </div>
     <ul id="path-list" class="path-list"></ul>
   </div>
+
+  <div id="settings-guide-card" class="card"></div>
 
   <div id="watcher-card" class="card"></div>
 
@@ -77,6 +82,8 @@
 <script src="js/core/shift-settings.js"></script>
 <script src="js/core/settings-restore-config.js"></script>
 <script src="js/core/settings-restore.js"></script>
+<script src="js/core/settings-type-config.js"></script>
+<script src="js/core/settings-type.js"></script>
 <script src="js/pages/settings.js"></script>
 `);
 })();
