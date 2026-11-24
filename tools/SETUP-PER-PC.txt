@@ -1,5 +1,15 @@
-BMWW SETUP PER PC (v1 | 2026-11-21)
-Para sa PC na walang internet. Lahat ay offline; walang kailangang i-install na program (browser at PowerShell ng Windows lang).
+BMWW SETUP PER PC (v2 | 2026-11-24)
+Para sa PC na walang internet. Lahat ay offline. Walang kailangang i-install na program maliban sa nakalista sa seksyong KAILANGAN BAGO MAG-SETUP.
+
+KAILANGAN BAGO MAG-SETUP (v2 | 2026-11-24)
+- Windows PowerShell: kasama na sa Windows. Kailangan ng lahat ng .bat maliban sa Check templates.
+- Chrome o Edge: kailangan ng BMWW para sa folder access. Chrome 122 pataas para sa "Allow on every visit" sa localhost (Local launcher).
+- Microsoft Excel: para mabuksan ang Open latest repeatability/correl file (Open handler).
+- Node.js (nodejs.org): para sa Check templates lang (developer). Hindi kailangan ng ibang tool.
+- BUONG BMWW folder sa permanenteng lokal na folder (hal. C:\BMWW_App\), hindi sa ZIP, Downloads o network drive.
+- Walang internet at walang Administrator na kailangan.
+- Company PC: ipaalam sa IT bago mag-install ng tool na nagsusulat sa Startup o registry (File Watcher, Ongoing Monitor, Open handler).
+- Parehong listahan ito sa Settings page ng website, sa card na "Kailangan bago mag-setup".
 
 A. DALHIN ANG FILES (isang beses kada PC)
 1. Sa PC na may internet: i-download ang ZIP ng repo (branch developerOne), o kopyahin ang buong website folder.

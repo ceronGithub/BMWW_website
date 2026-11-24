@@ -26,6 +26,7 @@
 [LUMA v25] 8. MGA LIMITASYON [v24]: dagdag sa [v23]: hindi nasubukan sa totoong Chrome/Edge at totoong server path ang maraming LEAD PC (Node at jsdom lang, gawa-gawang folder); ang dalawang LEAD PC na sabay na nag-Save ay may maliit na tsansang magbanggaan (verify at ulit ang proteksyon); ang lumang LEAD PC.json ay nananatili hanggang mag-Save ang may-ari.
 8. MGA LIMITASYON [v25]: dagdag sa [v24]: nasubukan lang ang Ongoing Monitor sa PowerShell 7 sa Linux (gawa-gawang folder), hindi pa sa totoong Windows, Edge/Chrome at network drive; hindi ito gumagawa ng Master Correl, Calibration o Trend (website ang gumagawa kapag nabuksan); kailangan pa ring pindutin ang Payagan sa folder pagkabukas ng website.
 
+v32 | 2026-11-24 | Task 1: ang mga .bat tool sa Settings ay kapareho na ng itsura ng card ng File Watcher: isang card kada tool (Ongoing Monitor, Local launcher, Check templates, Open handler, Desktop shortcut) na may Para saan, Kailangan, babala at tick (kung may install na nagsusulat sa Startup o registry), hakbang sa File Explorer, path na may Copy, Paano i-test at Paano i-uninstall. May bagong card na "Kailangan bago mag-setup" (PowerShell, Chrome/Edge, Excel, Node.js, folder, ZIP, company laptop). Ang tawag sa ganitong card: guided install card. Ang card ng File Watcher ay hindi ginalaw. [LUMA v32] #bat-guide-card at css/pages/bat-guide.css (hindi na ginagamit; hindi binura ang file). BAGO: js/core/bat-tools-config.js, js/pages/bat-card.js, css/pages/bat-card.css. BINAGO (may permission mo, 'go'): pages/settings.html, js/templates/settings.template.js, js/pages/settings.js (isang linya: batCard.init), tools/SETUP-PER-PC.txt, README.txt, 00_INSTRUCTIONS.txt. Nasubukan: check-templates (lahat MATCH), node --check, jsdom (6 card, tick gate, isang panel lang ang bukas, Copy block) at headless Chrome screenshot (desktop at mobile); hindi pa sa Edge at totoong Windows.
 v31 | 2026-11-24 | Task 1: ang gabay sa mga .bat ay nasa Settings na (card na "Mga .bat tool (install at uninstall)", #bat-guide-card): collapsible kada tool (Ongoing Monitor, Local launcher, Check templates, File Watcher, Open handler, Desktop shortcut) na may Para saan, I-install/Patakbuhin, Pang-test at I-uninstall. Static HTML lang (details/summary), walang JS at walang bagong function/variable/event/storage key, kaya hindi nakadepende sa init ng settings.js. BAGO: css/pages/bat-guide.css. BINAGO (utos mo): pages/settings.html, js/templates/settings.template.js, README.txt, 00_INSTRUCTIONS.txt. Walang ginalaw sa settings.js at storage.js. Nasubukan: check-templates (lahat MATCH) at takbo sa headless Chromium (6 na tool, bumubukas, lumalabas kahit hindi sumagot ang IndexedDB); hindi pa sa Edge mo.
 v30 | 2026-11-24 | Task 3: ang Date ng Calibration Correl ay readonly na ulit (LATEST.DATE_READONLY = true; laging today, kapareho ng Master Correl); binago ang note sa card. Hindi ginalaw ang Master Correl (nanatiling readonly). BINAGO (utos mo): js/core/calibration-config.js, pages/calibration.html, js/templates/calibration.template.js, README.txt, 00_INSTRUCTIONS.txt. Walang bagong file. Walang ginalaw sa calibration.js. Nasubukan: check-templates at takbo sa headless Chromium; hindi pa sa Edge mo.
 v29 | 2026-11-24 | Batch I (Task 15): pages/dashboard.html: tinanggal ang type="module" sa 29 script; magkapareho na ito at ang js/templates/dashboard.template.js (tools/check-templates: lahat MATCH). Walang epekto sa takbo (template ang gamit ng router). BINAGO (may permission mo, 'go'): pages/dashboard.html (v29), README.txt, 00_INSTRUCTIONS.txt. Walang bagong file. Nasubukan: takbo ng check-templates.
@@ -1877,3 +1878,57 @@ PAGE CONTRACT: walang page; dagdag na tool lang.
   2026-11-24 | [v25] Hindi gumagawa ang script ng Master Correl, Calibration o Trend; naa-update lang ang mga ito kapag nabuksan ang website. Ang Dashboard ng LEAD PC ay ongoing/done/idle lang ang naa-update ng script.
   2026-11-24 | [v25] Ang header ng CSV ay hinahati sa kuwit lang; ang header na may kuwit sa loob ng quotes ay maaaring magbago ng bilang.
   2026-11-24 | [v25] Hindi pa tapos (huling batch): Task 15 (flaws).
+
+=== [v32] MGA CARD NG .BAT TOOL SA SETTINGS (OVERVIEW) ===
+A. FILES
+js/core/bat-tools-config.js | window.BMWW.batToolsConfig: CARD_ID, SEPARATOR, COPY_STATUS_MS, STEP_KIND, TEXT, SETUP (card na Kailangan bago mag-setup), TOOL_LIST (data ng 5 tool: id, title, audience, purpose, requires, limitation, folder, panelList)
+js/pages/bat-card.js        | gumagawa ng mga card sa #bat-tools-card (textContent lang); walang ini-install o pinapatakbo
+css/pages/bat-card.css      | style (.batcard-*), naka-scope sa .page-settings; mobile-first
+[LUMA v32] css/pages/bat-guide.css | para sa lumang #bat-guide-card; hindi na ginagamit (hindi binura)
+B. FUNCTIONS
+step(...partList) -> {parts} | bat-tools-config.js | hakbang na text; ang bahagi ay string o file(name) | TOOL_LIST (panloob)
+file(name) -> {file} | bat-tools-config.js | pangalan ng file/command na lalabas na code | step (panloob)
+makeElement(tagName, className, text) -> Element | bat-card.js | gumagawa ng elemento (textContent) | lahat ng build*
+makeFileName(fileName) -> <code> | bat-card.js | pangalan ng file sa loob ng hakbang | appendParts
+getFolderPath(folderRelative) -> {path, isExact} | bat-card.js | hula ng Windows path ng folder ng tool kapag file:// ; kung hindi, relative na path | buildPathBlock
+showCopyStatus(statusElement, message) | bat-card.js | isang status lang ang may text; binubura pagkalipas ng COPY_STATUS_MS | copyField
+copyField(field, statusElement) -> Promise<void> | bat-card.js | clipboard; kung hindi puwede, pinipili ang text (Ctrl+C) | Copy button
+buildCopyBlock(value, labelText, isMultiLine) -> Element | bat-card.js | readonly input/textarea, Copy button at status | buildPathBlock, buildStepItem
+buildPathBlock(folderRelative) -> Element | bat-card.js | path ng folder na may paalala kung hindi eksakto | buildStepItem
+appendParts(listItem, partList) | bat-card.js | string = text, {file} = code | buildStepItem, buildStepsBox
+buildStepItem(stepConfig, tool) -> <li> | bat-card.js | File Explorer, path, o text (may command kung meron) | buildStepsBox
+buildStepsBox(panel, tool) -> {wrap, title} | bat-card.js | pamagat, intro, listahan ng hakbang, manual na paraan | buildPanel
+buildWarning(panel) -> {box, title} | bat-card.js | pulang kahon ng babala (role alert) | buildPanel
+buildAcknowledge(onChange) -> {label, checkbox} | bat-card.js | tick na "Naiintindihan ko"; lalabas ang hakbang kapag naka-tick | buildPanel
+buildPanel(tool, panel, onClose) -> {element, focusTarget, reset} | bat-card.js | panel na nakatago sa simula; may babala at tick kung may warningList | buildToolCard
+buildToolCard(tool) -> Element | bat-card.js | card ng tool; panloob: closePanel, openPanel (isa lang ang bukas), togglePanel | init
+buildSetupCard() -> Element | bat-card.js | card na Kailangan bago mag-setup | init
+init() | bat-card.js | gumagawa ng lahat ng card sa #bat-tools-card kada bukas ng Settings | settings.js (kasunod ng watcherInstall.init)
+C. VARIABLES / CONSTANTS
+config (const) | bat-card.js | window.BMWW.batToolsConfig | lahat ng function
+TEXT, STEP_KIND (const) | bat-card.js | shortcut sa config.TEXT at config.STEP_KIND | buildStepItem at iba pa
+statusList (let array) | bat-card.js | lahat ng status ng Copy (para isa lang ang may text) | showCopyStatus, openPanel
+copyTimer (let number) | bat-card.js | timer ng pagbura ng status | showCopyStatus, init
+STEP_KIND, EXPLORER_STEP, PATH_STEP, NO_ADMIN, PRESS_ANY_KEY, STARTUP_COMMAND, IT_WARNING_COMPANY, IT_WARNING_BLOCK, WARNING_NOT_BY_WEBSITE (const) | bat-tools-config.js | pinagsasaluhang hakbang at text | TOOL_LIST
+D. EVENTS (listener)
+click | button ng panel (.batcard-actions .btn) | bat-card.js | togglePanel (aria-expanded)
+click | .batcard-close | bat-card.js | isinasara ang panel at ibinabalik ang focus sa button
+change | .batcard-ack input | bat-card.js | ipinapakita o itinatago ang hakbang
+click | .batcard-copy-row .btn | bat-card.js | copyField
+E. STORAGE / API: walang (walang localStorage, walang fetch, walang isinusulat sa disk)
+F. CSS VARIABLES: walang bago (ginagamit ang --color-*, --space-*, --radius, --radius-sm, --font-size-label)
+G. DEPENDENCY MAP
+settings.html -> bat-tools-config.js -> bat-card.js ; settings.js (init) -> batCard.init -> buildSetupCard, buildToolCard -> buildPanel -> buildStepsBox -> buildStepItem -> buildPathBlock / buildCopyBlock
+PAGE CONTRACT (settings, bahagi ng card na ito)
+PAGE     : settings
+INPUT    : window.BMWW.batToolsConfig; window.location (path)
+OUTPUT   : mga card sa loob ng #bat-tools-card; walang sine-save
+HTML ID  : bat-tools-card (container); batcard-<tool> (card); batcard-<tool>-<panel> (panel); tool: ongoing-monitor, local-launcher, check-templates, open-handler, desktop-shortcut, setup
+DEPENDS  : batToolsConfig (config); walang function ng core
+
+=== [v32] KNOWN ISSUES / TODO ===
+  2026-11-24 | [v32] Nasubukan sa jsdom at headless Chrome (Linux). HINDI pa nasubukan sa Edge at totoong Windows; ang unang test ay sa PC mo.
+  2026-11-24 | [v32] Ang card ng File Watcher ay nasa watcher-install.js pa (hindi ginalaw); wala itong linya na "Kailangan:" at ang nakasulat na note ay nasa card na Kailangan bago mag-setup lang.
+  2026-11-24 | [v32] Hindi nakakandado ang mga card ng tool kahit walang Saving path (hindi tulad ng File Watcher); nakasulat sa Kailangan na ilagay at i-Save muna ang Settings.
+  2026-11-24 | [v32] Kapag binuksan ang website sa http://localhost (hindi file://), hindi mahuhulaan ang eksaktong path ng folder; relative na path ang ipapakita na may paalala.
+  2026-11-24 | [v32] Ang css/pages/bat-guide.css ay hindi na ginagamit; puwedeng burahin sa susunod na batch kapag pumayag ka.

@@ -1,3 +1,14 @@
+=== TASK 1 (v32): mga .bat tool sa Settings ay kapareho na ng card ng File Watcher ===
+Bagong: js/core/bat-tools-config.js, js/pages/bat-card.js, css/pages/bat-card.css. Binago: pages/settings.html, js/templates/settings.template.js, js/pages/settings.js, tools/SETUP-PER-PC.txt. Palitan ang may parehong pangalan; kasama sa ZIP ang mga file ng v31.
+TEST: Settings (Ctrl+F5) > pagkatapos ng card na File Watcher: DAPAT may card na "Kailangan bago mag-setup" at 5 card: Ongoing Monitor (optional), Local launcher (optional), Check templates (optional), Open handler, Desktop shortcut (optional). Wala na ang lumang card na "Mga .bat tool".
+  - Ongoing Monitor > Install Ongoing Monitor: DAPAT lumabas ang pulang babala at tick; HINDI dapat makita ang hakbang hangga't hindi naka-tick. Pagka-tick: lalabas ang hakbang at ang path ng folder; pindutin ang Copy: DAPAT lumabas ang "Na-copy.".
+  - Pindutin ang Paano i-test o Paano i-uninstall: DAPAT magsara ang naunang panel (isa lang ang bukas). Isara button: DAPAT magsara at bumalik ang focus sa button.
+  - Local launcher > Paano itigil at tanggalin: DAPAT may command na may Copy button. Check templates at Desktop shortcut: walang babala (walang tick), diretso ang hakbang.
+  - Sa maliit na screen (phone): DAPAT walang horizontal scroll; ang path at command ay may sariling scroll.
+  - DAPAT HINDI mangyari: error sa console; magbago ang ibang card o ang Save settings; may .bat na tumakbo nang kusa (ang user lang ang nag-double-click).
+Para sa bagong PC: tingnan ang tools\SETUP-PER-PC.txt (seksyong KAILANGAN BAGO MAG-SETUP) o ang card na "Kailangan bago mag-setup" sa Settings.
+Hindi pa nasubukan sa Edge at totoong Windows. Nasubukan sa jsdom at headless Chrome (Linux) lang.
+
 === TASK 1 (v31): gabay sa .bat ay nasa Settings na ===
 Bagong: css/pages/bat-guide.css. Binago: pages/settings.html at js/templates/settings.template.js (palitan ang may parehong pangalan; kasama sa ZIP ang mga file ng v30).
 TEST: Settings > mag-scroll sa card na "Mga .bat tool (install at uninstall)": DAPAT may 6 na tool; i-click ang bawat isa para bumukas ang Para saan, hakbang at I-uninstall. Walang dapat magbago sa ibang card at sa Save settings.

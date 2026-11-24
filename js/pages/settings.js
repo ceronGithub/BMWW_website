@@ -1,7 +1,7 @@
 /*
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
- * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional), lead-pc.js at lead-pc-config.js (optional)
+ * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), bat-card.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional), lead-pc.js at lead-pc-config.js (optional)
  * VERSION : v26 | 2026-11-24 | Batch F (Task 4): autoSaveAfterPick; awtomatikong nase-save ang full path pagkapili ng folder kapag tugma sa clipboard at kumpleto ang mga path
  * VERSION : v24 | 2026-11-24 | Batch D (Task 8): maraming LEAD PC; ang pangalan ng LEAD PC ay galing sa leadPc.claimLeadName (LEAD PC 1, 2, ...); leadPcId; hindi binubura sa Server path ang file ng ibang LEAD PC
  * VERSION : v21 | 2026-11-24 | Batch A: settingsType (Select 1 type only: lock ng uri, hindi binubura ang file ng kabilang uri kapag OFF, itago ang Data source sa LEAD PC, full path mula sa clipboard); userInputName; applyTypeLock, handleTypeChange
@@ -17,6 +17,7 @@
  * VERSION : v2.4 | 2026-11-20 | walang lock ang machine name; full path ng bawat folder (type/paste, may validation)
  * VERSION : v2.3 | 2026-11-20 | ibang path ay sarado hanggang may Saving path; Required marker; highlight kapag kulang
  * VERSION : v5 | 2026-11-20 | Save: settings kada machine (<machine>.json) sa Saving path at Server path; basa ng settings ayon sa machine file
+ * VERSION : v32 | 2026-11-24 | tawag sa batCard.init (mga card ng .bat tool; optional, kapareho ng watcherInstall)
  * VERSION : v3.2 | 2026-11-21 | tawag sa watcher-install (init at setUnlocked) para sa card ng Install File Watcher
  */
 (function () {
@@ -625,6 +626,7 @@
     query('saveButton').addEventListener('click', onSave);
     query('nameInput').addEventListener('input', () => setDirty(true));
     if (root.watcherInstall) root.watcherInstall.init();
+    if (root.batCard) root.batCard.init();
     if (settings.machineMode === CONFIG.MACHINE_MODE.USER_INPUT) query('nameInput').value = settings.machineName || '';
     renderMachine();
     renderPaths();

@@ -1,0 +1,48 @@
+/*
+ * FILE    : css/pages/bat-card.css
+ * PURPOSE : Style ng mga card ng .bat tool sa Settings (babala, hakbang, path/command na may Copy), kapareho ng card ng File Watcher
+ * DEPENDS : css/base.css (variables), css/components.css, css/pages/settings.css
+ * USED BY : pages/settings.html, js/templates/settings.template.js, js/pages/bat-card.js
+ * VERSION : v1 | 2026-11-24 | bagong file (Batch K: v32)
+ */
+
+/* ===== ULO NG CARD ===== */
+/* Para sa: pamagat, tag (hal. Developer) at listahan ng kailangan */
+.page-settings .batcard-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.page-settings .batcard-title-row .card-title { margin-bottom: var(--space-1); }
+.page-settings .batcard-tag { padding: 0 var(--space-2); font-size: var(--font-size-label); font-weight: 700; color: var(--color-on-cta); background: var(--color-cta); border-radius: var(--radius-sm); }
+.page-settings .batcard-requires { margin-top: var(--space-2); }
+.page-settings .batcard-need-list { display: grid; gap: var(--space-2); margin: 0 0 var(--space-3); padding-left: 1.25rem; }
+.page-settings .batcard-need-label { font-weight: 700; }
+.page-settings .batcard-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-1); }
+
+/* ===== PANEL (BABALA, TICK, HAKBANG) ===== */
+.page-settings .batcard-panel { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
+.page-settings .batcard-panel[hidden], .page-settings .batcard-steps[hidden] { display: none; }
+.page-settings .batcard-warning { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; padding: var(--space-4); background: var(--color-bg); border: 2px solid var(--color-danger); border-radius: var(--radius); }
+.page-settings .batcard-warn-sign { display: inline-flex; align-items: flex-end; justify-content: center; width: 2.25rem; height: 2rem; padding-bottom: 0.1rem; font-weight: 800; line-height: 1.2; color: #ffffff; background: var(--color-danger); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.page-settings .batcard-warning-title { margin: 0 0 var(--space-2); font-size: 1rem; font-weight: 700; color: var(--color-danger); }
+.page-settings .batcard-warning-title:focus, .page-settings .batcard-steps-title:focus { outline: none; }
+.page-settings .batcard-warning-list { display: grid; gap: var(--space-2); margin: 0; padding-left: 1.25rem; }
+.page-settings .batcard-ack { display: flex; align-items: center; gap: var(--space-2); font-weight: 600; cursor: pointer; }
+.page-settings .batcard-ack input { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+.page-settings .batcard-steps { display: grid; gap: var(--space-3); padding: var(--space-4); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); }
+.page-settings .batcard-steps-title { margin: 0; font-size: 1rem; font-weight: 700; }
+.page-settings .batcard-steps-list { display: grid; gap: var(--space-3); margin: 0; padding-left: 1.5rem; }
+.page-settings .batcard-manual { display: grid; gap: var(--space-1); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.page-settings .batcard-manual-title { margin: 0; font-size: 0.9375rem; font-weight: 700; }
+.page-settings .batcard-close { justify-self: start; }
+
+/* ===== PATH AT COMMAND (MAY COPY) ===== */
+.page-settings .batcard-copy-row { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
+.page-settings .batcard-copy-field { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9rem; }
+.page-settings textarea.batcard-copy-field { padding: var(--space-2) var(--space-3); resize: vertical; }
+.page-settings .batcard-copy-status { min-height: 1.25rem; margin-top: var(--space-1); }
+.page-settings .batcard-file { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 700; overflow-wrap: anywhere; }
+
+/* ===== TABLET AT DESKTOP ===== */
+@media (min-width: 768px) {
+  .page-settings .batcard-copy-row { flex-direction: row; align-items: flex-start; }
+  .page-settings .batcard-copy-field { flex: 1; min-width: 0; }
+  .page-settings .batcard-copy-row .btn { flex-shrink: 0; }
+}
