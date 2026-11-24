@@ -2,6 +2,7 @@
  * FILE    : js/core/calibration-config.js
  * PURPOSE : Constants ng Calibration correl: ayos ng calibration CSV (After at Master), selector, Excel export, text
  * DEPENDS : js/core/config.js, js/core/master-export-config.js (kulay, autofit, separator)
+ * VERSION : v30 | 2026-11-24 | LATEST.DATE_READONLY = true: readonly na ulit ang Date ng Calibration Correl (kapareho ng Master Correl)
  * VERSION : v11.2 | 2026-11-22 | GROUP.before at TEXT.typeSuffix: Daily Check record (After blangko) ay gumagamit ng Before bilang Actual
  * VERSION : v11 | 2026-11-22 | LATEST.DATE_READONLY = false: editable ang Date ng Calibration Correl (para sa pag-test)
  * VERSION : v9.0 | 2026-11-22 | bagong file (Calibration correl, kopya ng Master Correl)
@@ -24,8 +25,8 @@
     END_MARKER_LIST: ['avg', 'avg.', 'max', 'max.', 'std. phase', 'slice'],
     // Ilang column pagkatapos ng huling barcode hahanapin ang AVG header.
     AVERAGE_SCAN_COLUMNS: 3,
-    // DATE_READONLY true = ang Date ay laging today at hindi mababago (kapareho ng Master Correl). false = puwedeng pumili ng petsa (ngayon: false, para sa pag-test).
-    LATEST: { MAX_FILES: 60, DATE_READONLY: false },
+    // DATE_READONLY true = ang Date ay laging today at hindi mababago (kapareho ng Master Correl). false = puwedeng pumili ng petsa (ngayon: true).
+    LATEST: { MAX_FILES: 60, DATE_READONLY: true },
     SELECTOR: {
       source: '#calibration-source', date: '#calibration-date', runButton: '#calibration-run',
       status: '#calibration-status', result: '#calibration-result'

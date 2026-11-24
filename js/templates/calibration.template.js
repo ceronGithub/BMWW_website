@@ -2,6 +2,7 @@
  * FILE    : js/templates/calibration.template.js
  * PURPOSE : Kopya ng pages/calibration.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js
+ * VERSION : v30 | 2026-11-24 | kasabay ng pages/calibration.html (readonly na ulit ang Date)
  * VERSION : v11 | 2026-11-22 | kasabay ng pages/calibration.html (editable ang Date)
  * VERSION : v9.2 | 2026-11-22 | kasabay ng pages/calibration.html (card na Calibration Repeatability at mga script/css nito)
  * VERSION : v9.1 | 2026-11-22 | kasabay ng pages/calibration.html (card na Compare sliders at mga script/css nito)
@@ -31,7 +32,7 @@
     <div class="card-head">
       <div>
         <h2 class="card-title">Calibration correl</h2>
-        <p class="card-note">Pinakabagong calibration record ngayong araw: Actual (After) laban sa Master. Ang Date ay puwedeng baguhin para sa pag-test (default: today).</p>
+        <p class="card-note">Pinakabagong calibration record ngayong araw: Actual (After) laban sa Master. Ang Date ay laging today at hindi puwedeng baguhin.</p>
       </div>
     </div>
     <div class="date-row">

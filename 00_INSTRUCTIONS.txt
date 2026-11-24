@@ -1,3 +1,8 @@
+=== TASK 3 (v30): Date ng Calibration Correl ay readonly na ulit ===
+Binago: js/core/calibration-config.js (LATEST.DATE_READONLY = true), pages/calibration.html at js/templates/calibration.template.js (note lang). Palitan ang tatlong file.
+TEST: Calibration > card na Calibration correl: ang Date ay today at HINDI mapipindot/mababago; DAPAT gumana pa rin ang Calibration Correl at Compare. Master > Master Correl: walang nagbago (readonly pa rin).
+Hindi pa nasubukan sa Edge mo.
+
 INSTRUCTIONS v23 (Batch C: barcode checker ng Master at Calibration, ayos ng Search Files)
 1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy). Bagong: js/core/barcode-checker-config.js, js/core/barcode-checker.js. Buksan ang index.html sa Chrome o Edge at Ctrl+F5.
 2. TEST STEPS v23 (Chrome o Edge).
