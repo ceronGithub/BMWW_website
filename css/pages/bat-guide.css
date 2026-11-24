@@ -1,0 +1,32 @@
+/*
+ * FILE    : css/pages/bat-guide.css
+ * PURPOSE : Style ng card na "Mga .bat tool" sa Settings (collapsible kada tool, hakbang, command)
+ * DEPENDS : css/base.css (variables), css/components.css, css/pages/settings.css
+ * USED BY : pages/settings.html, js/templates/settings.template.js
+ * VERSION : v31 | 2026-11-24 | bagong file (gabay sa .bat sa loob ng Settings)
+ */
+
+/* ===== CARD AT MGA PAALALA ===== */
+/* Para sa: #bat-guide-card sa Settings */
+.page-settings .bat-guide code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.875em; overflow-wrap: anywhere; }
+.page-settings .bat-rules { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); padding-left: 1.25rem; }
+
+/* ===== KADA TOOL (details/summary) ===== */
+/* Para sa: bawat <details class="bat-tool"> */
+.page-settings .bat-tool { border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
+.page-settings .bat-tool + .bat-tool { margin-top: var(--space-2); }
+.page-settings .bat-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-height: var(--touch-size); padding: var(--space-2) var(--space-4); font-weight: 700; cursor: pointer; border-radius: var(--radius); }
+.page-settings .bat-summary:hover { background: var(--color-primary-soft); }
+.page-settings .bat-summary:focus-visible { outline: none; box-shadow: var(--ring); }
+.page-settings .bat-tool[open] > .bat-summary { border-bottom: 1px solid var(--color-border); border-radius: var(--radius) var(--radius) 0 0; }
+.page-settings .bat-tag { padding: 0 var(--space-2); font-size: var(--font-size-label); font-weight: 700; color: var(--color-on-cta); background: var(--color-cta); border-radius: var(--radius-sm); }
+.page-settings .bat-for { font-size: var(--font-size-label); font-weight: 600; color: var(--color-muted); }
+
+/* ===== LAMAN NG TOOL ===== */
+/* Para saan, hakbang, command at tala */
+.page-settings .bat-body { display: grid; gap: var(--space-2); padding: var(--space-4); }
+.page-settings .bat-body p { margin: 0; }
+.page-settings .bat-heading { margin-top: var(--space-2); font-weight: 700; color: var(--color-primary); }
+.page-settings .bat-steps { display: grid; gap: var(--space-2); margin: 0; padding-left: 1.5rem; }
+.page-settings .bat-command { display: block; margin-top: var(--space-2); padding: var(--space-3); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); user-select: all; }
+.page-settings .bat-note { color: var(--color-muted); font-size: 0.9375rem; }

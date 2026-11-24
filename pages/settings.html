@@ -1,7 +1,8 @@
 <!--
   FILE    : pages/settings.html
   PURPOSE : Settings page: machine name at mga path
-  DEPENDS : css/pages/shift-settings.css, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/settings-restore.css, js/core/settings-restore.js, css/pages/settings.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
+  DEPENDS : css/pages/shift-settings.css, js/core/shift-settings-config.js, js/core/shift-settings.js, css/pages/settings-restore.css, js/core/settings-restore.js, css/pages/settings.css, css/pages/bat-guide.css, css/pages/watcher-install.css, js/pages/settings.js, js/pages/watcher-install.js
+  VERSION : v31 | 2026-11-24 | card na Mga .bat tool (#bat-guide-card, install at uninstall ng bawat .bat) at css/pages/bat-guide.css; walang bagong script
   VERSION : v21 | 2026-11-24 | Batch A: switch na Select 1 type only (#settings-type-lock), card ng instruction (#settings-guide-card), css/pages/settings-type.css, js/core/settings-type-config.js at settings-type.js
   VERSION : v1 | 2026-11-19 | unang bersyon
   VERSION : v2.2 | 2026-11-20 | bagong layout: page header, card head, path list, sticky save bar
@@ -19,6 +20,7 @@
 <link rel="stylesheet" href="css/pages/shift-settings.css">
 <link rel="stylesheet" href="css/pages/settings-restore.css">
 <link rel="stylesheet" href="css/pages/settings-type.css">
+<link rel="stylesheet" href="css/pages/bat-guide.css">
 <section class="page page-settings" data-page="settings">
   <header class="page-header">
     <h1 class="page-title">Settings</h1>
@@ -61,6 +63,122 @@
   <div id="settings-guide-card" class="card"></div>
 
   <div id="watcher-card" class="card"></div>
+
+  <div id="bat-guide-card" class="card bat-guide">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Mga .bat tool (install at uninstall)</h2>
+        <p class="card-note">Nasa folder na <code>tools</code> ng BMWW ang lahat ng ito. I-double-click ang .bat sa File Explorer; hindi kailangan ng Administrator. Dapat lumabas ang salitang <strong>TAPOS</strong> sa dulo. Kapag wala, kunan ng screenshot ang itim na window bago pindutin ang anumang key.</p>
+      </div>
+    </div>
+    <ul class="bat-rules">
+      <li>Ilagay ang BUONG BMWW folder sa permanenteng lokal na folder (hal. <code>C:\BMWW_App\</code>), hindi sa ZIP, Downloads o network drive. Kapag inilipat, patakbuhin ulit ang install .bat.</li>
+      <li>Galing sa ZIP? Right-click ang ZIP &gt; Properties &gt; Unblock, bago i-extract.</li>
+      <li>Hindi pa nasubukan sa totoong Windows ang mga bagong .bat. Ang unang test ay sa PC mo.</li>
+    </ul>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">Ongoing Monitor <span class="bat-tag">BAGO</span> <span class="bat-for">Sender PC lang</span></summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> tuloy-tuloy na binabasa ang Data source 1, 2, 3 kahit SARADO ang website. Isinusulat ang status ng machine (ongoing / done / idle) sa <code>&lt;Server path&gt;\queue\&lt;machine&gt;.json</code> para ma-update ang Dashboard ng LEAD PC, at binubuksan ang website sa Dashboard kapag may pagbabago. Basa lang ang Data source.</p>
+        <p class="bat-heading">I-install (isang beses)</p>
+        <ol class="bat-steps">
+          <li>Sa Settings na ito: ilagay at i-Save ang Machine name, Saving path, Server path at Data source 1, 2, 3 (may Full path ang bawat isa).</li>
+          <li>Buksan sa Notepad ang <code>tools\ongoing-monitor\ongoing-monitor-config.txt</code> at ilagay ang <code>SavingPath=</code> (hal. <code>SavingPath=C:\Users\Name\Desktop\BMWW</code>). Tingnan din ang Browser at Page.</li>
+          <li>I-double-click ang <code>install-ongoing-monitor.bat</code>. Gagawa ito ng shortcut sa Startup at tatakbo agad nang tago; tatakbo na ito tuwing mag-log in sa Windows.</li>
+          <li>Kapag nagbago ang config: patakbuhin ulit ang install .bat.</li>
+        </ol>
+        <p class="bat-heading">Pang-test</p>
+        <ol class="bat-steps">
+          <li>Kung naka-install na, i-uninstall muna (para hindi dalawa ang tumatakbo).</li>
+          <li>I-double-click ang <code>run-ongoing-monitor.bat</code>. Dapat lumabas ang "Settings: &lt;machine&gt; (user-input)".</li>
+          <li>Isara ang website, tapos mag-save o gumawa ng file sa Data source 1, 2 o 3. Dapat lumabas ang "Pagbabago sa sourceN" at bumukas ang website sa Dashboard.</li>
+          <li>Isara ang console window para itigil.</li>
+        </ol>
+        <p class="bat-heading">I-uninstall</p>
+        <p>I-double-click ang <code>uninstall-ongoing-monitor.bat</code>. Binubura nito ang shortcut sa Startup at itinitigil ang monitor. Hindi nito binubura ang project folder, config, <code>ongoing-monitor.log</code> o ang mga status file sa Server path\queue.</p>
+      </div>
+    </details>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">Local launcher <span class="bat-tag">BAGO</span></summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> binubuksan ang BMWW sa <code>http://localhost:8765/index.html</code> (hindi sa double-click na file://). Sa localhost, puwedeng piliin ng Chrome/Edge ang "Allow on every visit" para hindi na magtanong ng permission ng folder. Maliit na local server ito (127.0.0.1 lang, hindi abot ng ibang PC).</p>
+        <p class="bat-heading">Patakbuhin (walang install)</p>
+        <ol class="bat-steps">
+          <li>I-double-click ang <code>tools\local-launcher\start-bmww-local.bat</code>. Lalabas ang itim na window na "BMWW local server - HUWAG ISARA".</li>
+          <li>Magbubukas ang Chrome (o Edge) sa localhost. Sa Settings, piliin ulit ang BMWW, Server path at Data source (isang beses lang; ibang "address" ang localhost kaysa sa file://).</li>
+          <li>Kapag nagtanong ang browser ng edit access, piliin ang "Allow on every visit" kung nandoon.</li>
+          <li>Pang-araw-araw: right-click ang .bat &gt; Send to &gt; Desktop, o ilagay ang shortcut sa Startup (Win+R &gt; <code>shell:startup</code>).</li>
+          <li>Para gumana sa Ongoing Monitor: ilagay sa config ang <code>WebsiteUrl=http://localhost:8765/index.html</code>, tapos patakbuhin ulit ang install-ongoing-monitor.bat.</li>
+        </ol>
+        <p class="bat-heading">Itigil at i-uninstall (walang uninstall .bat)</p>
+        <ol class="bat-steps">
+          <li>Isara ang itim na window (o Ctrl+C). Tanggalin ang shortcut sa Desktop o Startup.</li>
+          <li>Kung kusa itong sinimulan nang tago ng Ongoing Monitor: buksan ang PowerShell (Win+X) at i-paste ito, tapos burahin ang WebsiteUrl sa config at i-install ulit ang monitor:
+            <code class="bat-command">Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Where-Object { $_.CommandLine -like '*start-bmww-local.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }</code>
+          </li>
+        </ol>
+        <p class="bat-note">Limitasyon: port 8765 lang; kailangan ng Chrome/Edge na bago (Chrome 122 pataas para sa Allow on every visit).</p>
+      </div>
+    </details>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">Check templates <span class="bat-tag">BAGO</span> <span class="bat-for">Developer</span></summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> sinusuri kung magkapareho ang <code>pages\*.html</code> at ang kopya nito sa <code>js\templates\*.template.js</code>. Kapag DRIFT, maaaring iba ang lumalabas sa double-click na bersyon. Basa lang; walang binabago.</p>
+        <p class="bat-heading">Patakbuhin (walang install)</p>
+        <ol class="bat-steps">
+          <li>Kailangan ng Node.js (nodejs.org). Kung wala, lalabas ang mensahe at hihinto ito.</li>
+          <li>I-double-click ang <code>tools\check-templates\run-check-templates.bat</code>. Lalabas ang MATCH o DRIFT kada page. Kapag may DRIFT, ipakita ang output.</li>
+        </ol>
+        <p class="bat-heading">I-uninstall</p>
+        <p>Wala; walang naiiwan sa PC.</p>
+      </div>
+    </details>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">File Watcher</summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> kusang binubuksan ang website (Search Files) kapag may bagong file o folder sa CLO1A o CLO1A1. Tumatakbo kahit sarado ang browser. Basa lang ang mga folder.</p>
+        <p class="bat-heading">I-install</p>
+        <ol class="bat-steps">
+          <li>Buksan ang <code>tools\file-watcher\watcher-config.txt</code>; tingnan ang WatchPaths, ModifiedWatchPaths (full path ng Data source 1, blangko = hindi gagamitin) at Browser.</li>
+          <li>I-double-click ang <code>install-watcher.bat</code>. Gagawa ng shortcut sa Startup at tatakbo agad nang tago. Kapag nagbago ang config, patakbuhin ulit.</li>
+        </ol>
+        <p class="bat-heading">Pang-test</p>
+        <p>I-double-click ang <code>run-watcher-visible.bat</code>, gumawa ng bagong file sa CLO1A: dapat lumabas ang "Bagong item" at bumukas ang website. Isara ang window para itigil. Log: <code>watcher.log</code>.</p>
+        <p class="bat-heading">I-uninstall</p>
+        <p>I-double-click ang <code>uninstall-watcher.bat</code>.</p>
+      </div>
+    </details>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">Open handler</summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> para gumana ang "Open latest repeatability file" at "Open latest correl file" (binubuksan sa Excel; hindi kaya ng website mismo). Tumatakbo lang ito kapag pinindot ang button. Nagsusulat sa HKCU\Software\Classes\bmww-open (user mo lang); sa company laptop, ipaalam muna sa IT.</p>
+        <p class="bat-heading">I-install</p>
+        <ol class="bat-steps">
+          <li>I-double-click ang <code>tools\open-handler\install-open-handler.bat</code>. Dapat lumabas ang "TAPOS: naka-install ang bmww-open".</li>
+          <li>Siguraduhing FULL PATH ang Saving path sa itaas (hal. <code>C:\BMWW</code>).</li>
+          <li>Sa unang pindot ng Open latest ... file, i-tick ang "Always allow" at pindutin ang Open.</li>
+        </ol>
+        <p class="bat-heading">I-uninstall</p>
+        <p>I-double-click ang <code>uninstall-open-handler.bat</code>. Log: <code>open-handler.log</code>.</p>
+      </div>
+    </details>
+
+    <details class="bat-tool">
+      <summary class="bat-summary">Desktop shortcut</summary>
+      <div class="bat-body">
+        <p class="bat-purpose"><strong>Para saan:</strong> gumagawa ng shortcut na "BMWW" sa Desktop na nagbubukas ng index.html sa Chrome (o Edge). Huwag kopyahin ang index.html sa Desktop; shortcut lang.</p>
+        <p class="bat-heading">I-install</p>
+        <p>I-double-click ang <code>tools\desktop-shortcut\create-desktop-shortcut.bat</code>. Dapat lumabas ang "TAPOS" at may bagong icon na BMWW sa Desktop. Kapag inilipat ang project folder, patakbuhin ulit.</p>
+        <p class="bat-heading">I-uninstall</p>
+        <p>Burahin ang <code>BMWW.lnk</code> sa Desktop. Walang ibang naiwan.</p>
+      </div>
+    </details>
+  </div>
 
   <div id="trend-limits-card" class="card"></div>
 
