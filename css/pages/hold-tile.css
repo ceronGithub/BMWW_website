@@ -1,0 +1,15 @@
+/*
+ * FILE    : css/pages/hold-tile.css
+ * PURPOSE : Style ng ON HOLD block sa tile ng Dashboard. Naka-scope sa .page-dashboard
+ * DEPENDS : css/base.css, css/pages/dashboard-machines.css
+ * VERSION : v1 | 2026-11-24 | bagong file (Task 1B)
+ */
+.page-dashboard .dm-hold { padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); }
+.page-dashboard .dm-hold.is-hold { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
+.page-dashboard .dm-hold-row { display: flex; align-items: center; gap: var(--space-2); }
+.page-dashboard .dm-hold-badge { min-width: 1.5rem; padding: 0.125rem var(--space-2); font-weight: 800; text-align: center; color: var(--color-text); background: var(--color-bg); border-radius: var(--radius-sm); }
+.page-dashboard .dm-hold.is-hold .dm-hold-badge { color: #ffffff; background: #d97706; }
+.page-dashboard .dm-hold-list { margin: var(--space-2) 0 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); }
+.page-dashboard .dm-hold-item { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
+.page-dashboard .dm-hold-unit { font-weight: 700; }
+.page-dashboard .dm-hold-meta { font-size: 0.8125rem; color: var(--color-muted); }

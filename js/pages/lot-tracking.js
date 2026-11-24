@@ -1,7 +1,7 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js, js/core/lot-watch.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js, js/core/lot-watch.js, js/core/lot-hold-config.js, js/core/lot-csv-check.js, js/core/lot-hold-store.js, js/core/lot-autohold.js
  * USED BY : pages/lot-tracking.html (script tag), js/templates/lot-tracking.template.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
@@ -9,6 +9,7 @@
  * VERSION : v2.8 | 2026-11-23 | Yugto 2: monitoring (row sa pag-scan, LOT Unit, auto-DONE kapag END, iba ang barcode o NEW LOTE), JSON at Excel sa Saving path at Server path
  * VERSION : v3.1 | 2026-11-24 | Yugto 6: bantay kapag walang aktibong lote (watchTick): bagong LOT Unit = itanong ang Barcode sa dialog, tapos Operator, tapos simula ng lote (Start = oras ng pinakamaagang unit)
  * VERSION : v3.0 | 2026-11-23 | Yugto 4: SERVER button sa bawat unit ng RESULT (Send sa Server path), Sent Status at Sent Time sa monitoring; handle sa bawat item ng RESULT
+ * VERSION : v3.2 | 2026-11-24 | Task 1A: auto-hold (nabura ang file, walang Average); hindi na tinatanggal ang hold ng barcode sa startLote (kada unit na ang tanggal, pagkatapos ng re-measure)
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: Remarks dialog kada LOT Unit, babala sa Final Meas., On hold (hold file sa Server path at Saving path), tanggal ng hold kapag nagsimula ulit ang barcode
  */
 (function () {
@@ -34,6 +35,7 @@
   const SEND = LOT_CONFIG.SEND;
   const lotWatch = root.lotWatch;
   const WATCH = LOT_CONFIG.WATCH;
+  const autoHold = root.lotAutoHold.create();
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -378,6 +380,23 @@
     }
   }
 
+  /**
+   * PARA SAAN    : auto-hold pagkatapos ng bawat scan (nabura ang file, walang Average, tanggal ng hold pagkatapos ng re-measure)
+   * GINAGAWA     : tinatawag ang autoHold.process para sa aktibong lote; hindi hinihintay at hindi nagtatapon ng error
+   * INPUT/OUTPUT : (rowList, isAllChecked) -> wala
+   * TINATAWAG NG : lot-tracking.js refreshResults
+   * TUMATAWAG SA : autoHold.process, monitor, persistMonitoring, setStatus
+   */
+  function runAutoHold(rowList, isAllChecked) {
+    if (!isActive()) return;
+    const startMs = lote.startMs;
+    autoHold.process({
+      lote, machine: currentMachine, rowList, isAllChecked, monitor,
+      persist: () => persistMonitoring(startMs),
+      notify: (message, isError) => setStatus(message, isError)
+    }).catch(() => setStatus(TEXT.scanError, true));
+  }
+
   // Isang beses na hanap ng bagong file/folder sa lahat ng Data source.
   async function refreshResults() {
     if (isScanning || !lote.startMs) return;
@@ -387,6 +406,7 @@
       const earliestMs = lote.startMs - LOT.START_TOLERANCE_MS;
       const itemList = [];
       const warningList = [];
+      let isAllChecked = sourceList.length > 0;
       if (sourceList.length === 0) warningList.push(TEXT.noSource);
       for (const source of sourceList) {
         let isAllowed = false;
@@ -395,7 +415,7 @@
         } catch (error) {
           isAllowed = false;
         }
-        if (!isAllowed) { warningList.push(source.label + TEXT.noPermission); continue; }
+        if (!isAllowed) { isAllChecked = false; warningList.push(source.label + TEXT.noPermission); continue; }
         await scanDirectory(source.handle, source.label, source.handle.name, 0, earliestMs, itemList);
       }
       if (!query('resultBody')) { stopTimer(); return; }
@@ -405,6 +425,7 @@
       lastScan = { rowList: collected.rowList, warningList };
       if (isActive() && await monitor.prepare(currentMachine, lote.startMs) && recordNewUnits(collected.rowList)) persistMonitoring(lote.startMs);
       renderResults(collected.rowList, warningList);
+      runAutoHold(collected.rowList, isAllChecked);
       askPendingRemarks().catch(() => setStatus(TEXT.scanError, true));
     } catch (error) {
       setResultNote(TEXT.scanError);
@@ -454,7 +475,7 @@
     query('barcode').focus();
     monitorWarningList = [];
     await requestAccess();
-    onhold.removeByBarcode(lote.barcode).then((holdWarningList) => { if (holdWarningList.length > 0) setStatus(holdWarningList.join(' | '), true); });
+    // [BINURA v3.2] onhold.removeByBarcode: ang hold ay tinatanggal na kada LOT Unit ng lot-autohold.js pagkatapos ng re-measure.
     if (await monitor.prepare(currentMachine, lote.startMs)) monitor.startBlock(lote);
     startTimer();
     persistMonitoring(lote.startMs);

@@ -5,6 +5,7 @@
  * DEPENDS : js/core/preview-tab.js, js/core/trend-tile.js (kung naka-load), js/core/preview-chart.js, js/core/chart-draw.js, js/core/correl-excel-reader.js, js/core/dashboard-machines-config.js, js/core/config.js, js/core/storage.js, js/core/queue.js, js/core/monitor.js, js/core/compare-sync.js, js/core/correl-sync.js, js/core/correl-preview.js, js/core/calibration-tile.js, js/core/dashboard-options.js (kung naka-load)
  * INPUT   : localStorage settings (machine name/mode), queue snapshot sa Server path (LEAD PC), monitor.getState (machine)
  * OUTPUT  : mga elemento sa #dm-section at #dm-role (textContent lang, walang innerHTML)
+ * VERSION : v13 | 2026-11-24 | Task 1B: ON HOLD block sa tile (Sender: ownHoldList mula sa Saving path; LEAD PC: item.holdList mula sa Server path), chip na On hold, at ang machine na may hold ay naka-highlight at nauuna (hasHold). Ang gawa ay nasa js/core/hold-tile.js
  * VERSION : v12 | 2026-11-22 | Task 1: tile ng Sender at LEAD PC: Master Correl, Calibration Correl (bago), Worst slider (nasa itaas na ng Trend), Trend; ang Master Repeatability at Calibration Repeatability ay opsyonal na (checkbox sa #dm-options, default OFF; dashboard-options.js). Slot ng Master Unit Correl (future upgrade) ay nasa pagitan ng Calibration Correl at Worst slider. Bago: buildCalibrationBlock, isOptionShown, mountOptions
  * VERSION : v11 | 2026-11-22 | Task 1: OUTDATED badge sa bawat block (Correl, Repeatability, Trend, Compare) kapag galing sa nakaraang shift (withFreshness, shift-freshness.js); kusang refresh kapag nagpalit ng shift (stopShiftWatch); kapag walang file sa folder ng ngayon, tinitingnan din ang folder ng kahapon (readWithYesterday)
  * VERSION : v9.4 | 2026-11-22 | Trend block sa tile (buildTrendBlock; LEAD PC: item.trend galing sa Server path; Sender: ownTrend galing sa Saving path); ang tile at Preview ay nasa js/core/trend-tile.js
@@ -104,7 +105,7 @@
   }
 
   // Buod ng mga machine sa taas ng listahan.
-  function renderSummary(summary, alertCount, correlFailCount, repeatabilityFailCount) {
+  function renderSummary(summary, alertCount, correlFailCount, repeatabilityFailCount, holdCount) {
     const list = createElementWith('ul', 'dm-chip-list');
     const labels = TEXT.summary;
     list.append(
@@ -118,6 +119,7 @@
       buildChip(labels.correlFail, correlFailCount, 'dm-chip-correl-fail'),
       buildChip(labels.repeatabilityFail, repeatabilityFailCount, 'dm-chip-correl-fail')
     );
+    if (root.holdTileConfig) list.append(buildChip(root.holdTileConfig.TEXT.chip, holdCount || 0, 'dm-chip-alert'));
     query(SEL.summary).replaceChildren(list);
   }
 
@@ -145,9 +147,14 @@
     return isOptionShown('masterRepeatability') && Boolean(item.repeatability) && item.repeatability.status === CONFIG.MASTER.STATUS.fail;
   }
 
+  // May naka-hold bang LOT Unit ang machine (galing sa <Server path>\\onhold)?
+  function hasHold(item) {
+    return Array.isArray(item.holdList) && item.holdList.length > 0;
+  }
+
   // Ranggo ng machine item para sa pagkakasunod (alert, Correl FAIL o Repeatability FAIL muna, tapos ongoing; no status sa huli).
   function getRank(item) {
-    if (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item)) return DM.RANK.alert;
+    if (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) || hasHold(item)) return DM.RANK.alert;
     if (item.presence === QUEUE.PRESENCE.stale) return DM.RANK.stale;
     if (item.presence === QUEUE.PRESENCE.noStatus || !item.status) return DM.RANK.noStatus;
     return DM.RANK[item.status.state] === undefined ? DM.RANK.idle : DM.RANK[item.status.state];
@@ -467,7 +474,9 @@
 
   // Mga block ng tile sa iisang pagkakasunod (Sender at LEAD PC): Master Correl, Calibration Correl, [Master Unit Correl: future upgrade], Worst slider, Trend, tapos ang opsyonal na Master Repeatability at Calibration Repeatability.
   function buildTileBlocks(data, nowMs, machineName, isSender) {
-    const blockList = [buildCorrelBlock(data.correl, nowMs), buildCalibrationBlock('correl', data.calibrationCorrel, nowMs, machineName, isSender)];
+    const blockList = [];
+    if (root.holdTile) blockList.push(root.holdTile.buildBlock(data.holdList || null));
+    blockList.push(buildCorrelBlock(data.correl, nowMs), buildCalibrationBlock('correl', data.calibrationCorrel, nowMs, machineName, isSender));
     // Dito ilalagay ang Master Unit Correl (future upgrade).
     if (data.compare && data.compare.status.detected && data.compare.status.worst) blockList.push(buildAlertBlock(data.compare, nowMs, machineName));
     blockList.push(withFreshness(buildTrendBlock(data.trend || null, machineName), data.trend && data.trend.modifiedMs, nowMs));
@@ -478,7 +487,7 @@
 
   // Tile ng isang machine sa LEAD PC view.
   function buildMachineTile(item, nowMs) {
-    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) ? ' dm-tile-alert' : ''));
+    const tile = createElementWith('article', DM.CLASS.tile + ' ' + DM.CLASS.tileRole.sender + ' ' + DM.CLASS.presence[item.presence] + (hasAlert(item) || hasCorrelFail(item) || hasRepeatabilityFail(item) || hasHold(item) ? ' dm-tile-alert' : ''));
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', item.machineName), buildRoleBadge(DM.ROLE.sender));
     tile.append(head, ...buildTileBlocks(item, nowMs, item.machineName, false));
@@ -545,9 +554,10 @@
     const excelIssueList = await applyLatestCorrelExcel(snapshot.handle, snapshot.machineItemList);
     await root.repeatabilityTile.attachToItems(snapshot.handle, snapshot.machineItemList);
     if (root.trendTile) await root.trendTile.attachToItems(snapshot.handle, snapshot.machineItemList);
+    if (root.holdTile) await root.holdTile.attachToItems(snapshot.machineItemList);
     if (root.calibrationTile) await root.calibrationTile.attachToItems(snapshot.handle, snapshot.machineItemList, isOptionShown('calibrationRepeatability'));
     if (!query(SEL.section)) return;
-    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length, snapshot.machineItemList.filter(hasRepeatabilityFail).length);
+    renderSummary(snapshot.summary, snapshot.machineItemList.filter(hasAlert).length, snapshot.machineItemList.filter(hasCorrelFail).length, snapshot.machineItemList.filter(hasRepeatabilityFail).length, snapshot.machineItemList.filter(hasHold).length);
     const sortedList = sortItems(snapshot.machineItemList);
     grid.replaceChildren(...sortedList.map((item) => buildMachineTile(item, nowMs)));
     setMessage(sortedList.length === 0 ? TEXT.emptyGrid : excelIssueList.join(' | '), false);
@@ -586,7 +596,7 @@
     const head = createElementWith('div', 'dm-tile-head');
     head.append(createElementWith('h3', 'dm-tile-name', settings.machineName), buildRoleBadge(DM.ROLE.sender));
     // Worst slider (Compare vs previous) ng araw na ito, galing sa <Saving path>\\master-compare\\<petsa ngayon>; nasa itaas ng Trend (buildTileBlocks).
-    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), ...buildTileBlocks({ correl: ownCorrel, calibrationCorrel: ownCalibrationCorrel, compare: ownCompare, trend: ownTrend, repeatability: ownRepeatability, calibrationRepeatability: ownCalibrationRepeatability }, nowMs, settings.machineName, true));
+    tile.append(head, createElementWith('p', 'card-note', TEXT.senderTileNote), ...buildTileBlocks({ correl: ownCorrel, calibrationCorrel: ownCalibrationCorrel, compare: ownCompare, trend: ownTrend, repeatability: ownRepeatability, calibrationRepeatability: ownCalibrationRepeatability, holdList: ownHoldList }, nowMs, settings.machineName, true));
     const isRunning = monitorState.state === MONITOR.STATE.running;
     if (isRunning) {
       const overall = getOwnOverallState(monitorState.sources);
@@ -632,6 +642,7 @@
       if (role.key === DM.ROLE.lead.key) await renderLead(settings, shouldRequest);
       else if (role.key === DM.ROLE.sender.key) {
         await readOwnCorrel(settings);
+        if (root.holdTile) ownHoldList = await root.holdTile.readOwn(settings.machineName || '');
         renderSender(settings, shouldRequest);
         publishOwnCorrel(settings);
       }
@@ -667,6 +678,7 @@
   let ownCalibrationCorrel = null;
   let ownCalibrationRepeatability = null;
   let ownTrend = null;
+  let ownHoldList = [];
   let isOwnReading = false;
   async function readOwnCorrel(settings) {
     if (isOwnReading) return;

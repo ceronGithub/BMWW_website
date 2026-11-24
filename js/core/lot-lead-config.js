@@ -3,6 +3,7 @@
  * PURPOSE : Lahat ng constant ng LEAD PC view ng LOT Tracking (refresh, filter, column, selector, text)
  * DEPENDS : js/core/lot-config.js (window.BMWW.lotConfig)
  * VERSION : v1 | 2026-11-23 | bagong file (Yugto 5)
+ * VERSION : v2 | 2026-11-24 | Task 1B: dagdag na column na Remarks (para makita ang On hold) sa COLUMN_FIELD_LIST
  */
 (function () {
   'use strict';
@@ -27,7 +28,7 @@
     // Ayos ng mga column ng table (ayon sa seksyon 6 ng spec). Dapat tugma sa <th> ng pages/lot-tracking-lead.html.
     COLUMN_FIELD_LIST: Object.freeze([
       'barcode', 'lotUnit', 'wafer', 'blk', 'layerNo', 'startMs', 'endMs',
-      'lotDurationMin', 'operator', 'machine', 'status', 'filePath'
+      'lotDurationMin', 'operator', 'machine', 'status', 'remarks', 'filePath'
     ]),
     // Resulta ng pagbasa sa Server path.
     STATE: Object.freeze({ ok: 'ok', unsupported: 'unsupported', noServer: 'noServer', noPermission: 'noPermission', noMonitoring: 'noMonitoring', readError: 'readError' }),

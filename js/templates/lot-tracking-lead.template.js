@@ -3,6 +3,7 @@
  * PURPOSE : Kopya ng pages/lot-tracking-lead.html bilang template string, para gumana sa double-click (file://)
  * DEPENDS : js/core/registry.js, js/pages/lot-tracking-lead.js, js/core/lot-config.js, js/core/lot-lead-config.js, js/core/lot-shift.js, js/core/lot-monitoring-reader.js
  * VERSION : v1 | 2026-11-23 | bagong file (Yugto 5)
+ * VERSION : v2 | 2026-11-24 | Task 1B: dagdag na column na Remarks
  */
 (function () {
   'use strict';
@@ -53,6 +54,7 @@
             <th scope="col">Operator</th>
             <th scope="col">Machine</th>
             <th scope="col">Status</th>
+            <th scope="col">Remarks</th>
             <th scope="col">File Path</th>
           </tr>
         </thead>

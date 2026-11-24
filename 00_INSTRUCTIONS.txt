@@ -1,3 +1,23 @@
+=== TASK 1B (v35): ON HOLD sa Dashboard at Remarks sa LOT Monitoring ===
+BAGO: js/core/hold-tile-config.js, js/core/hold-tile.js, css/pages/hold-tile.css. BINAGO: js/pages/dashboard-machines.js, pages/dashboard.html, js/templates/dashboard.template.js, js/core/lot-lead-config.js, pages/lot-tracking-lead.html, js/templates/lot-tracking-lead.template.js, README.txt, 00_INSTRUCTIONS.txt. Ilagay muna ang v34 (Task 1A). Ctrl+F5 pagkatapos.
+TEST:
+  - Sender: gumawa ng hold (gamit ang test ng v34). Dashboard: DAPAT may block na ON HOLD na may bilang at listahan (LOT Unit, Barcode, dahilan, oras) sa tile ng machine; kapag walang hold, 'Walang On hold'. Pagkatanggal ng hold (re-measure), DAPAT mawala ito sa susunod na refresh.
+  - LEAD PC (Server path na parehong gamit ng Sender): DAPAT may ON HOLD block sa tile ng machine, chip na 'On hold' sa buod, naka-highlight ang tile at nauuna sa listahan.
+  - LOT Monitoring (LEAD): DAPAT may column na Remarks; ang unit na naka-hold ay 'On hold - No Average' o 'On hold - File deleted'.
+DAPAT HINDI makita: hold ng ibang machine sa tile ng Sender; error sa console; pagbabago sa onhold folder (basa lang ang Dashboard).
+Hindi pa nasubukan sa Chrome/Edge; nasubukan lang sa jsdom na may pekeng folder.
+
+=== TASK 1A (v34): auto On hold ng LOT Unit ===
+BAGO: js/core/lot-hold-config.js, lot-csv-check.js, lot-hold-store.js, lot-autohold.js. BINAGO: js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, README.txt, 00_INSTRUCTIONS.txt. Ctrl+F5 pagkatapos.
+TEST (Chrome/Edge; Machine name, Saving path, Server path at Data source 2 o 3 sa Settings; aktibong lote):
+  - Ilagay sa Data source ang 5AHG459A_261105204644.csv (may Average): DAPAT walang hold. Ilagay ang 4A25C20A_261020134704.csv (walang Average), maghintay ng ~15 segundo: DAPAT may 4A25C20A__.txt (<Barcode>__4A25C20A.txt) sa onhold ng Saving path at Server path, Reason=NO AVERAGE, at ang Remarks ng unit sa monitoring ay 'On hold - No Average'.
+  - Burahin ang CSV ng isang unit na naitala na: pagkalipas ng ~6 na segundo DAPAT may hold (Reason=FILE DELETED, Remarks 'On hold - File deleted').
+  - Alisin ang permission ng isang Data source habang tumatakbo: DAPAT HINDI mag-hold dahil lang doon.
+  - Re-measure: maglagay ng BAGONG CSV ng parehong LOT Unit na may Average: pagkalipas ng 30 segundo (kung hindi nabura) DAPAT mawala ang hold file ng unit na iyon sa dalawang folder at ang Remarks ay 'Re-measured OK'. Kung nabura ulit o walang Average, DAPAT nananatili ang hold.
+  - I-END at i-scan ulit ang parehong barcode: DAPAT HINDI mawala ang hold file ng mga unit (dati ay nabubura lahat).
+DAPAT HINDI makita: dobleng hold file ng parehong unit, pagbabago sa file sa Data source (basa lang), error sa console.
+Hindi pa nasubukan sa Chrome/Edge; nasubukan lang sa Node na may pekeng folder at ang 2 totoong CSV.
+
 === TASK 1 at 2 (v33): Settings sa Edge at mensahe ng Search Files ===
 Binago: js/core/storage.js, js/core/config.js, js/pages/settings.js, js/pages/file-search.js, css/pages/file-search.css.
 TEST 1: Edge > Settings (Ctrl+F5): DAPAT may laman ang Machine name, Mga path at mga card. Kung hindi sumasagot ang browser storage, DAPAT lumabas pa rin ang form pagkalipas ng mga 3 segundo, na may pulang mensahe tungkol sa browser storage. DAPAT HINDI manatiling blangko.
