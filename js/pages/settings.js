@@ -1,7 +1,8 @@
 /*
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
- * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional)
+ * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional), lead-pc.js at lead-pc-config.js (optional)
+ * VERSION : v24 | 2026-11-24 | Batch D (Task 8): maraming LEAD PC; ang pangalan ng LEAD PC ay galing sa leadPc.claimLeadName (LEAD PC 1, 2, ...); leadPcId; hindi binubura sa Server path ang file ng ibang LEAD PC
  * VERSION : v21 | 2026-11-24 | Batch A: settingsType (Select 1 type only: lock ng uri, hindi binubura ang file ng kabilang uri kapag OFF, itago ang Data source sa LEAD PC, full path mula sa clipboard); userInputName; applyTypeLock, handleTypeChange
  * VERSION : v15 | 2026-11-22 | Yugto 0: hook sa shiftSettings (card na Shift): init (sa init at applyRestoredSettings), tsek at save ng shiftTimes sa onSave
  * VERSION : v10.1 | 2026-11-22 | settings ay sa settings\machines\sender o monitoring: removeMachineSettings na may keep ({mode, fileName}) at laging tinatawag kapag may dating file (migration); getFileLocation ay may machines\<role>
@@ -65,12 +66,17 @@
   function renderMachine() {
     const mode = getSelectedMode();
     const input = query('nameInput');
-    if (input.value && input.value !== CONFIG.LEAD_PC_NAME) typedUserName = input.value;
-    if (mode === CONFIG.MACHINE_MODE.LEAD_PC) input.value = CONFIG.LEAD_PC_NAME;
-    else if (input.value === CONFIG.LEAD_PC_NAME) input.value = getUserInputName();
+    if (input.value && !isLeadLabel(input.value)) typedUserName = input.value;
+    if (mode === CONFIG.MACHINE_MODE.LEAD_PC) input.value = root.leadPc ? root.leadPc.getDisplayName(settings) : CONFIG.LEAD_PC_NAME;
+    else if (isLeadLabel(input.value)) input.value = getUserInputName();
     input.disabled = mode !== CONFIG.MACHINE_MODE.USER_INPUT;
     query('note').textContent = TEXT.machineNote;
     applyTypeLock();
+  }
+
+  // Label ba ito ng LEAD PC (LEAD PC, LEAD PC 2, paalala)? Kapag walang leadPc, ang batayang pangalan lang.
+  function isLeadLabel(text) {
+    return root.leadPc ? root.leadPc.isLeadLabel(text) : text === CONFIG.LEAD_PC_NAME;
   }
 
   // Ang huling pangalan ng Sender (User input) na naka-save, para maibalik kapag bumalik mula sa LEAD PC.
@@ -504,7 +510,7 @@
     try {
       clearAttention();
       const mode = getSelectedMode();
-      const name = mode === CONFIG.MACHINE_MODE.LEAD_PC ? CONFIG.LEAD_PC_NAME : sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX);
+      let name = mode === CONFIG.MACHINE_MODE.LEAD_PC ? CONFIG.LEAD_PC_NAME : sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX);
       if (!mode || !name) { setStatus(TEXT.machineMissing, true); return; }
       const fullPathMap = {};
       CONFIG.PATH_LIST.forEach((pathItem) => { fullPathMap[pathItem.key] = getInputFullPath(pathItem.key); });
@@ -524,6 +530,12 @@
           isServerAllowed = false;
         }
       }
+      let leadClaim = null;
+      if (mode === CONFIG.MACHINE_MODE.LEAD_PC && root.leadPc) {
+        leadClaim = await root.leadPc.claimLeadName(serverHandle, isServerAllowed, settings);
+        if (leadClaim.state === root.leadPcConfig.STATE.full) { setStatus(root.leadPcConfig.TEXT.full, true); return; }
+        name = leadClaim.name;
+      }
       const next = { ...settings };
       delete next.machineNameLocked;
       next.machineMode = mode;
@@ -532,6 +544,8 @@
       const previousFile = settings[CONFIG.MACHINE_FILE_FIELD] || '';
       next[CONFIG.MACHINE_FILE_FIELD] = fileName;
       const removeOptions = { isSingleType: root.settingsType ? root.settingsType.isOn() : true, previousFile, previousMode: settings.machineMode || '', mode, fileName };
+      const serverRemoveOptions = leadClaim && leadClaim.isPreviousForeign ? { ...removeOptions, previousFile: '' } : removeOptions;
+      if (leadClaim) next[root.leadPcConfig.FIELD.id] = leadClaim.leadPcId;
       next[TYPE.FIELD.selectOneTypeOnly] = removeOptions.isSingleType;
       next[TYPE.FIELD.userInputName] = mode === CONFIG.MACHINE_MODE.USER_INPUT ? name : getUserInputName();
       const folderNames = {};
@@ -551,7 +565,7 @@
       settings = next;
       storage.writeLocalSettings(settings);
       setDirty(false);
-      const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, removeOptions);
+      const serverResult = await writeToServer(serverHandle, isServerAllowed, fileName, next, serverRemoveOptions);
       renderMachine();
       renderPaths();
       const rootLocation = getFileLocation(fullPathMap[CONFIG.ROOT_KEY], fileName, mode);
@@ -562,9 +576,17 @@
       } else {
         setStatus(TEXT.savedRootOnly + rootLocation + TEXT.serverFailed, true);
       }
+      if (leadClaim) appendLeadNote(leadClaim);
     } catch (error) {
       setStatus(TEXT.saveError, true);
     }
+  }
+
+  // Dinadagdag sa status ang pangalang nakuha ng LEAD PC (at paalala kung hindi nasuri ang Server path).
+  function appendLeadNote(leadClaim) {
+    const leadText = root.leadPcConfig.TEXT;
+    const template = leadClaim.state === root.leadPcConfig.STATE.unchecked ? leadText.unchecked : leadText.assigned;
+    query('status').textContent += template.replace('{name}', leadClaim.name);
   }
 
   // Init ng page, tinatawag ng router.

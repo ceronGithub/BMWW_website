@@ -511,3 +511,19 @@ INSTRUCTIONS v3.4 (File Watcher: kasama na ang Data source 1 na may na-modify na
    - Ang install-watcher.bat ay ikaw mismo ang magpapatakbo (README-WATCHER.txt). Sa company laptop, ipaalam muna sa IT.
    - Ibalik sa akin kung mali ang ipinakitang path (lalo na kung OneDrive, network drive o http ang pinagbubukasan).
    - Hindi pa ito nasubukan sa totoong Chrome/Edge ng gumawa (jsdom lang para sa Settings, 26 test; ang watcher ay nasubukan lang sa PowerShell 7 sa Linux); ang unang test ay sa device mo.
+
+=== [v24] BATCH D: MARAMING LEAD PC (Task 8) ===
+BAGONG file: js/core/lead-pc-config.js, js/core/lead-pc.js
+BINAGO: js/pages/settings.js, index.html, README.txt, 00_INSTRUCTIONS.txt
+
+TEST (kailangan ng dalawang PC o dalawang browser profile, parehong Server path):
+1. PC A: Settings > piliin ang LEAD PC > ilagay ang Saving path at Server path > Save settings.
+   DAPAT: ang pangalan field ay LEAD PC 1; may file na "LEAD PC 1.json" sa <Server>\settings\machines\monitoring.
+2. PC B: ganoon din, parehong Server path. DAPAT: LEAD PC 2 ("LEAD PC 2.json"); buo pa rin ang LEAD PC 1.json.
+3. PC A: Save ulit. DAPAT: LEAD PC 1 pa rin (hindi nagbago).
+4. Dashboard ng PC A at PC B. DAPAT makita ang lahat ng Sender. DAPAT HINDI makita ang isa't isa na LEAD PC.
+5. Kung may lumang "LEAD PC.json": pag-Save ng may-ari nito, DAPAT ma-migrate sa LEAD PC <numero> at mabura ang lumang file.
+6. Walang Server path o walang permission: DAPAT may paalalang pansamantala ang pangalan at i-Save ulit.
+7. I-off ang Select 1 type only, lumipat sa Sender at bumalik sa LEAD PC. DAPAT pareho pa ring LEAD PC <numero>.
+Hindi pa ito nasubukan sa totoong Chrome/Edge (Node lang, gawa-gawang folder).
+
