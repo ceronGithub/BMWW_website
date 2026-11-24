@@ -581,3 +581,9 @@ Hindi pa ito nasubukan sa totoong Windows (PowerShell 7 sa Linux lang, gawa-gawa
 3. (Kung may Node.js) i-double-click ang tools\check-templates\run-check-templates.bat.
    DAPAT: 9 MATCH at 1 DRIFT (dashboard). DAPAT HINDI: may nagbago sa mga file (basa lang).
 4. Buksan ang website: DAPAT walang pagbabago sa takbo (walang ginalaw na code).
+
+
+=== BATCH I (v29): pages/dashboard.html ===
+1. Backup muna. Palitan ang pages/dashboard.html, README.txt, 00_INSTRUCTIONS.txt. Walang bagong file.
+2. (Kung may Node.js) run-check-templates.bat: DAPAT lahat MATCH (10 sa 10).
+3. Buksan ang website at ang Dashboard: DAPAT walang pagbabago (template pa rin ang gamit).
