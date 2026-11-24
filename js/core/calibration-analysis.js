@@ -3,6 +3,7 @@
  * PURPOSE : Calibration correl: binabasa ang pinakabagong calibration record (After = Actual, Master) at kinakalkula ang R squared
  * DEPENDS : js/core/config.js, csv-reader.js, master-analysis.js, calibration-config.js
  * VERSION : v11.2 | 2026-11-22 | Daily Check: kapag blangko ang After, Before ang Actual (locateLayout may beforeStart, getActualSource, readActualPoints, getTypeSuffix); analyzeLatest ay pinipili ang pinakabagong record na may laman
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 11): locateLayout ay may barcodeCheck (27 hanggang 30 barcode); analyzeLatest ay nagtatapon ng error na barcodeCheck kapag mali ang file ng napiling record
  * VERSION : v9.0 | 2026-11-22 | bagong file (kopya ng analyzeLatest ng Master, para sa calibration CSV: "Calibration Status List")
  */
 (function () {
@@ -77,6 +78,7 @@
     const beforeStart = beforeGroupColumn >= 0 && readBarcodeList(rowList, beforeGroupColumn + 1).length === barcodeList.length ? beforeGroupColumn + 1 : -1;
     return {
       afterStart, beforeStart, masterStart, barcodeList,
+      barcodeCheck: root.barcodeChecker.check('calibration', barcodeList),
       afterAverageColumn: findAverageColumn(rowList, afterStart + barcodeList.length),
       beforeAverageColumn: beforeStart >= 0 ? findAverageColumn(rowList, beforeStart + barcodeList.length) : -1,
       masterAverageColumn: findAverageColumn(rowList, masterStart + barcodeList.length)
@@ -156,6 +158,7 @@
         if (rowSource) { bestDate = rowDate; bestIndex = rowIndex; bestSource = rowSource; }
       }
       if (bestIndex < 0) continue;
+      if (!layout.barcodeCheck.ok) throw root.barcodeChecker.createError(layout.barcodeCheck, item.name);
       const points = readActualPoints(rowList, bestIndex, layout, bestSource);
       const regression = masterAnalysis.computeRegression(points.masterList, points.actualList);
       if (!regression) throw csv.createError('noRegression');

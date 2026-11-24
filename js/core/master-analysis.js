@@ -6,6 +6,7 @@
  * VERSION : v2.7 | 2026-11-20 | classifyDeviation (green / yellow / red)
  * VERSION : v2.15 | 2026-11-21 | analyzeLatest: may optional na endDate (pinakabagong record sa pagitan ng start at end date); kapag wala, isang araw lang gaya ng dati
  * VERSION : v2.22 | 2026-11-21 | findWorstSlider (barcode na may pinakamalaking diff ng actual vs master sa Correl)
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 12): sinusuri ang 15 barcode ng bawat master file na gagamitin (analyzeLatest at analyzeRange); kapag mali, nagtatapon ng error na barcodeCheck
  */
 (function () {
   'use strict';
@@ -180,13 +181,16 @@
         if (rowDate && rowDate.getTime() >= dayStart && rowDate.getTime() < dayEnd && (!bestDate || rowDate > bestDate)) { bestDate = rowDate; bestIndex = rowIndex; }
       }
       if (bestIndex < 0) continue;
+      const barcodeList = readBarcodes(rowList);
+      const barcodeCheck = root.barcodeChecker.check('master', barcodeList);
+      if (!barcodeCheck.ok) throw root.barcodeChecker.createError(barcodeCheck, item.name);
       const points = readPoints(rowList, bestIndex);
       const regression = computeRegression(points.masterList, points.actualList);
       if (!regression) throw csv.createError('noRegression');
       const actualAverage = csv.toNumber(csv.getCell(rowList, bestIndex, MASTER.ACTUAL_AVG_COLUMN));
       const masterAverage = csv.toNumber(csv.getCell(rowList, bestIndex, MASTER.MASTER_AVG_COLUMN));
       return {
-        kind: 'latest', fileName: item.name, recordDate: bestDate, barcodeList: readBarcodes(rowList),
+        kind: 'latest', fileName: item.name, recordDate: bestDate, barcodeList,
         actualList: points.actualList, masterList: points.masterList, regression,
         status: classifyLatest(regression.rSquared),
         actualAverage: actualAverage !== null ? actualAverage : averageOf(points.actualList),
@@ -226,7 +230,10 @@
       }
       if (csv.countHeaders(rowList) !== MASTER.HEADER_COUNT) continue;
       masterFileCount += 1;
-      if (!barcodeList) barcodeList = readBarcodes(rowList);
+      const fileBarcodeList = readBarcodes(rowList);
+      const barcodeCheck = root.barcodeChecker.check('master', fileBarcodeList);
+      if (!barcodeCheck.ok) throw root.barcodeChecker.createError(barcodeCheck, item.name);
+      if (!barcodeList) barcodeList = fileBarcodeList;
       for (let rowIndex = MASTER.DATA_START_ROW; rowIndex < rowList.length; rowIndex += 1) {
         const rowDate = csv.parseAnyDate(csv.getCell(rowList, rowIndex, MASTER.DATE_COLUMN));
         if (!rowDate) continue;

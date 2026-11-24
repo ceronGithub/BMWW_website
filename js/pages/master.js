@@ -2,6 +2,7 @@
  * FILE    : js/pages/master.js
  * PURPOSE : Master page: Latest Master (today, readonly) at Range Master analysis, gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 12): getErrorMessage ay ipinapakita ang error.userMessage (mali ang barcode ng master file)
  * VERSION : v8.15 | 2026-11-22 | Master Repeatability: tinanggal ang button na Open latest repeatability file at Export to Excel (onExport, onOpenLatestFile, getExportButton, getOpenLatestButton); tuloy ang kusang export (autoExportRange). Ang updateExportButton ay naging refreshCompare (refresh na lang ng Compare sliders)
  * VERSION : v8.11 | 2026-11-21 | (1) Latest Master: tinanggal ang button na Open latest correl file at Export to Excel (onExportCorrel, onOpenLatestCorrel, getCorrelOpenButton, getCorrelExportButton); tuloy ang autoExportCorrel. (2) Date ng Latest Master: laging today at readonly (getTodayDate); hindi na ibinabalik ang lumang petsa. (3) Master Repeatability: kusang export pagkatapos ng run (autoExportRange) at kopya sa Server path (repeatabilitySync.exportBoth)
  * VERSION : v8.1 | 2026-11-21 | autoExportCorrel: laging nag-e-export kada Run Latest Master (CORREL.AUTO.SKIP_SAME = false)
@@ -99,6 +100,7 @@
   // Ginagawang friendly na mensahe ang error (walang teknikal na detalye).
   function getErrorMessage(error) {
     const messageMap = TEXT.error;
+    if (error && error.userMessage) return error.userMessage;
     if (error && SHIFT.TEXT.error[error.code]) return SHIFT.TEXT.error[error.code];
     if (error && messageMap[error.code]) return messageMap[error.code];
     if (error && MASTER.ERROR_BY_NAME[error.name]) return messageMap[MASTER.ERROR_BY_NAME[error.name]];

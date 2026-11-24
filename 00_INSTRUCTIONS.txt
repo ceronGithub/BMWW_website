@@ -1,3 +1,24 @@
+INSTRUCTIONS v23 (Batch C: barcode checker ng Master at Calibration, ayos ng Search Files)
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy). Bagong: js/core/barcode-checker-config.js, js/core/barcode-checker.js. Buksan ang index.html sa Chrome o Edge at Ctrl+F5.
+2. TEST STEPS v23 (Chrome o Edge).
+   MASTER (15 barcode):
+   - Master > Latest Master / Master Repeatability gamit ang normal na master CSV: DAPAT gumana tulad ng dati.
+   - Gumawa ng KOPYA ng master CSV (huwag ang original) at gawing doble ang isang barcode sa row 4, o burahin ang isa: DAPAT may pulang mensahe na may pangalan ng file, 'dobleng barcode' o 'blangkong barcode'. DAPAT HINDI lumabas ang resulta.
+   CALIBRATION (27 hanggang 30):
+   - Calibration > Calibration Correl gamit ang calibration CSV na 27, 28, 29 o 30 slider: DAPAT gumana.
+   - Kopya ng file na 15 slider lang (o 31): DAPAT may pulang mensahe na 'ang nabasang barcode ... dapat 27 hanggang 30'.
+   - Calibration Repeatability na may 15-slider na file kasama ang 30-slider: DAPAT gumana gamit ang 30-slider at may tala sa ilalim ng resulta kung aling file ang nilaktawan at bakit.
+   SEARCH FILES (Data source 2 at 3):
+   - Get latest files: DAPAT lumabas ang file at folder na bago ngayong araw at kahapon sa CLO1A at CLO1A1.
+   - Search date: pumili ng saklaw; DAPAT lumabas ang file at folder sa loob ng saklaw lang.
+   - Search file name: mag-type ng bahagi ng pangalan; DAPAT lumabas ang LAHAT ng may ganoong text sa pangalan (file at folder).
+   - Habang may search: DAPAT kumikislap na kulay ang button na pinindot, DAPAT hindi clickable ang ibang button (kasama ang Clear, Send, Choose folder), at STOP lang ang clickable.
+   - Habang may search, pumunta sa ibang page at bumalik: DAPAT pareho pa rin (kulay, hindi clickable ang mga button, gumagana ang STOP). Kapag natapos na, DAPAT bumalik sa normal ang mga button at lumabas ang resulta.
+   - DAPAT HINDI mangyari: error sa console; dalawang search na sabay.
+3. Tandaan: Date Modified ang oras ng file (hindi mababasa ng browser ang Date Created). Ang file na kinopya na luma ang Modified ay hindi lalabas sa Get latest files.
+4. Hindi pa ito nasubukan sa totoong Chrome/Edge ng gumawa (Node at jsdom lang, gawa-gawang CSV); ang unang test ay sa device mo. Kung may totoong barcode na hindi pumapasa, ipadala ang mensahe; ang tamang bilang at anyo ay nasa js/core/barcode-checker-config.js.
+
+--- LUMANG INSTRUCTIONS (v22) ---
 INSTRUCTIONS v22 (Batch B: autochecker ng folder, isang click na Payagan lahat, desktop shortcut)
 1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy). Bagong: js/core/access-guard-config.js, js/core/access-guard.js, css/access-guard.css, tools/desktop-shortcut/. Ctrl+F5 pagkatapos.
 2. TEST STEPS v22 (Chrome o Edge; kailangan nang naka-Save ang Settings ng machine).

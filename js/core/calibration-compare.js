@@ -3,6 +3,7 @@
  * PURPOSE : Hinahanap ang naunang calibration record (bago ang napiling petsa) para sa Compare vs previous; ang kalkulasyon ng pagkukumpara ay galing sa masterCompare
  * DEPENDS : js/core/csv-reader.js, master-analysis.js, calibration-analysis.js, calibration-config.js, master-compare-config.js, master-compare.js
  * VERSION : v11.2 | 2026-11-22 | Daily Check: kapag blangko ang After, Before ang Actual; ang record na blangko ang pareho ay nilalaktawan sa paghahanap ng previous
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 11): kapag mali ang barcode (27 hanggang 30) ng file ng previous record, nagtatapon ng error na barcodeCheck
  * VERSION : v9.1 | 2026-11-22 | bagong file (isang scan ng mga file; hindi ginalaw ang calibration-analysis.js)
  */
 (function () {
@@ -61,6 +62,7 @@
       }
     }
     if (!best) throw csv.createError('noPreviousRecord');
+    if (!best.layout.barcodeCheck.ok) throw root.barcodeChecker.createError(best.layout.barcodeCheck, best.fileName);
     const points = calibrationAnalysis.readActualPoints(best.rowList, best.rowIndex, best.layout, best.source);
     const regression = masterAnalysis.computeRegression(points.masterList, points.actualList);
     if (!regression) throw csv.createError('noRegression');

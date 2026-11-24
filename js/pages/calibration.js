@@ -2,6 +2,7 @@
  * FILE    : js/pages/calibration.js
  * PURPOSE : Calibration page: Calibration correl (pinakabagong calibration record ngayong araw: After = Actual vs Master), gamit ang Data source 1 ng Settings
  * DEPENDS : js/core/config.js, storage.js, csv-reader.js, master-analysis.js, chart-draw.js, calibration-config.js, calibration-analysis.js, calibration-export.js
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 11): getErrorMessage ay ipinapakita ang error.userMessage (mali ang barcode ng calibration file)
  * VERSION : v9.2 | 2026-11-22 | hook sa calibrationRepeatabilityUi (Calibration Repeatability): init at refresh kasabay ng Compare
  * VERSION : v9.1 | 2026-11-22 | hook sa calibrationCompareUi (Compare sliders): refresh pagkatapos ng run, init ng compare, getReadyHandle hook
  * VERSION : v9.0 | 2026-11-22 | Calibration correl (kopya ng Master Correl): resulta, chart, table, kusang export sa Saving path at Server path
@@ -68,6 +69,7 @@
 
   // Ginagawang friendly na mensahe ang error ng pagbabasa (walang teknikal na detalye).
   function getErrorMessage(error) {
+    if (error && error.userMessage) return error.userMessage;
     if (error && TEXT.error[error.code]) return TEXT.error[error.code];
     if (error && MASTER.ERROR_BY_NAME[error.name]) return TEXT.error[MASTER.ERROR_BY_NAME[error.name]];
     return TEXT.error.readFail;

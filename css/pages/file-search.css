@@ -4,6 +4,7 @@
  * DEPENDS : css/base.css, css/components.css
  * VERSION : v2.8 | 2026-11-20 | bagong file
  * VERSION : v2.8.1 | 2026-11-21 | laging kita ang scrollbar ng resulta; legend ng Status
+ * VERSION : v23 | 2026-11-24 | Task 13: kulay at animation ng button na ginamit habang may search (.is-searching); malinaw ang hindi clickable na button
  */
 .page-file-search { --fs-pending: #4b5563; --fs-sent: #15803d; --fs-failed: #b91c1c; --fs-exists: #b45309; --fs-replaced: #1d4ed8; padding-bottom: var(--space-6); }
 .page-file-search .fs-source-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); }
@@ -64,3 +65,10 @@
 .page-file-search .fs-csv { border-collapse: collapse; font-size: 0.8125rem; background: var(--color-surface); }
 .page-file-search .fs-csv th, .page-file-search .fs-csv td { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); white-space: nowrap; text-align: left; }
 .page-file-search .fs-csv th { background: var(--color-primary-soft); color: var(--color-muted); font-weight: 600; }
+/* Task 13: habang may search, ang button na ginamit ay may kumikislap na kulay (kahit disabled), at ang ibang button ay malinaw na hindi clickable. */
+.page-file-search { --fs-reading-a: #f59e0b; --fs-reading-b: #fde68a; --fs-reading-text: #111827; }
+.page-file-search .btn:disabled { cursor: not-allowed; }
+.page-file-search .btn.is-searching,
+.page-file-search .btn.is-searching:disabled { opacity: 1; background: var(--fs-reading-a); color: var(--fs-reading-text); border-color: var(--fs-reading-a); animation: fs-reading 1.1s ease-in-out infinite; }
+@keyframes fs-reading { 0%, 100% { background: var(--fs-reading-a); } 50% { background: var(--fs-reading-b); } }
+@media (prefers-reduced-motion: reduce) { .page-file-search .btn.is-searching, .page-file-search .btn.is-searching:disabled { animation: none; } }

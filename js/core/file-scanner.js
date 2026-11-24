@@ -5,6 +5,7 @@
  * INPUT   : mga source {key, label, handle, rootPath} at options ng hanap
  * OUTPUT  : {itemList, scannedCount, skippedCount, isStopped, isResultLimited, isScanLimited}
  * VERSION : v2.8 | 2026-11-20 | bagong file
+ * VERSION : v23 | 2026-11-24 | Task 13: matchFolderNames (By name: kasama ang folder na tugma ang pangalan), findNewestMs; kasama na ang folder sa Search Date (includeFolders)
  */
 (function () {
   'use strict';
@@ -89,10 +90,38 @@
           if (context.includeFolders && folderNewestMs >= context.fromMs && folderNewestMs <= context.toMs) {
             addItem(context, { name: entry.name, type: SEARCH.TYPE.folder, modifiedMs: folderNewestMs, size: null, segmentList, handle: null });
           }
+          // By name: ang folder na tugma ang pangalan ay kasama rin (anuman ang petsa); ang petsa nito ay ang pinakabagong file sa loob.
+          if (context.matchFolderNames && context.nameMatcher && context.nameMatcher(entry.name)) {
+            const matchedMs = await findNewestMs(entry, depth + 1, context);
+            addItem(context, { name: entry.name, type: SEARCH.TYPE.folder, modifiedMs: matchedMs, size: null, segmentList, handle: null });
+          }
         }
       }
     } catch (error) {
       // Hindi mabasa ang folder na ito (walang access o naputol ang network): laktawan, tuloy ang iba.
+      context.skippedCount += 1;
+    }
+    return newestMs;
+  }
+
+  // Pinakabagong oras ng pagbabago ng lahat ng file sa loob ng folder (hanggang MAX_DEPTH). 0 kung walang mabasa. Basa lang.
+  async function findNewestMs(directoryHandle, depth, context) {
+    let newestMs = 0;
+    try {
+      for await (const entry of directoryHandle.values()) {
+        if (context.control.isStopped || context.isScanLimited) break;
+        context.scannedCount += 1;
+        if (context.scannedCount > SEARCH.MAX_SCANNED) { context.isScanLimited = true; break; }
+        if (entry.kind === 'file') {
+          if (entry.name.startsWith(SEARCH.IGNORED_PREFIX)) continue;
+          const file = await entry.getFile();
+          if (file.lastModified > newestMs) newestMs = file.lastModified;
+        } else if (entry.kind === 'directory' && depth < SEARCH.MAX_DEPTH) {
+          const innerMs = await findNewestMs(entry, depth + 1, context);
+          if (innerMs > newestMs) newestMs = innerMs;
+        }
+      }
+    } catch (error) {
       context.skippedCount += 1;
     }
     return newestMs;
@@ -131,6 +160,7 @@
       fromMs: options.fromMs,
       toMs: options.toMs,
       includeFolders: Boolean(options.includeFolders),
+      matchFolderNames: Boolean(options.matchFolderNames),
       control: options.control,
       onProgress: options.onProgress || null
     };

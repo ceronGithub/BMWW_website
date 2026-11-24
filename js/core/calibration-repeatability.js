@@ -2,6 +2,7 @@
  * FILE    : js/core/calibration-repeatability.js
  * PURPOSE : Calibration Repeatability: binabasa ang lahat ng calibration CSV sa saklaw ng petsa (After = Actual, Master) at kinakalkula ang repeatability (kopya ng analyzeRange ng Master)
  * DEPENDS : js/core/csv-reader.js, master-analysis.js, calibration-analysis.js, calibration-config.js
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 11): ang file na mali ang barcode (hindi 27 hanggang 30, may doble o blangko) ay nilalaktawan at nasa result.barcodeRejectedList (may paliwanag); kapag lahat ng file ay mali, nagtatapon ng error na barcodeCheck
  * VERSION : v11.4 | 2026-11-22 | Ang listahan ng barcode ay hindi na galing sa unang file lang: reference = pinakamahabang listahan ng barcode sa mga file ng saklaw (analyzeRange, pickReferenceBarcodeList, overlapRatio). Ang file na kulang ang tugmang barcode (RANGE.MIN_BARCODE_OVERLAP sa config) ay nilalaktawan at nasa result.skippedFileList; calibrationFileCount ay ang mga ginamit lang
  * VERSION : v11.3 | 2026-11-22 | Bawat record ay inihahambing sa SARILING Master (column.masterValues) sa halip na sa Master ng pinakabagong record (computeOwnMasterStats); ang masterList ng resulta ay Master ng pinakabagong record, para sa chart line at table
  * VERSION : v11.2 | 2026-11-22 | Daily Check: kapag blangko ang After, Before ang Actual (gamit ang calibrationAnalysis.getActualSource); ang record na blangko ang pareho ay hindi binibilang; ' (Daily Check)' sa pangalan ng record
@@ -135,11 +136,21 @@
         if (!source) continue;
         recordList.push({ rowDate, source, maps: readRecordMaps(rowList, rowIndex, layout, source) });
       }
-      fileEntryList.push({ name: item.name, barcodeList: layout.barcodeList, recordList });
+      fileEntryList.push({ name: item.name, barcodeList: layout.barcodeList, barcodeCheck: layout.barcodeCheck, recordList });
     }
     if (!fileEntryList.length) throw csv.createError('noCalibrationFile');
-    const barcodeList = pickReferenceBarcodeList(fileEntryList);
-    if (!barcodeList) throw csv.createError('noRecordInRange');
+    // Barcode checker: ang file na may record pero mali ang barcode ay hindi ginagamit (iniulat sa barcodeRejectedList).
+    const barcodeRejectedList = [];
+    const usableEntryList = fileEntryList.filter((entry) => {
+      if (!entry.recordList.length || entry.barcodeCheck.ok) return true;
+      barcodeRejectedList.push({ name: entry.name, barcodeCount: entry.barcodeCheck.count, reason: entry.barcodeCheck.message, check: entry.barcodeCheck });
+      return false;
+    });
+    const barcodeList = pickReferenceBarcodeList(usableEntryList);
+    if (!barcodeList) {
+      if (barcodeRejectedList.length) throw root.barcodeChecker.createError(barcodeRejectedList[0].check, barcodeRejectedList[0].name);
+      throw csv.createError('noRecordInRange');
+    }
     // Ikalawang daan: ang tugma lang sa reference ang ginagamit; ang iba ay nasa skippedFileList.
     const columnMap = new Map();
     const skippedFileList = [];
@@ -147,7 +158,7 @@
     let latestMaster = null;
     let calibrationFileCount = 0;
     let recordCount = 0;
-    fileEntryList.forEach((entry) => {
+    usableEntryList.forEach((entry) => {
       const ratio = overlapRatio(entry.barcodeList, barcodeList);
       if (ratio < minOverlap) { skippedFileList.push({ name: entry.name, barcodeCount: entry.barcodeList.length, overlap: ratio }); return; }
       calibrationFileCount += 1;
@@ -165,7 +176,7 @@
     return {
       kind: 'range', barcodeList, columnList, masterList: latestMaster, masterDate: latestDate,
       stats: computeOwnMasterStats(columnList, latestMaster, barcodeList),
-      startDate, endDate, fileCount: candidateList.length, calibrationFileCount, skippedFileList, recordCount, unreadableCount
+      startDate, endDate, fileCount: candidateList.length, calibrationFileCount, skippedFileList, barcodeRejectedList, recordCount, unreadableCount
     };
   }
 

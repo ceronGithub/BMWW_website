@@ -2,6 +2,7 @@
  * FILE    : js/core/calibration-repeatability-ui.js
  * PURPOSE : Screen ng Calibration Repeatability sa Calibration page (kopya ng Master Repeatability): Start/End date, mode (All / Latest per shift), table, line chart na may file panel, at kusang Excel export (window.BMWW.calibrationRepeatabilityUi)
  * DEPENDS : js/core/config.js, storage.js, queue.js, csv-reader.js, chart-draw.js, master-shift.js, calibration-repeatability.js, calibration-repeatability-export.js, calibration-repeatability-config.js, calibration-config.js
+ * VERSION : v23 | 2026-11-24 | Barcode checker (Task 11): tala sa ilalim ng resulta kung may file na nilaktawan dahil mali ang barcode (result.barcodeRejectedList)
  * VERSION : v9.2 | 2026-11-22 | bagong file; tinatawag ng js/pages/calibration.js (init at refresh); walang sync sa Dashboard ng LEAD PC
  */
 (function () {
@@ -287,6 +288,11 @@
     redraw();
     if (shownList.length < result.columnList.length) area.append(makeElement('p', 'result-note', MTEXT.linesLimited.replace('{n}', String(shownList.length))));
     if (result.unreadableCount) area.append(makeElement('p', 'result-note', result.unreadableCount + MTEXT.unreadable));
+    // Barcode checker: ang file na nilaktawan dahil mali ang barcode (pangalan at dahilan).
+    if (result.barcodeRejectedList && result.barcodeRejectedList.length) {
+      const rejectedText = result.barcodeRejectedList.map((entry) => entry.name + ' (' + entry.reason + ')').join(' | ');
+      area.append(makeElement('p', 'result-note', result.barcodeRejectedList.length + root.barcodeCheckerConfig.TEXT.rejectedNote + rejectedText));
+    }
   }
 
   // Kinukuha ang Server path at humihingi ng permission (galing sa click). Hindi nagtatapon ng error.

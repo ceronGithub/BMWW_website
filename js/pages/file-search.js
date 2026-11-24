@@ -3,6 +3,7 @@
  * PURPOSE : Search Files page: hanap sa CLO1A/CLO1A1 (by name, by range date, latest), resulta na may scroll, Send to (Path o manual)
  * DEPENDS : js/core/config.js, registry.js, security.js, storage.js, csv-reader.js, file-scanner.js, file-sender.js, send-log.js
  * VERSION : v2.8 | 2026-11-20 | bagong file
+ * VERSION : v23 | 2026-11-24 | Task 13: ang search na tumatakbo ay nananatili kahit lumabas at bumalik sa page (activeSearch, pendingOutcome, isPageOpen); kulay (is-searching) ang button na ginamit; hindi clickable ang lahat ng button habang may search; By name: kasama ang folder; Search Date: kasama ang folder
  * VERSION : v3.0 | 2026-11-21 | Preview kada file sa Result (text, CSV, larawan, PDF)
  * VERSION : v2.9 | 2026-11-21 | tanong kung papalitan ang kapangalan (overwrite); send log sa Saving path; alaala ng huling manual destination
  */
@@ -24,6 +25,10 @@
   let manualHandle = null;
   let previewToken = 0;
   let previewUrl = '';
+  // Nananatili kahit lumabas sa page (hindi nire-reset ng init): ang search na tumatakbo at ang resulta na natapos habang wala sa page.
+  let activeSearch = null;
+  let pendingOutcome = null;
+  let pageRoot = null;
 
   // Hinahanap ang elemento ayon sa key ng selector.
   function query(key) {
@@ -122,11 +127,33 @@
     return { checkedCount: checkedList.length, readyList, warningList };
   }
 
-  // Busy state: disable ng search at send, enable ng Stop.
+  // Nakabukas ba ang page na ito ngayon? (Ang tumatakbong search ay hindi dapat sumulat sa DOM na wala na.)
+  function isPageOpen() {
+    return Boolean(pageRoot && pageRoot.isConnected);
+  }
+
+  // Kulay (is-searching) ang button ng search na tumatakbo; walang buttonKey = tanggalin ang kulay.
+  function markSearching(buttonKey) {
+    ['nameButton', 'rangeButton', 'latestButton'].forEach((key) => {
+      const button = query(key);
+      if (!button) return;
+      const isActive = key === buttonKey;
+      button.classList.toggle('is-searching', isActive);
+      if (isActive) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+    });
+  }
+
+  // Busy state: disable ng lahat ng button maliban sa Stop; enable ng Stop.
   function setBusy(nextBusy) {
     isBusy = nextBusy;
-    ['nameButton', 'rangeButton', 'latestButton', 'clearButton', 'sendButton'].forEach((key) => { query(key).disabled = nextBusy; });
-    query('stopButton').disabled = !nextBusy;
+    if (!isPageOpen()) return;
+    ['nameButton', 'rangeButton', 'latestButton', 'clearButton', 'sendButton', 'manualPick'].forEach((key) => {
+      const button = query(key);
+      if (button) button.disabled = nextBusy;
+    });
+    const stopButton = query('stopButton');
+    if (stopButton) stopButton.disabled = !nextBusy;
+    if (!nextBusy) markSearching('');
   }
 
   // Bilang ng napiling (may check) na file sa resulta.
@@ -215,30 +242,50 @@
     return noteList.concat(warningList).join(' | ');
   }
 
-  // Karaniwang takbo ng isang search. buildOptions(sourceList) -> options ng scanSources; modeText para sa tala.
-  async function runSearch(buildOptions, modeText) {
-    if (isBusy) return;
+  // Karaniwang takbo ng isang search. buildOptions(sourceList) -> options ng scanSources; modeText para sa tala; buttonKey = button na pinindot.
+  // Nananatiling tumatakbo kahit lumabas sa page: ang estado ay nasa activeSearch at ang natapos na resulta ay nasa pendingOutcome.
+  async function runSearch(buildOptions, modeText, buttonKey) {
+    if (isBusy || activeSearch) return;
     if (!storage.isFolderAccessSupported()) { setStatus('status', TEXT.unsupported, 'error'); return; }
+    activeSearch = { control: null, buttonKey, progressText: TEXT.working };
+    pendingOutcome = null;
     setBusy(true);
+    markSearching(buttonKey);
     setStatus('sendStatus', '', '');
+    let outcome = null;
     try {
       const prepared = await prepareSources();
-      if (prepared.checkedCount === 0) { setStatus('status', TEXT.noSourceChecked, 'error'); return; }
-      if (prepared.readyList.length === 0) { setStatus('status', prepared.warningList.join(' | ') || TEXT.noSourceReady, 'error'); return; }
+      if (prepared.checkedCount === 0) { outcome = { statusText: TEXT.noSourceChecked }; return; }
+      if (prepared.readyList.length === 0) { outcome = { statusText: prepared.warningList.join(' | ') || TEXT.noSourceReady }; return; }
       control = fileScanner.createControl();
+      activeSearch.control = control;
       setStatus('status', TEXT.working, 'info');
       const options = buildOptions();
       options.control = control;
-      options.onProgress = (count) => setStatus('status', TEXT.progress + count, 'info');
+      options.onProgress = (count) => {
+        activeSearch.progressText = TEXT.progress + count;
+        if (isPageOpen()) setStatus('status', activeSearch.progressText, 'info');
+      };
       const result = await fileScanner.scanSources(prepared.readyList, options);
-      renderResults(result.itemList);
-      query('resultNote').textContent = describeResult(modeText, result, prepared.warningList);
-      setStatus('status', '', '');
+      outcome = { itemList: result.itemList, noteText: describeResult(modeText, result, prepared.warningList) };
     } catch (error) {
-      setStatus('status', TEXT.searchError, 'error');
+      outcome = { statusText: TEXT.searchError };
     } finally {
       control = null;
-      setBusy(false);
+      activeSearch = null;
+      if (isPageOpen()) { setBusy(false); showOutcome(outcome); } else { isBusy = false; pendingOutcome = outcome; }
+    }
+  }
+
+  // Ipinapakita ang resulta o mensahe ng natapos na search.
+  function showOutcome(outcome) {
+    if (!outcome) return;
+    if (outcome.itemList) {
+      renderResults(outcome.itemList);
+      query('resultNote').textContent = outcome.noteText;
+      setStatus('status', '', '');
+    } else {
+      setStatus('status', outcome.statusText, 'error');
     }
   }
 
@@ -247,7 +294,7 @@
     const nameText = sanitizeInput(query('nameInput').value, SEARCH.NAME_MAX);
     if (!nameText) { setStatus('status', TEXT.nameEmpty, 'error'); query('nameInput').focus(); return; }
     const matcher = fileScanner.buildNameMatcher(nameText);
-    return runSearch(() => ({ nameMatcher: matcher, fromMs: 0, toMs: Number.MAX_SAFE_INTEGER, includeFolders: false }), TEXT.modeNote.name + nameText);
+    return runSearch(() => ({ nameMatcher: matcher, fromMs: 0, toMs: Number.MAX_SAFE_INTEGER, includeFolders: false, matchFolderNames: true }), TEXT.modeNote.name + nameText, 'nameButton');
   }
 
   // SEARCH DATE
@@ -257,13 +304,13 @@
     if (!startDate || !endDate) { setStatus('status', TEXT.badDates, 'error'); return; }
     if (startDate.getTime() > endDate.getTime()) { setStatus('status', TEXT.startAfterEnd, 'error'); return; }
     const range = fileScanner.getRangeMs(startDate, endDate);
-    return runSearch(() => ({ nameMatcher: null, fromMs: range.fromMs, toMs: range.toMs, includeFolders: false }), TEXT.modeNote.range + query('rangeStart').value + ' hanggang ' + query('rangeEnd').value);
+    return runSearch(() => ({ nameMatcher: null, fromMs: range.fromMs, toMs: range.toMs, includeFolders: true }), TEXT.modeNote.range + query('rangeStart').value + ' hanggang ' + query('rangeEnd').value, 'rangeButton');
   }
 
   // GET LATEST FILES: bago ngayong araw at kahapon (mga file at folder).
   function onGetLatest() {
     const fromMs = fileScanner.getLatestStartMs(new Date());
-    return runSearch(() => ({ nameMatcher: null, fromMs, toMs: Number.MAX_SAFE_INTEGER, includeFolders: true }), TEXT.modeNote.latest + formatDateTime(fromMs) + ' pataas');
+    return runSearch(() => ({ nameMatcher: null, fromMs, toMs: Number.MAX_SAFE_INTEGER, includeFolders: true }), TEXT.modeNote.latest + formatDateTime(fromMs) + ' pataas', 'latestButton');
   }
 
   // Extension ng file (maliit na letra, walang tuldok).
@@ -582,8 +629,10 @@
 
   // Init ng page, tinatawag ng router.
   async function init() {
-    isBusy = false;
-    control = null;
+    pageRoot = document.querySelector('.page-file-search');
+    // Kapag may search pa na tumatakbo mula sa naunang bukas ng page, nananatili itong busy (hindi nare-reset).
+    isBusy = Boolean(activeSearch);
+    control = activeSearch ? activeSearch.control : null;
     previewToken = 0;
     previewUrl = '';
     resultList = [];
@@ -630,6 +679,17 @@
     query('stopButton').disabled = true;
     await buildSourceRows();
     if (!storage.isFolderAccessSupported()) setStatus('status', TEXT.unsupported, 'error');
+    if (activeSearch) {
+      // May search pa: hindi clickable ang mga button, may kulay ang ginamit na button, at ang Stop ay gumagana.
+      setBusy(true);
+      markSearching(activeSearch.buttonKey);
+      setStatus('status', activeSearch.progressText, 'info');
+    } else if (pendingOutcome) {
+      // Natapos ang search habang wala ka sa page: ipakita ang resulta.
+      const outcome = pendingOutcome;
+      pendingOutcome = null;
+      showOutcome(outcome);
+    }
   }
 
   root.registry.registerPage(SEARCH.PAGE, Object.freeze({ init }));
