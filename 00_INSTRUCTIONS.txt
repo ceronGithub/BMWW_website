@@ -546,3 +546,17 @@ TEST (unahin ang run-ongoing-monitor.bat para makita ang console):
 7. Isara ang console para itigil. Kapag naka-install na: uninstall-ongoing-monitor.bat.
 Hindi pa ito nasubukan sa totoong Windows (PowerShell 7 sa Linux lang, gawa-gawang folder).
 
+
+
+=== BATCH F (v26): Task 4, 5, 9 ===
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan.
+   BAGONG: tools/local-launcher/* (3 file). BINAGO: js/pages/settings.js, js/core/settings-type-config.js, README.txt, 00_INSTRUCTIONS.txt.
+2. Buksan ang index.html (Ctrl+F5). Settings: gumawa ng machine name at piliin ang Saving path.
+3. Kopyahin muna sa File Explorer ang path ng folder (Ctrl+C sa address bar), tapos pindutin ang Piliin at piliin ang folder.
+   DAPAT: kusang napunan ang Full path AT lumabas ang 'Awtomatikong na-save ang full path' (wala nang pindot sa Save settings).
+   DAPAT HINDI: kusang mag-save kapag hindi nakopya ang path (hula lang); Save settings pa rin.
+   DAPAT HINDI: lumabas ang pulang error kapag kulang pa ang form (walang machine name).
+4. Buksan ang tools/local-launcher/start-bmww-local.bat. DAPAT: magbukas ang browser sa http://localhost:8765/index.html at gumana ang app.
+5. Piliin ulit ang mga folder, piliin ang 'Allow on every visit' kung nandoon, isara ang browser at buksan ulit ang .bat.
+   DAPAT: hindi na magtanong (o mas kaunti). Kung nagtanong pa, sabihin kung ano ang eksaktong lumabas.
+6. Hindi pa nasubukan sa totoong Chrome/Edge at Windows.

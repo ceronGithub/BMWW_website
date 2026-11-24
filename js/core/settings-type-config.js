@@ -3,6 +3,7 @@
  * PURPOSE  : Constants ng "Select 1 type only" (Sender / LEAD PC), mga path na itinatago sa LEAD PC, at text ng instruction card sa Settings
  * DEPENDS  : js/core/config.js
  * USED BY  : js/core/settings-type.js, js/pages/settings.js
+ * VERSION  : v26 | 2026-11-24 | Batch F (Task 4): dagdag na text na autoSaved
  * VERSION  : v21 | 2026-11-24 | bagong file (Batch A: Task 1, 2, 3, 4)
  */
 (function () {
@@ -34,7 +35,8 @@
         'Pindutin ang Save settings. Kung mali ang awtomatikong Full path, baguhin ito bago mag-save.'
       ],
       fullPathFromClipboard: 'Awtomatikong inilagay ang full path mula sa na-copy mo: ',
-      fullPathFromClipboardHint: ' | Tingnan kung tama, tapos pindutin ang Save settings.'
+      fullPathFromClipboardHint: ' | Tingnan kung tama, tapos pindutin ang Save settings.',
+      autoSaved: ' | Awtomatikong na-save ang full path (tugma sa na-copy mo at walang mali sa mga path).'
     }
   });
 })();

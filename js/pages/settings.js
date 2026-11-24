@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional), lead-pc.js at lead-pc-config.js (optional)
+ * VERSION : v26 | 2026-11-24 | Batch F (Task 4): autoSaveAfterPick; awtomatikong nase-save ang full path pagkapili ng folder kapag tugma sa clipboard at kumpleto ang mga path
  * VERSION : v24 | 2026-11-24 | Batch D (Task 8): maraming LEAD PC; ang pangalan ng LEAD PC ay galing sa leadPc.claimLeadName (LEAD PC 1, 2, ...); leadPcId; hindi binubura sa Server path ang file ng ibang LEAD PC
  * VERSION : v21 | 2026-11-24 | Batch A: settingsType (Select 1 type only: lock ng uri, hindi binubura ang file ng kabilang uri kapag OFF, itago ang Data source sa LEAD PC, full path mula sa clipboard); userInputName; applyTypeLock, handleTypeChange
  * VERSION : v15 | 2026-11-22 | Yugto 0: hook sa shiftSettings (card na Shift): init (sa init at applyRestoredSettings), tsek at save ng shiftTimes sa onSave
@@ -458,11 +459,31 @@
       } else {
         setStatus(key === CONFIG.ROOT_KEY && !wasRootReady ? TEXT.pathsUnlocked : TEXT.folderPicked, false);
       }
+      // Task 4: kapag tugma sa clipboard (hindi hula) at kumpleto na ang lahat ng path, kusang nase-save.
+      if (clipboardPath && await autoSaveAfterPick()) return;
       if (!getInputFullPath(key)) rowMap[key].inputElement.focus();
     } catch (error) {
       if (error && error.name === 'AbortError') return;
       setStatus(TEXT.folderError, true);
     }
+  }
+
+  // Kusang nagse-save pagkapili ng folder. Tahimik na tinitingnan muna kung kumpleto (uri, pangalan, lahat ng kailangang full path); kung hindi, hindi nagse-save at walang error na ipinapakita.
+  // Hula na path ay hindi kailanman kusang nase-save (clipboard lang), dahil binabasa ng tools ang path na ito.
+  async function autoSaveAfterPick() {
+    if (!handleMap[CONFIG.ROOT_KEY]) return false;
+    const mode = getSelectedMode();
+    const name = mode === CONFIG.MACHINE_MODE.LEAD_PC ? CONFIG.LEAD_PC_NAME : sanitizeInput(query('nameInput').value, CONFIG.MACHINE_NAME_MAX);
+    if (!mode || !name) return false;
+    const isComplete = CONFIG.PATH_LIST.every((pathItem) => {
+      if (root.settingsType && root.settingsType.isHiddenKey(pathItem.key, mode)) return true;
+      return !validateFullPath(pathItem.key, getInputFullPath(pathItem.key));
+    });
+    if (!isComplete) return false;
+    await onSave();
+    if (isDirty) return false;
+    query('status').textContent += TYPE.TEXT.autoSaved;
+    return true;
   }
 
   // Ibinibigay ang lokasyon ng settings.json para sa mensahe (full path kung alam, kung hindi ang default label).
