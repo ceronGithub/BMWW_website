@@ -8,6 +8,7 @@
  NOTE    : Basa lang ang Data source. Ang sinusulat lang ay ang status file sa Server path\queue (parehong format ng website).
            Kapag ang website ang kakasulat lang ng status (WebAliveSeconds), hindi ito susulat para hindi magbanggaan.
  USAGE   : install-ongoing-monitor.bat (tumatakbo nang tago sa Startup) o run-ongoing-monitor.bat (may console, pang-test)
+ VERSION : v27 | 2026-11-24 | Batch G: WebsiteUrl (http://localhost...) at kusang simula ng local server (Test-PortOpen, Start-LocalServerIfNeeded); IndexPath ay gumagana pa rin kapag blangko ang WebsiteUrl
  VERSION : v25 | 2026-11-24 | bagong file (Batch E: Task 6 at 7)
 #>
 param([switch]$Visible, [string]$ConfigPath = '')
@@ -35,7 +36,7 @@ function Read-Config {
     $config = @{
         SavingPath = ''; SettingsFile = ''; PollSeconds = '5'; SettleSeconds = '30'; HeartbeatSeconds = '30'; WebAliveSeconds = '45'
         Source1TimeoutSeconds = '300'; Source2TimeoutSeconds = '1800'; Source3TimeoutSeconds = '1800'
-        OpenWebsite = 'yes'; Browser = 'edge'; Page = '#dashboard'; IndexPath = ''; CooldownSeconds = '120'; SkipIfOpen = 'yes'
+        OpenWebsite = 'yes'; Browser = 'edge'; Page = '#dashboard'; IndexPath = ''; WebsiteUrl = ''; CooldownSeconds = '120'; SkipIfOpen = 'yes'
         MaxEntries = '5000'; MaxDepth = '5'; IgnorePrefixes = '~$'; IgnoreSuffixes = '.tmp;.temp;.part;.crdownload'
         MasterHeaderCount = '15'; HeaderRow = '1'; HeaderScanColumns = '300'
     }
@@ -279,17 +280,50 @@ function Test-WebsiteOpen {
     return $false
 }
 
-# Binubuksan ang website sa napiling browser (Dashboard page).
+# Bukas ba ang port sa 127.0.0.1? (para malaman kung tumatakbo ang local server)
+function Test-PortOpen([int]$port) {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $async = $client.BeginConnect('127.0.0.1', $port, $null, $null)
+        return ($async.AsyncWaitHandle.WaitOne(500) -and $client.Connected)
+    } catch { return $false } finally { $client.Close() }
+}
+
+# Kung localhost ang WebsiteUrl at hindi tumatakbo ang server, pinapatakbo nang tago ang tools\local-launcher\start-bmww-local.ps1 (-NoBrowser).
+function Start-LocalServerIfNeeded($config) {
+    $uri = [Uri]$config.WebsiteUrl
+    if ($uri.Host -ne 'localhost' -and $uri.Host -ne '127.0.0.1') { return $true }
+    if (Test-PortOpen $uri.Port) { return $true }
+    $launcher = Join-Path (Split-Path -Parent $scriptDir) 'local-launcher\start-bmww-local.ps1'
+    if (-not (Test-Path -LiteralPath $launcher)) { Write-Log ('HINDI MAHANAP ang local launcher: ' + $launcher); return $false }
+    try {
+        Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $launcher + '"'), '-NoBrowser'
+    } catch { Write-Log ('Hindi masimulan ang local server: ' + $_.Exception.Message); return $false }
+    for ($attempt = 0; $attempt -lt 10; $attempt++) {
+        Start-Sleep -Seconds 1
+        if (Test-PortOpen $uri.Port) { Write-Log ('Sinimulan ang local server sa port ' + $uri.Port); return $true }
+    }
+    Write-Log ('Hindi tumugon ang local server sa port ' + $uri.Port + ' (tingnan kung tama ang port; ang launcher ay port 8765)')
+    return $false
+}
+
+# Binubuksan ang website sa napiling browser (Dashboard page). WebsiteUrl (localhost) ang una; kung blangko, ang index.html (file://).
 function Open-Website($config) {
-    $indexPath = $config.IndexPath
-    if ($indexPath -eq '') { $indexPath = Join-Path (Split-Path -Parent (Split-Path -Parent $scriptDir)) 'index.html' }
-    if (-not (Test-Path $indexPath)) { Write-Log ('HINDI MAHANAP ang index.html: ' + $indexPath + ' (ayusin ang IndexPath sa ongoing-monitor-config.txt)'); return $false }
-    $url = ([Uri]$indexPath).AbsoluteUri + $config.Page
+    $indexPath = ''
+    if ($config.WebsiteUrl -ne '') {
+        if (-not (Start-LocalServerIfNeeded $config)) { return $false }
+        $url = $config.WebsiteUrl + $config.Page
+    } else {
+        $indexPath = $config.IndexPath
+        if ($indexPath -eq '') { $indexPath = Join-Path (Split-Path -Parent (Split-Path -Parent $scriptDir)) 'index.html' }
+        if (-not (Test-Path $indexPath)) { Write-Log ('HINDI MAHANAP ang index.html: ' + $indexPath + ' (ayusin ang IndexPath sa ongoing-monitor-config.txt)'); return $false }
+        $url = ([Uri]$indexPath).AbsoluteUri + $config.Page
+    }
     try {
         switch ($config.Browser.ToLower()) {
             'edge' { Start-Process 'msedge.exe' -ArgumentList $url }
             'chrome' { Start-Process 'chrome.exe' -ArgumentList $url }
-            default { Start-Process $indexPath }
+            default { if ($indexPath -ne '') { Start-Process $indexPath } else { Start-Process $url } }
         }
         Write-Log ('Binuksan ang website: ' + $url)
         return $true

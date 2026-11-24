@@ -1,7 +1,9 @@
 # FILE    : tools/local-launcher/start-bmww-local.ps1
 # PURPOSE : maliit na local web server (127.0.0.1 lang) para sa BMWW folder, tapos bubuksan ang Chrome/Edge sa http://localhost:8765/index.html
 # DEPENDS : Windows PowerShell 5.1 o mas bago; Chrome o Edge
+# VERSION : v1.1 | 2026-11-24 | Batch G: switch na -NoBrowser (para sa ongoing-monitor)
 # VERSION : v1 | 2026-11-24 | bagong file (Batch F: Task 5 at 9); hindi pa nasubukan sa totoong Windows
+param([switch]$NoBrowser)
 
 $ErrorActionPreference = 'Stop'
 
@@ -23,6 +25,7 @@ if (-not (Test-Path (Join-Path $ProjectRoot 'index.html'))) {
 
 # Binubuksan ang Chrome o Edge (auto: Chrome muna).
 function Open-Browser([string]$TargetUrl) {
+  if ($NoBrowser) { return }
   $chromePath = @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe", "$env:LocalAppData\Google\Chrome\Application\chrome.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
   $edgePath = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
   if ($Browser -ne 'edge' -and $chromePath) { Start-Process $chromePath -ArgumentList $TargetUrl; return }

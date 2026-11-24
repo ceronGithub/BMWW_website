@@ -35,3 +35,11 @@ PAANO TANGGALIN
 I-double-click ang uninstall-ongoing-monitor.bat.
 
 HINDI PA NASUBUKAN sa totoong Windows: nasubukan lang sa PowerShell 7 sa Linux (gawa-gawang folder). Ang unang test ay sa PC mo.
+
+LOCALHOST (v27, Batch G)
+- Kung gumagamit ka ng tools\local-launcher (http://localhost:8765), ilagay sa ongoing-monitor-config.txt: WebsiteUrl=http://localhost:8765/index.html
+  tapos patakbuhin ulit ang install-ongoing-monitor.bat.
+- Kapag may laman ang WebsiteUrl, iyon ang bubuksan (hindi ang IndexPath). Kung hindi tumatakbo ang local server, kusa itong sisimulan nang tago
+  (start-bmww-local.ps1 -NoBrowser). Nananatiling tumatakbo ito hanggang mag-log off ka o patayin sa Task Manager (powershell.exe).
+- Ang launcher ay port 8765 lang; kung ibang port ang ilalagay sa WebsiteUrl, hindi ito masisimulan ng script.
+- Hindi pa nasubukan sa totoong Windows.

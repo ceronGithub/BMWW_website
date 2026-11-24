@@ -30,6 +30,9 @@ Browser=edge
 Page=#dashboard
 # Full path ng index.html. Blangko = ang index.html sa labas ng tools folder.
 IndexPath=
+# Opsyonal: address ng website kung gumagamit ng local launcher (tools\local-launcher). Hal.: WebsiteUrl=http://localhost:8765/index.html
+# Kapag may laman ito, ito ang bubuksan (hindi ang IndexPath) at kusang sisimulan ang local server kung hindi tumatakbo.
+WebsiteUrl=
 # Hindi magbubukas ulit sa loob ng ganitong segundo
 CooldownSeconds=120
 # Huwag magbukas kung bukas na ang website (yes/no)

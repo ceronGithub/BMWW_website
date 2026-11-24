@@ -22,4 +22,4 @@ LIMITASYON (tapat)
 - Kailangang Chrome/Edge na bago (Chrome 122 pataas ang may Allow on every visit).
 - Ang port ay 8765; kapag napalitan, magbabago ang address at kailangang piliin ulit ang mga folder.
 - 127.0.0.1 lang ang server (hindi abot ng ibang PC). Hindi naseserve ang tools at .git.
-- Ang ongoing-monitor ay bubukas pa rin ng website sa lumang file:// address (ang IndexPath nito ay file path lang, hindi URL). Para sa localhost, kailangan itong baguhin sa susunod na batch (kailangan ang permission mo sa ongoing-monitor.ps1).
+- Para sa ongoing-monitor: ilagay ang WebsiteUrl=http://localhost:8765/index.html sa ongoing-monitor-config.txt (tingnan ang README-ONGOING.txt).

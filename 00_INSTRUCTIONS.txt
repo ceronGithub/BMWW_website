@@ -560,3 +560,15 @@ Hindi pa ito nasubukan sa totoong Windows (PowerShell 7 sa Linux lang, gawa-gawa
 5. Piliin ulit ang mga folder, piliin ang 'Allow on every visit' kung nandoon, isara ang browser at buksan ulit ang .bat.
    DAPAT: hindi na magtanong (o mas kaunti). Kung nagtanong pa, sabihin kung ano ang eksaktong lumabas.
 6. Hindi pa nasubukan sa totoong Chrome/Edge at Windows.
+
+
+=== BATCH G (v27): Task 6 at 7, Ongoing Monitor sa localhost ===
+1. Backup muna. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan.
+   BAGONG: wala. BINAGO: tools/ongoing-monitor/ongoing-monitor.ps1, ongoing-monitor-config.txt, README-ONGOING.txt, tools/local-launcher/start-bmww-local.ps1, README-LOCAL.txt, README.txt, 00_INSTRUCTIONS.txt.
+2. Sa tools\ongoing-monitor\ongoing-monitor-config.txt ilagay: WebsiteUrl=http://localhost:8765/index.html (at ang SavingPath kung hindi pa).
+3. Isara ang start-bmww-local.bat kung bukas. Patakbuhin ang run-ongoing-monitor.bat (may console).
+4. Isara ang website. Gumawa ng file sa Data source 1, 2 o 3.
+   DAPAT: lumabas sa console ang 'Sinimulan ang local server sa port 8765' at 'Binuksan ang website', at magbukas ang browser sa http://localhost:8765/index.html#dashboard.
+   DAPAT HINDI: magbukas ng pangalawang tab kapag bukas na ang website (cooldown / bukas na).
+5. Alisin ang WebsiteUrl (blangko). DAPAT: bumalik sa dating gawi (file:// na index.html).
+6. Hindi pa nasubukan sa totoong Windows.
