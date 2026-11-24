@@ -527,3 +527,22 @@ TEST (kailangan ng dalawang PC o dalawang browser profile, parehong Server path)
 7. I-off ang Select 1 type only, lumipat sa Sender at bumalik sa LEAD PC. DAPAT pareho pa ring LEAD PC <numero>.
 Hindi pa ito nasubukan sa totoong Chrome/Edge (Node lang, gawa-gawang folder).
 
+=== [v25] BATCH E: ONGOING MONITOR (Task 6 at 7) ===
+BAGONG file: tools/ongoing-monitor/ongoing-monitor.ps1, ongoing-monitor-config.txt, run-ongoing-monitor.bat, install-ongoing-monitor.bat, install-ongoing-monitor.ps1, uninstall-ongoing-monitor.bat, uninstall-ongoing-monitor.ps1, README-ONGOING.txt
+BINAGO: README.txt, 00_INSTRUCTIONS.txt (dokumento lang)
+
+PAANO I-INSTALL (Sender PC):
+1. Sa website: Settings, i-Save ang Machine name (Sender), Saving path, Server path at Data source 1, 2, 3.
+2. Buksan ang tools\ongoing-monitor\ongoing-monitor-config.txt at ilagay ang SavingPath (hal. SavingPath=C:\Users\Name\Desktop\BMWW).
+3. I-double-click ang install-ongoing-monitor.bat. Dapat lumabas ang TAPOS.
+
+TEST (unahin ang run-ongoing-monitor.bat para makita ang console):
+1. DAPAT lumabas ang "Settings: <machine> (user-input)" at "Status: idle".
+2. Isara ang website. Mag-save o gumawa ng file sa Data source 1: DAPAT "Pagbabago sa source1", "Status: ongoing ...", at bumukas ang website sa Dashboard.
+3. Gumawa ng bagong file sa Data source 2 o 3: DAPAT "Status: done online/offline ..." (nasa Source 1 na ongoing muna kung nagpapatuloy pa ito).
+4. Sa LEAD PC, buksan ang Dashboard: DAPAT lumabas ang status ng Sender sa loob ng ilang segundo kahit sarado ang website ng Sender.
+5. Buksan ang website ng Sender at maghintay ng mga 1 minuto: DAPAT hindi na susulat ang script (ang website na ang susulat; walang "writer" sa status file).
+6. Gumawa ulit ng file sa loob ng 2 minuto: DAPAT "Laktawan: nasa cooldown pa" o "bukas na ang website"; DAPAT HINDI bumukas ng bagong tab.
+7. Isara ang console para itigil. Kapag naka-install na: uninstall-ongoing-monitor.bat.
+Hindi pa ito nasubukan sa totoong Windows (PowerShell 7 sa Linux lang, gawa-gawang folder).
+

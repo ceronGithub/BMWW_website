@@ -1,0 +1,36 @@
+# BMWW Ongoing Monitor - config
+# Isang setting kada linya: pangalan=halaga. Ang linyang may # sa unahan ay tala lang.
+# Pagkatapos magbago dito, patakbuhin ulit ang install-ongoing-monitor.bat.
+
+# Full path ng Saving path (BMWW folder) na nasa Settings ng website. Dito binabasa ang settings ng machine
+# (machine name, Server path, Data source 1, 2, 3). Hal.: SavingPath=C:\Users\Name\Desktop\BMWW
+SavingPath=
+
+# Opsyonal: buong path ng <machine>.json kung gusto mong ituro mismo. Blangko = awtomatikong hahanapin sa SavingPath.
+SettingsFile=
+
+# Gaano kadalas babasahin ang 3 Data source (segundo)
+PollSeconds=5
+# Ang bagong file na kasusulat pa lang ay hindi ituturing na bagong ongoing sa loob ng ganitong segundo
+SettleSeconds=30
+# Ilang segundo bago magsulat ulit ng status kahit walang pagbabago (heartbeat)
+HeartbeatSeconds=30
+# Kapag ang status file sa Server path ay isinulat ng website sa loob ng ganitong segundo, ang website ang masusunod (hindi susulat ang script)
+WebAliveSeconds=45
+# Ilang segundo na walang aktibidad bago maging idle ang ongoing (Data source 1, 2, 3)
+Source1TimeoutSeconds=300
+Source2TimeoutSeconds=1800
+Source3TimeoutSeconds=1800
+
+# Kapag may pagbabago sa alinman sa 3 Data source: buksan ang website (yes/no)
+OpenWebsite=yes
+# Browser: edge, chrome o default
+Browser=edge
+# Page na bubuksan
+Page=#dashboard
+# Full path ng index.html. Blangko = ang index.html sa labas ng tools folder.
+IndexPath=
+# Hindi magbubukas ulit sa loob ng ganitong segundo
+CooldownSeconds=120
+# Huwag magbukas kung bukas na ang website (yes/no)
+SkipIfOpen=yes
