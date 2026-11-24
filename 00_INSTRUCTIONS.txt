@@ -572,3 +572,12 @@ Hindi pa ito nasubukan sa totoong Windows (PowerShell 7 sa Linux lang, gawa-gawa
    DAPAT HINDI: magbukas ng pangalawang tab kapag bukas na ang website (cooldown / bukas na).
 5. Alisin ang WebsiteUrl (blangko). DAPAT: bumalik sa dating gawi (file:// na index.html).
 6. Hindi pa nasubukan sa totoong Windows.
+
+
+=== BATCH H (v28): Task 15, mga flaw ===
+1. Backup muna. I-unzip ang ZIP sa project folder (may mga file na nagsisimula sa tuldok: .gitignore, .editorconfig, .prettierrc, .eslintrc.json; i-on ang 'Show hidden files').
+   BAGONG: .gitignore, .editorconfig, .prettierrc, .eslintrc.json, tools/check-templates/*. BINAGO: README.txt, 00_INSTRUCTIONS.txt.
+2. Tanggalin sa git ang tracked na log: git rm --cached tools/file-watcher/watcher.log (hindi nabubura ang file sa disk).
+3. (Kung may Node.js) i-double-click ang tools\check-templates\run-check-templates.bat.
+   DAPAT: 9 MATCH at 1 DRIFT (dashboard). DAPAT HINDI: may nagbago sa mga file (basa lang).
+4. Buksan ang website: DAPAT walang pagbabago sa takbo (walang ginalaw na code).
