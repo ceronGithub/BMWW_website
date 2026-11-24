@@ -2,6 +2,7 @@
  * FILE    : js/core/storage.js
  * PURPOSE : Folder access, IndexedDB handles, settings file
  * DEPENDS : js/core/config.js
+ * VERSION : v33 | 2026-11-24 | openDatabase: timeout (CONFIG.DB_OPEN_TIMEOUT_MS) at onblocked; hindi na naghihintay nang walang katapusan sa Edge
  * VERSION : v1 | 2026-11-19 | unang bersyon
  * VERSION : v2 | 2026-11-20 | naka-IIFE na (walang module)
  * VERSION : v5 | 2026-11-20 | settings kada machine: toMachineFileName, writeMachineSettings, removeMachineSettings, readMachineSettings
@@ -18,14 +19,45 @@
     return typeof window.showDirectoryPicker === 'function';
   }
 
-  // Binubuksan ang IndexedDB kung saan nakasave ang folder handles.
+  /**
+   * PARA SAAN    : buksan ang IndexedDB na may nakasave na folder handles, na hindi naghihintay nang walang katapusan
+   * GINAGAWA     : indexedDB.open; kapag walang sagot sa CONFIG.DB_OPEN_TIMEOUT_MS, o blocked, o error, nagre-reject
+   * INPUT/OUTPUT : wala -> Promise<IDBDatabase>; reject ng Error na may code 'DB_TIMEOUT' (walang sagot o blocked) o ang error ng browser
+   * TINATAWAG NG : storage.js saveHandle, storage.js loadHandle
+   * TUMATAWAG SA : indexedDB.open
+   */
   function openDatabase() {
     return new Promise((resolve, reject) => {
+      let isSettled = false;
+      const timerId = setTimeout(() => settle(false, createTimeoutError()), CONFIG.DB_OPEN_TIMEOUT_MS);
+      const settle = (isSuccess, value) => {
+        if (isSettled) {
+          if (isSuccess && value && typeof value.close === 'function') value.close();
+          return;
+        }
+        isSettled = true;
+        clearTimeout(timerId);
+        if (isSuccess) resolve(value); else reject(value);
+      };
       const request = indexedDB.open(CONFIG.DB_NAME, 1);
       request.onupgradeneeded = () => request.result.createObjectStore(CONFIG.DB_STORE);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () => settle(true, request.result);
+      request.onerror = () => settle(false, request.error);
+      request.onblocked = () => settle(false, createTimeoutError());
     });
+  }
+
+  /**
+   * PARA SAAN    : gumawa ng error na kilala ng Settings (walang sagot ang IndexedDB)
+   * GINAGAWA     : Error na may code 'DB_TIMEOUT'
+   * INPUT/OUTPUT : wala -> Error
+   * TINATAWAG NG : storage.js openDatabase
+   * TUMATAWAG SA : wala
+   */
+  function createTimeoutError() {
+    const error = new Error('db-timeout');
+    error.code = 'DB_TIMEOUT';
+    return error;
   }
 
   // Sine-save ang folder handle para hindi na pumili ulit.

@@ -2,6 +2,7 @@
  * FILE    : js/pages/settings.js
  * PURPOSE : Settings: machine name (puwedeng palitan) at mga path na may full path (server, saving, data source)
  * DEPENDS : config.js, security.js, storage.js, watcher-install.js (optional), bat-card.js (optional), settings-restore.js at settings-restore-config.js (optional), shift-settings.js at shift-times.js (optional), lead-pc.js at lead-pc-config.js (optional)
+ * VERSION : v33 | 2026-11-24 | loadState: kapag DB_TIMEOUT ang error, TEXT.dbTimeout ang mensahe (tuloy pa rin ang render ng Settings)
  * VERSION : v26 | 2026-11-24 | Batch F (Task 4): autoSaveAfterPick; awtomatikong nase-save ang full path pagkapili ng folder kapag tugma sa clipboard at kumpleto ang mga path
  * VERSION : v24 | 2026-11-24 | Batch D (Task 8): maraming LEAD PC; ang pangalan ng LEAD PC ay galing sa leadPc.claimLeadName (LEAD PC 1, 2, ...); leadPcId; hindi binubura sa Server path ang file ng ibang LEAD PC
  * VERSION : v21 | 2026-11-24 | Batch A: settingsType (Select 1 type only: lock ng uri, hindi binubura ang file ng kabilang uri kapag OFF, itago ang Data source sa LEAD PC, full path mula sa clipboard); userInputName; applyTypeLock, handleTypeChange
@@ -322,7 +323,7 @@
         }
       }
     } catch (error) {
-      setStatus(TEXT.loadError, true);
+      setStatus(error && error.code === 'DB_TIMEOUT' ? TEXT.dbTimeout : TEXT.loadError, true);
     }
   }
 

@@ -1,3 +1,9 @@
+=== TASK 1 at 2 (v33): Settings sa Edge at mensahe ng Search Files ===
+Binago: js/core/storage.js, js/core/config.js, js/pages/settings.js, js/pages/file-search.js, css/pages/file-search.css.
+TEST 1: Edge > Settings (Ctrl+F5): DAPAT may laman ang Machine name, Mga path at mga card. Kung hindi sumasagot ang browser storage, DAPAT lumabas pa rin ang form pagkalipas ng mga 3 segundo, na may pulang mensahe tungkol sa browser storage. DAPAT HINDI manatiling blangko.
+TEST 2: Search Files > By name / Search date / Get latest: DAPAT kumikislap ang button nang kahit 0.7 segundo; pagkatapos DAPAT may mensahe sa status: berde (may nakitang N), dilaw (walang nakita), pula (error). Clear Result: DAPAT mawala ang mensahe.
+Hindi pa nasubukan sa Edge at totoong Windows.
+
 === TASK 1 (v32): mga .bat tool sa Settings ay kapareho na ng card ng File Watcher ===
 Bagong: js/core/bat-tools-config.js, js/pages/bat-card.js, css/pages/bat-card.css. Binago: pages/settings.html, js/templates/settings.template.js, js/pages/settings.js, tools/SETUP-PER-PC.txt. Palitan ang may parehong pangalan; kasama sa ZIP ang mga file ng v31.
 TEST: Settings (Ctrl+F5) > pagkatapos ng card na File Watcher: DAPAT may card na "Kailangan bago mag-setup" at 5 card: Ongoing Monitor (optional), Local launcher (optional), Check templates (optional), Open handler, Desktop shortcut (optional). Wala na ang lumang card na "Mga .bat tool".

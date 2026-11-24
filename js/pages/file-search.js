@@ -2,6 +2,7 @@
  * FILE    : js/pages/file-search.js
  * PURPOSE : Search Files page: hanap sa CLO1A/CLO1A1 (by name, by range date, latest), resulta na may scroll, Send to (Path o manual)
  * DEPENDS : js/core/config.js, registry.js, security.js, storage.js, csv-reader.js, file-scanner.js, file-sender.js, send-log.js
+ * VERSION : v33 | 2026-11-24 | Task 2: mensahe pagkatapos ng bawat search (may nakita, wala, error) na nananatili; pinakamaikling tagal ng search (SEARCH.MIN_SEARCH_MS); setStatus: kind 'warning'
  * VERSION : v2.8 | 2026-11-20 | bagong file
  * VERSION : v23 | 2026-11-24 | Task 13: ang search na tumatakbo ay nananatili kahit lumabas at bumalik sa page (activeSearch, pendingOutcome, isPageOpen); kulay (is-searching) ang button na ginamit; hindi clickable ang lahat ng button habang may search; By name: kasama ang folder; Search Date: kasama ang folder
  * VERSION : v3.0 | 2026-11-21 | Preview kada file sa Result (text, CSV, larawan, PDF)
@@ -43,13 +44,14 @@
     return element;
   }
 
-  // Mensahe: 'error', 'success' o 'info'. statusKey = 'status' (search) o 'sendStatus' (send).
+  // Mensahe: 'error', 'success', 'warning' o 'info'. statusKey = 'status' (search) o 'sendStatus' (send).
   function setStatus(statusKey, message, kind) {
     const element = query(statusKey);
     if (!element) return;
     element.textContent = message;
     element.classList.toggle('is-error', kind === 'error');
     element.classList.toggle('is-success', kind === 'success');
+    element.classList.toggle('is-warning', kind === 'warning');
     element.classList.toggle('is-info', kind === 'info');
   }
 
@@ -242,6 +244,19 @@
     return noteList.concat(warningList).join(' | ');
   }
 
+  /**
+   * PARA SAAN    : hindi biglang mawala ang "Naghahanap..." kapag sobrang bilis ng search
+   * GINAGAWA     : naghihintay hanggang umabot sa SEARCH.MIN_SEARCH_MS mula sa startedMs
+   * INPUT/OUTPUT : startedMs (number) -> Promise<void>
+   * TINATAWAG NG : file-search.js runSearch
+   * TUMATAWAG SA : wala
+   */
+  function waitMinimum(startedMs) {
+    const remaining = SEARCH.MIN_SEARCH_MS - (Date.now() - startedMs);
+    if (remaining <= 0) return Promise.resolve();
+    return new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+
   // Karaniwang takbo ng isang search. buildOptions(sourceList) -> options ng scanSources; modeText para sa tala; buttonKey = button na pinindot.
   // Nananatiling tumatakbo kahit lumabas sa page: ang estado ay nasa activeSearch at ang natapos na resulta ay nasa pendingOutcome.
   async function runSearch(buildOptions, modeText, buttonKey) {
@@ -253,6 +268,7 @@
     markSearching(buttonKey);
     setStatus('sendStatus', '', '');
     let outcome = null;
+    const startedMs = Date.now();
     try {
       const prepared = await prepareSources();
       if (prepared.checkedCount === 0) { outcome = { statusText: TEXT.noSourceChecked }; return; }
@@ -272,6 +288,7 @@
       outcome = { statusText: TEXT.searchError };
     } finally {
       control = null;
+      await waitMinimum(startedMs);
       activeSearch = null;
       if (isPageOpen()) { setBusy(false); showOutcome(outcome); } else { isBusy = false; pendingOutcome = outcome; }
     }
@@ -283,7 +300,8 @@
     if (outcome.itemList) {
       renderResults(outcome.itemList);
       query('resultNote').textContent = outcome.noteText;
-      setStatus('status', '', '');
+      if (outcome.itemList.length > 0) setStatus('status', TEXT.doneFound.replace('{n}', String(outcome.itemList.length)), 'success');
+      else setStatus('status', TEXT.doneNone, 'warning');
     } else {
       setStatus('status', outcome.statusText, 'error');
     }

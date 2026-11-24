@@ -2,6 +2,7 @@
  * FILE    : js/core/config.js
  * PURPOSE : Lahat ng constants, selectors at text
  * DEPENDS : wala
+ * VERSION : v33 | 2026-11-24 | DB_OPEN_TIMEOUT_MS at TEXT.settings.dbTimeout (Settings sa Edge); FILE_SEARCH.MIN_SEARCH_MS at TEXT.doneFound, doneNone
  * VERSION : v9.3 | 2026-11-22 | PAGE_LIST at LEAD_BLOCKED_PAGES: dagdag na page na trend (Trend, binabasa ang Data source 1)
  * VERSION : v10.3 | 2026-11-23 | LOT Yugto 5: PAGE_LIST dagdag na lot-tracking-lead (LEAD PC view ng LOT Tracking)
  * VERSION : v10.2 | 2026-11-22 | LOT Yugto 1: tinanggal ang LOT.SOURCE_KEYS (lumipat sa lotConfig.SOURCE.KEYS) at LOT.PATH_COLUMN; text ng operatorInvalid at enterOperator; bagong operatorCancelled
@@ -47,6 +48,8 @@
     STORAGE_KEY: 'bmww.settings',
     DB_NAME: 'bmww-db',
     DB_STORE: 'handles',
+    // Hanggang kailan hihintayin ang IndexedDB bago sumuko (ms). Iwas blangko ang Settings kapag hindi sumasagot ang browser.
+    DB_OPEN_TIMEOUT_MS: 3000,
     // Listahan ng mga path sa Settings. required: kailangan bago mag-save. gated: nakasara hanggang may Saving path (ROOT_KEY).
     PATH_LIST: [
       { key: 'server', gated: true, label: 'Server path', note: 'Folder sa server o shared drive. Mas maayos kung naka-map ito bilang drive letter (hal. Z:). Dito rin sine-save ang settings ng machine (subfolder settings).' },
@@ -246,6 +249,8 @@
         PDF_EXT: ['pdf']
       },
       MAX_DEPTH: 6,
+      // Pinakamaikling tagal ng search na makikita (ms), para hindi biglang mawala kapag sobrang bilis.
+      MIN_SEARCH_MS: 700,
       MAX_RESULTS: 5000,
       MAX_SCANNED: 200000,
       YIELD_EVERY: 100,
@@ -288,6 +293,8 @@
         startAfterEnd: 'Hindi puwedeng mas huli ang Start date kaysa sa End date.',
         stopped: 'Itinigil ang paghahanap. Ipinapakita ang mga nakita na.',
         none: 'Walang nakitang file.',
+        doneFound: 'Tapos na ang paghahanap: may nakitang {n} file o folder.',
+        doneNone: 'Tapos na ang paghahanap: walang nakitang file o folder.',
         resultLimited: 'Umabot sa limit na {n} ang resulta. Paliitin ang hanap (pangalan o petsa).',
         scanLimited: 'Umabot sa limit ng pag-scan ({n}). Paliitin ang hanap para kumpleto.',
         skipped: ' folder ang hindi nabasa at nilaktawan.',
@@ -402,6 +409,7 @@
       fullPathAutoHint: ' | Hula ito mula sa napiling folder; tingnan kung tama (baguhin kung mali), tapos pindutin ang Save settings.',
       folderError: 'Hindi mapili ang folder.', saveError: 'Hindi na-save ang settings. Subukan ulit.',
       saved: 'Na-save sa ', loadError: 'Hindi mabasa ang naunang settings.',
+      dbTimeout: 'Hindi sumasagot ang browser storage (IndexedDB), kaya hindi nabasa ang naka-save na folder. Isara ang ibang BMWW tab at i-refresh. Puwede mo pa ring piliin ulit ang mga folder.',
       savedBoth: 'Na-save sa Saving path at Server path: ',
       savedRootOnly: 'Na-save sa Saving path: ',
       serverNotSet: ' | Hindi pa naka-set ang Server path, kaya wala pang kopya sa server.',

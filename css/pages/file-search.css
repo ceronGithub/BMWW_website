@@ -4,6 +4,7 @@
  * DEPENDS : css/base.css, css/components.css
  * VERSION : v2.8 | 2026-11-20 | bagong file
  * VERSION : v2.8.1 | 2026-11-21 | laging kita ang scrollbar ng resulta; legend ng Status
+ * VERSION : v33 | 2026-11-24 | Task 2: .status.is-warning (dilaw) para sa walang nakitang file
  * VERSION : v23 | 2026-11-24 | Task 13: kulay at animation ng button na ginamit habang may search (.is-searching); malinaw ang hindi clickable na button
  */
 .page-file-search { --fs-pending: #4b5563; --fs-sent: #15803d; --fs-failed: #b91c1c; --fs-exists: #b45309; --fs-replaced: #1d4ed8; padding-bottom: var(--space-6); }
@@ -48,6 +49,8 @@
 .page-file-search .fs-manual-row .fs-path-text { margin-left: 0; }
 .page-file-search .form-input.is-error { border-color: var(--color-danger); }
 .page-file-search .status.is-info { color: var(--color-muted); }
+/* Walang nakitang file: dilaw (gamit ng #fs-status sa Search Files) */
+.page-file-search .status.is-warning { color: var(--fs-exists); font-weight: 600; }
 @media (min-width: 768px) {
   .page-file-search .fs-search-grid { grid-template-columns: repeat(3, 1fr); }
 }
