@@ -7,6 +7,7 @@
  * VERSION : v3 | 2026-11-23 | Yugto 2: SHIFT at MONITORING (imbakan ng monitoring: JSON at Excel, column, status, kulay, text)
  * VERSION : v4 | 2026-11-23 | Yugto 3: REMARKS (dialog, 9 na opsyon, Manual input) at ONHOLD (hold file sa Server path at Saving path)
  * VERSION : v5 | 2026-11-23 | Yugto 4: SEND (SERVER lang: text, label ng button, lalim ng kopya ng folder)
+ * VERSION : v6 | 2026-11-24 | Yugto 6: WATCH (bantay kapag walang aktibong lote: interval, selector ng dialog ng Barcode, text)
  */
 (function () {
   'use strict';
@@ -177,6 +178,22 @@
         sent: 'Naipadala sa Server path: ',
         failed: 'Hindi naipadala (NOT SENT): ',
         error: 'May error sa pagpapadala. Nananatiling NOT SENT.'
+      })
+    }),
+    WATCH: Object.freeze({
+      // Bantay kapag walang aktibong lote (spec 4.8): hanap ng bagong file sa Data source 2 at 3 mula sa huling tingin.
+      INTERVAL_MS: 3000,
+      // Ilang pangalan ng unit ang ipapakita sa dialog (ang sobra ay "at n pa").
+      UNIT_SHOW_MAX: 5,
+      SELECTOR: Object.freeze({
+        dialog: '#lot-watch-dialog', units: '#lot-watch-units', barcode: '#lot-watch-barcode',
+        error: '#lot-watch-error', ok: '#lot-watch-ok', cancel: '#lot-watch-cancel'
+      }),
+      TEXT: Object.freeze({
+        found: 'May bagong file: ',
+        more: ' at {n} pa',
+        barcodeEmpty: 'Isulat o i-scan ang Barcode.',
+        declined: 'Hindi na itatanong ang mga file na iyon.'
       })
     })
   });

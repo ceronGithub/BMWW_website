@@ -1,3 +1,18 @@
+INSTRUCTIONS v20 (LOT Tracking Yugto 6: bantay kapag walang aktibong lote)
+1. Backup muna. Ilagay muna ang v19 (Yugto 5) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-watch.js. BINAGONG file: js/core/lot-config.js, js/pages/lot-tracking.js, pages/lot-tracking.html, js/templates/lot-tracking.template.js, css/pages/lot-tracking.css, README.txt, 00_INSTRUCTIONS.txt. Walang ibang ginalaw.
+2. TEST STEPS v20 (LOT Tracking). Kailangan: Machine name, Saving path, Server path at Data source 2 o 3 sa Settings; Chrome o Edge. Pindutin ang Ctrl+F5 pagkatapos ilagay ang mga file. Pagkatapos mag-refresh, kung hindi pa napapayagan ang Data source, mag-scan muna ng isang barcode (ito ang humihingi ng permission) at i-END agad bago subukan ang bantay.
+   - Buksan ang LOT Tracking na WALANG aktibong lote. Ang mga lumang file sa Data source ay DAPAT HINDI itanong.
+   - Maglagay ng bagong 4A25C20A.csv (at _Time) sa Data source 2: sa loob ng mga 3 segundo DAPAT lumabas ang dialog na 'Bagong file' na may 'May bagong file: 4A25C20A' at input ng Barcode.
+   - OK na walang Barcode: DAPAT may mensahe at bukas pa ang dialog. I-type ang 'abc12' (o i-scan) at Enter o OK: DAPAT 'ABC12' sa Barcode ng page, at ang cursor ay nasa Operator.
+   - Ilagay ang Operator at Enter: DAPAT magsimula ang lote at lumabas sa RESULT ang 4A25C20A (ang unit na nakita na), at ang Start ay ang oras ng file (hindi ang oras ng Enter). Sagutin ang Remarks dialog gaya ng dati.
+   - Habang aktibo ang lote at habang naghihintay ng Operator: DAPAT HINDI lumabas ang dialog na 'Bagong file' kahit may bagong file.
+   - I-END ang lote (parehong barcode). Maglagay ng bagong 6C22E40C.csv: DAPAT magtanong ulit ng Barcode, at ang mga file ng natapos na lote ay DAPAT HINDI isama.
+   - Cancel (o Esc) sa dialog: DAPAT HINDI na itanong ulit ang 6C22E40C.csv. Ganoon din kapag Esc sa Operator pagkatapos mag-Barcode sa dialog.
+   - NEW LOTE habang naghihintay ng Operator mula sa bantay: DAPAT malinis ang form at HINDI na itanong ang mga unit na iyon.
+   - DAPAT HINDI makita: dalawang dialog nang sabay, pagtatanong ng lumang file pagkabukas ng page, pagbabago o pagbura ng file sa Data source (basa lang).
+   Nasubukan sa Node at jsdom (fake folders) lang. HINDI nasubukan sa totoong Chrome/Edge: ang unang test ay nasa device mo.
+
+--- LUMANG INSTRUCTIONS (v19) ---
 INSTRUCTIONS v19 (LOT Tracking Yugto 5: LEAD PC view, page na LOT Monitoring)
 1. Backup muna. Ilagay muna ang v18 (Yugto 4) kung hindi pa. I-unzip ang ZIP sa project folder at palitan ang may parehong pangalan (buo ang folder hierarchy sa loob). BAGONG file: js/core/lot-lead-config.js, js/core/lot-monitoring-reader.js, js/pages/lot-tracking-lead.js, pages/lot-tracking-lead.html, js/templates/lot-tracking-lead.template.js, css/pages/lot-tracking-lead.css. BINAGONG file: js/core/config.js (PAGE_LIST lang), components/sidebar.html, js/templates/sidebar.template.js, index.html (isang script tag), README.txt, 00_INSTRUCTIONS.txt. Pindutin ang Ctrl+F5 sa browser pagkatapos.
 2. TEST STEPS v19 (LOT Monitoring). Kailangan: Chrome o Edge; Machine name, Saving path at Server path (may write permission) sa Settings ng Sender; para sa buong test, dalawang machine na pareho ang Server path. Puwede ring isang PC lang (Sender at ang LOT Monitoring sa iisang browser).

@@ -5,6 +5,7 @@
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: style ng Remarks dialog (.lot-remarks-dialog)
  * VERSION : v3.0 | 2026-11-23 | Yugto 4: style ng SERVER button (.lot-send-button) at .lot-sent-mark
+ * VERSION : v3.1 | 2026-11-24 | Yugto 6: style ng dialog ng bantay (.lot-watch-units)
  */
 .page-lot-tracking .lot-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .page-lot-tracking .lot-grid .form-group { margin-top: 0; }
@@ -36,3 +37,5 @@
 /* Send (pages/lot-tracking.html, column na Send ng RESULT): SERVER button at tatak na SENT */
 .page-lot-tracking .lot-send-button { min-height: 2.75rem; min-width: 5.5rem; }
 .page-lot-tracking .lot-sent-mark { margin-left: var(--space-2); font-weight: 700; color: var(--color-success, #16a34a); white-space: nowrap; }
+/* Dialog ng bantay (pages/lot-tracking.html, #lot-watch-dialog): ginagamit ang style ng .lot-remarks-dialog; ito ang listahan ng bagong unit */
+.page-lot-tracking .lot-watch-units { margin: var(--space-2) 0 var(--space-3); overflow-wrap: anywhere; }

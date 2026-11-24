@@ -1,12 +1,13 @@
 /*
  * FILE    : js/pages/lot-tracking.js
  * PURPOSE : LOT Tracking: Barcode -> Operator -> simula ng lote; binabantayan ang bagong file/folder sa mga Data source ng Settings
- * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js
+ * DEPENDS : js/core/config.js, js/core/registry.js, js/core/security.js, js/core/storage.js, js/core/lot-config.js, js/core/lot-unit-collector.js, js/core/lot-active-store.js, js/core/lot-validation.js, js/core/lot-beep.js, js/core/lot-monitoring-store.js, js/core/lot-remarks.js, js/core/lot-onhold.js, js/core/lot-send.js, js/core/file-sender.js, js/core/lot-watch.js
  * USED BY : pages/lot-tracking.html (script tag), js/templates/lot-tracking.template.js
  * VERSION : v2.5 | 2026-11-20 | bagong file
  * VERSION : v2.6 | 2026-11-22 | Yugto 1: isang row kada LOT Unit (X at X_Time), Unang nakita, at pag-save/pagbalik ng aktibong lote
  * VERSION : v2.7 | 2026-11-22 | Yugto 1: Barcode uppercase, check ng Operator, Esc sa Operator = Cancel, beep sa END, Data source 2 at 3 lang (lotConfig.SOURCE.KEYS)
  * VERSION : v2.8 | 2026-11-23 | Yugto 2: monitoring (row sa pag-scan, LOT Unit, auto-DONE kapag END, iba ang barcode o NEW LOTE), JSON at Excel sa Saving path at Server path
+ * VERSION : v3.1 | 2026-11-24 | Yugto 6: bantay kapag walang aktibong lote (watchTick): bagong LOT Unit = itanong ang Barcode sa dialog, tapos Operator, tapos simula ng lote (Start = oras ng pinakamaagang unit)
  * VERSION : v3.0 | 2026-11-23 | Yugto 4: SERVER button sa bawat unit ng RESULT (Send sa Server path), Sent Status at Sent Time sa monitoring; handle sa bawat item ng RESULT
  * VERSION : v2.9 | 2026-11-23 | Yugto 3: Remarks dialog kada LOT Unit, babala sa Final Meas., On hold (hold file sa Server path at Saving path), tanggal ng hold kapag nagsimula ulit ang barcode
  */
@@ -31,6 +32,8 @@
   const onhold = root.lotOnhold;
   const send = root.lotSend;
   const SEND = LOT_CONFIG.SEND;
+  const lotWatch = root.lotWatch;
+  const WATCH = LOT_CONFIG.WATCH;
 
   let lote = createEmptyLote();
   let pendingBarcode = '';
@@ -43,6 +46,10 @@
   let lastScan = { rowList: [], warningList: [] };
   let isAskingRemarks = false;
   let isSending = false;
+  let watcher = null;
+  let watchTimerId = null;
+  let isWatching = false;
+  let watchPending = null;
 
   // Walang laman na lote (barcode, operator, simula, wakas sa milliseconds).
   function createEmptyLote() {
@@ -394,6 +401,7 @@
       if (!query('resultBody')) { stopTimer(); return; }
       const collected = unitCollector.collectUnits(itemList, firstSeenMap, Date.now());
       if (collected.isFirstSeenChanged && isActive()) saveActive();
+      if (watcher) watcher.addKnown(collected.rowList.map((row) => row.unitName));
       lastScan = { rowList: collected.rowList, warningList };
       if (isActive() && await monitor.prepare(currentMachine, lote.startMs) && recordNewUnits(collected.rowList)) persistMonitoring(lote.startMs);
       renderResults(collected.rowList, warningList);
@@ -427,6 +435,7 @@
     await monitor.prepare(currentMachine, startMs);
     lote.endMs = Date.now();
     monitor.finishBlock(lote, lote.endMs);
+    if (watcher) watcher.reset(lote.endMs);
     activeStore.clear();
     renderLote();
     setStatus(TEXT.ended + lote.barcode + '.', false);
@@ -434,8 +443,8 @@
   }
 
   // Sinisimulan ang bagong lote: Start Date/Time = ngayon, clear ang End, simula ng bantay.
-  async function startLote(operatorValue) {
-    lote = { barcode: pendingBarcode, operator: operatorValue, startMs: Date.now(), endMs: 0 };
+  async function startLote(operatorValue, startMsOverride) {
+    lote = { barcode: pendingBarcode, operator: operatorValue, startMs: startMsOverride || Date.now(), endMs: 0 };
     firstSeenMap = {};
     saveActive();
     pendingBarcode = '';
@@ -450,6 +459,91 @@
     startTimer();
     persistMonitoring(lote.startMs);
     await refreshResults();
+  }
+
+  /**
+   * PARA SAAN    : simulan ang bantay kapag walang aktibong lote
+   * GINAGAWA     : isang timer lang (WATCH.INTERVAL_MS) na tumatawag ng watchTick
+   * INPUT/OUTPUT : wala -> wala
+   * TINATAWAG NG : lot-tracking.js init
+   * TUMATAWAG SA : lot-tracking.js watchTick (kada interval)
+   */
+  function startWatchTimer() {
+    if (watchTimerId !== null) return;
+    watchTimerId = window.setInterval(() => { watchTick().catch(() => { isWatching = false; }); }, WATCH.INTERVAL_MS);
+  }
+
+  /**
+   * PARA SAAN    : itigil ang bantay (kapag umalis na sa page)
+   * GINAGAWA     : nililinis ang timer
+   * INPUT/OUTPUT : wala -> wala
+   * TINATAWAG NG : lot-tracking.js watchTick
+   * TUMATAWAG SA : wala
+   */
+  function stopWatchTimer() {
+    if (watchTimerId === null) return;
+    window.clearInterval(watchTimerId);
+    watchTimerId = null;
+  }
+
+  /**
+   * PARA SAAN    : kalimutan ang bantay na naghihintay ng Operator (Esc, NEW LOTE)
+   * GINAGAWA     : ang mga unit na iyon ay itinatala bilang tinanggihan para hindi na itanong
+   * INPUT/OUTPUT : wala -> wala
+   * TINATAWAG NG : lot-tracking.js cancelOperator, onNewLote
+   * TUMATAWAG SA : watcher.decline
+   */
+  function dropWatchPending() {
+    if (!watchPending) return;
+    if (watcher) watcher.decline(watchPending.unitNameList);
+    watchPending = null;
+  }
+
+  /**
+   * PARA SAAN    : isang tingin ng bantay (spec 4.8): may bagong LOT Unit ba habang walang aktibong lote
+   * GINAGAWA     : hindi tumatakbo kapag may aktibong lote, naghihintay ng Operator, may ipinapadala o may dialog; hinahanap ang bagong file sa Data source mula sa huling tingin; kapag may bagong unit, tinatanong ang Barcode sa dialog; Cancel = tinatanggihan ang mga unit; OK = ilalagay ang Barcode at hihintayin ang Operator (Start ng lote = oras ng pinakamaagang unit)
+   * INPUT/OUTPUT : wala -> Promise<void> (hindi nagtatapon ng error sa tumatawag)
+   * TINATAWAG NG : timer ng startWatchTimer (kada WATCH.INTERVAL_MS)
+   * TUMATAWAG SA : scanDirectory, storage.hasPermission, unitCollector.collectUnits, watcher (getEarliestMs, markLooked, findNewUnits, addKnown, decline), lotWatch.askBarcode, setStatus
+   */
+  async function watchTick() {
+    if (isWatching || isScanning || isSending || isAskingRemarks || isActive() || pendingBarcode || watchPending) return;
+    if (!query('barcode')) { stopWatchTimer(); return; }
+    if (!watcher || sourceList.length === 0) return;
+    isWatching = true;
+    try {
+      const lookedMs = Date.now();
+      const itemList = [];
+      for (const source of sourceList) {
+        let isAllowed = false;
+        try {
+          isAllowed = await storage.hasPermission(source.handle, false);
+        } catch (error) {
+          isAllowed = false;
+        }
+        if (isAllowed) await scanDirectory(source.handle, source.label, source.handle.name, 0, watcher.getEarliestMs(), itemList);
+      }
+      if (isActive() || pendingBarcode || !query('barcode')) return;
+      watcher.markLooked(lookedMs);
+      const newRowList = watcher.findNewUnits(unitCollector.collectUnits(itemList, {}, lookedMs).rowList);
+      if (newRowList.length === 0) return;
+      const unitNameList = newRowList.map((row) => row.unitName);
+      const answer = await lotWatch.askBarcode(unitNameList);
+      if (answer.isCancelled) {
+        watcher.decline(unitNameList);
+        setStatus(WATCH.TEXT.declined, false);
+        return;
+      }
+      watcher.addKnown(unitNameList);
+      watchPending = { startMs: Math.min(...newRowList.map((row) => row.modifiedMs)), unitNameList };
+      pendingBarcode = answer.barcode;
+      query('barcode').value = answer.barcode;
+      query('operator').value = '';
+      setStatus(TEXT.enterOperator, false);
+      query('operator').focus();
+    } finally {
+      isWatching = false;
+    }
   }
 
   // Enter sa Barcode: parehong barcode ng aktibong lote = tapusin; iba o bago = hingin ang Operator.
@@ -475,6 +569,7 @@
   // Esc sa Operator = Cancel: nililinis ang Barcode at RESULT. Ang End ng naunang lote (kung meron) ay iniiwan.
   function cancelOperator() {
     if (!pendingBarcode) return;
+    dropWatchPending();
     stopTimer();
     lote = { barcode: '', operator: '', startMs: 0, endMs: lote.endMs };
     firstSeenMap = {};
@@ -493,13 +588,17 @@
     const operatorValue = validation.normalizeOperator(query('operator').value);
     if (!pendingBarcode) { setStatus(TEXT.barcodeFirst, true); query('barcode').focus(); return; }
     if (!validation.isValidOperator(operatorValue)) { setStatus(TEXT.operatorInvalid, true); return; }
-    startLote(operatorValue).catch(() => setStatus(TEXT.scanError, true));
+    const startMsOverride = watchPending ? watchPending.startMs : 0;
+    watchPending = null;
+    startLote(operatorValue, startMsOverride).catch(() => setStatus(TEXT.scanError, true));
   }
 
   // NEW LOTE: tanungin muna, lagyan ng End kung aktibo, linisin ang form (naiiwan ang End hanggang sa susunod na lote).
   function onNewLote() {
     if ((lote.barcode || pendingBarcode) && !window.confirm(TEXT.confirmNew)) return;
     stopTimer();
+    dropWatchPending();
+    if (watcher) watcher.reset(Date.now());
     const wasActive = isActive();
     const finishedLote = lote;
     const keptEndMs = wasActive ? Date.now() : lote.endMs;
@@ -557,6 +656,10 @@
     if (!storage.isFolderAccessSupported()) setStatus(CONFIG.TEXT.unsupported, true);
     else setStatus(TEXT.scanBarcode, false);
     await loadSources();
+    if (storage.isFolderAccessSupported()) {
+      watcher = lotWatch.createWatcher(Date.now());
+      startWatchTimer();
+    }
     if (isActive()) await monitor.prepare(currentMachine, lote.startMs);
     if (isActive()) startTimer();
     if (lote.startMs) refreshResults();
