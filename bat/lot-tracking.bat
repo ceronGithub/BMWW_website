@@ -28,6 +28,18 @@ REM           Binabasa lang ang Data source 2 at 3 (Rule 7). Ang
 REM           paglilipat sa Server path ay trabaho ng server-sync.bat.
 REM           Ang creation time ay kinukuha ng PowerShell, kasi hindi
 REM           pare-pareho ang format ng dir sa bawat PC.
+REM MEASURE: Kapag may Remarks (OK o Onhold) na sa remarks.txt ng shift
+REM           folder at wala pa sa measured.txt, isang linya ang idadagdag sa
+REM             <saving>\lot tracking\measures\<machine>_measures_yyyy-mm.txt
+REM           event_time | written_time | machine | lot unit | wafer |
+REM           file name | measurement # | remarks | operator
+REM           event_time = creation time ng file. Ang measurement # ay
+REM           binibilang mula sa measure logs (sariling Saving at kopya sa
+REM           Server) at marks logs, ng LAHAT ng machine, mula sa huling Mark.
+REM           Basa lang ang Server (Rule 7). Kapag offline ang Server, lokal
+REM           lang ang bilang. Blangko ang operator hanggang isulat ng macro
+REM           ang inputs.txt.
+REM VERSION: v2 | 2026-11-28 | Measure log (macro task 1, Hold Lots)
 REM VERSION: v1 | 2026-11-28 | Unang version (macro task 1)
 REM ======================================================================
 
@@ -52,6 +64,8 @@ set "newLinesFile=%baseDir%lot-tracking.new.tmp"
 set "newProcessedFile=%baseDir%lot-tracking.proc.tmp"
 set "newSkippedFile=%baseDir%lot-tracking.skip.tmp"
 set "liveTempFile=%baseDir%lot-tracking.live.tmp"
+set "measureNewFile=%baseDir%lot-tracking.measure.tmp"
+set "measureCountFile=%baseDir%lot-tracking.count.tmp"
 set /a pingCount=pollSeconds+1
 set "lockTries=0"
 set "mainRan="
@@ -115,6 +129,13 @@ set "trackingFile=%trackingDir%\%ini_machine_name%_%shiftDate%_%shiftName%_lottr
 set "monitoringFile=%monitoringDir%\%ini_machine_name%_%shiftDate%_lotmonitoring.txt"
 set "processedFile=%shiftDir%\processed.txt"
 set "skippedFile=%shiftDir%\skipped.log"
+set "remarksFile=%shiftDir%\remarks.txt"
+set "measuredFile=%shiftDir%\measured.txt"
+set "measuresDir=%savingRoot%\lot tracking\measures"
+set "marksDir=%savingRoot%\lot tracking\marks"
+set "serverMeasuresDir="
+set "serverMarksDir="
+if defined ini_server_path call :buildServerDirs
 
 if not exist "%shiftDir%\" mkdir "%shiftDir%" >nul 2>&1
 if not exist "%trackingDir%\" mkdir "%trackingDir%" >nul 2>&1
@@ -162,6 +183,7 @@ set "macroWaitCycles=%relaunchWaitCycles%"
 
 :afterCommit
 if %macroWaitCycles% GTR 0 set /a macroWaitCycles-=1
+call :writeMeasures
 
 :sleepCycle
 ping -n %pingCount% 127.0.0.1 >nul
@@ -176,7 +198,7 @@ echo Tapos na ang shift. Titigil ang lot-tracking.
 goto :exitLoop
 
 :exitLoop
-del /q "%aliveFile%" "%scanFile%" "%newLinesFile%" "%newProcessedFile%" "%newSkippedFile%" "%liveTempFile%" >nul 2>&1
+del /q "%aliveFile%" "%scanFile%" "%newLinesFile%" "%newProcessedFile%" "%newSkippedFile%" "%liveTempFile%" "%measureNewFile%" "%measureCountFile%" >nul 2>&1
 exit /b 0
 
 REM ======================================================================
@@ -192,6 +214,7 @@ set "ini_machine_name="
 set "ini_morning_start="
 set "ini_night_start="
 set "ini_shift_folder="
+set "ini_server_path="
 for /f "usebackq delims=" %%A in ("%iniFile%") do call :storeSetting "%%A"
 if not defined ini_data_source_2 exit /b 1
 if not defined ini_data_source_3 exit /b 1
@@ -215,6 +238,7 @@ if "%settingKey%"=="machine_name" set "ini_machine_name=%settingValue%"
 if "%settingKey%"=="morning_start" set "ini_morning_start=%settingValue%"
 if "%settingKey%"=="night_start" set "ini_night_start=%settingValue%"
 if "%settingKey%"=="shift_folder" set "ini_shift_folder=%settingValue%"
+if "%settingKey%"=="server_path" set "ini_server_path=%settingValue%"
 exit /b 0
 
 REM ======================================================================
@@ -260,6 +284,87 @@ exit /b 0
 :entrySkipped
 set "skipText=!entryTime!|%scanLocation%|!entryKind!|!entryName!"
 >>"%newSkippedFile%" echo(!skipText!
+exit /b 0
+
+REM ======================================================================
+REM :buildServerDirs - ang measures at marks folder sa Server path (basa
+REM lang). Walang laman kung blangko ang server_path.
+REM ======================================================================
+:buildServerDirs
+set "serverRootDir=%ini_server_path%"
+if "%serverRootDir:~-1%"=="\" set "serverRootDir=%serverRootDir:~0,-1%"
+set "serverMeasuresDir=%serverRootDir%\lot tracking\measures"
+set "serverMarksDir=%serverRootDir%\lot tracking\marks"
+exit /b 0
+
+REM ======================================================================
+REM :writeMeasures - bawat lote sa remarks.txt na wala pa sa measured.txt
+REM ay isinusulat sa measure log. Isang beses lang kada lote (walang
+REM duplicate). Kapag kulang ang kailangan, laktaw at uulitin sa susunod.
+REM ======================================================================
+:writeMeasures
+if not exist "%remarksFile%" exit /b 0
+if not exist "%measuresDir%\" mkdir "%measuresDir%" >nul 2>&1
+if not exist "%measuresDir%\" exit /b 0
+for /f "usebackq tokens=1,2 delims=|" %%A in ("%remarksFile%") do call :measureEntry "%%A" "%%B"
+exit /b 0
+
+REM ======================================================================
+REM :measureEntry - isang lote. Mga argumento: file name at remarks (OK o
+REM Onhold). Kinukuha ang creation time at lot unit sa lot tracking file,
+REM kinukuwenta ang measurement #, at isinusulat ang linya sa measure log.
+REM ======================================================================
+:measureEntry
+set "measureName=%~1"
+set "measureRemark=%~2"
+if not defined measureName exit /b 0
+if not defined measureRemark exit /b 0
+findstr /x /l /c:"%measureName%" "%measuredFile%" >nul 2>&1
+if not errorlevel 1 exit /b 0
+
+set "measureStart="
+set "measureLot="
+set "measureWafer="
+for /f "usebackq tokens=1-9 delims=|" %%a in (`findstr /l /c:"|%measureName%|" "%trackingFile%"`) do call :storeTrackingLine "%%a" "%%d" "%%e"
+if not defined measureStart exit /b 0
+if not defined measureLot exit /b 0
+
+set "mLot=%measureLot%"
+set "mEvent=%measureStart%"
+set "mMachine=%ini_machine_name%"
+set "mOwnMeasures=%measuresDir%"
+set "mServerMeasures=%serverMeasuresDir%"
+set "mOwnMarks=%marksDir%"
+set "mServerMarks=%serverMarksDir%"
+if exist "%measureCountFile%" del /q "%measureCountFile%" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; try { $ci=[Globalization.CultureInfo]::InvariantCulture; $fmt='yyyy-MM-dd HH:mm:ss'; $lot=$env:mLot; $evt=[datetime]::ParseExact($env:mEvent,$fmt,$ci); $mons=@((Get-Date).ToString('yyyy-MM',$ci),(Get-Date).AddMonths(-1).ToString('yyyy-MM',$ci)); function Rd($dir,$mid){ if($dir -and (Test-Path -LiteralPath $dir)){ foreach($m in $mons){ foreach($f in @(Get-ChildItem -LiteralPath $dir -Filter ('*'+$mid+$m+'.txt') -File -ErrorAction SilentlyContinue)){ Get-Content -LiteralPath $f.FullName -ErrorAction SilentlyContinue } } } }; $seen=@{}; $byFile=@{}; foreach($l in (@(Rd $env:mOwnMeasures '_measures_')+@(Rd $env:mServerMeasures '_measures_'))){ try { $f=$l.Split('|'); if($f.Count -ge 6){ $t=[datetime]::ParseExact($f[0].Trim(),$fmt,$ci); $byFile[$f[5].Trim()]=$t; if($f[3].Trim() -eq $lot){ $seen[$f[2].Trim()+'|'+$f[5].Trim()]=$t } } } catch {} }; $ev=@(); foreach($l in (@(Rd $env:mOwnMarks '_marks_')+@(Rd $env:mServerMarks '_marks_'))){ try { $f=$l.Split('|'); if($f.Count -ge 5 -and $f[2].Trim() -eq $lot){ $ev+=[pscustomobject]@{T=[datetime]::ParseExact($f[0].Trim(),$fmt,$ci);F=$f[3].Trim();E=$f[4].Trim().ToUpper()} } } catch {} }; $marked=@{}; foreach($e in ($ev | Sort-Object T)){ if($e.E -eq 'MARK'){ $marked[$e.F]=1 } elseif($e.E -eq 'UNMARK'){ $marked.Remove($e.F) } }; $mt=[datetime]::MinValue; foreach($k in @($marked.Keys)){ $ft=$null; if($byFile.ContainsKey($k)){ $ft=$byFile[$k] } elseif($k.Length -ge 21){ try { $ft=[datetime]::ParseExact($k.Substring(9,12),'yyMMddHHmmss',$ci) } catch {} }; if($ft -ne $null -and $ft -le $evt -and $ft -gt $mt){ $mt=$ft } }; $n=1; foreach($v in $seen.Values){ if($v -ge $mt -and $v -lt $evt){ $n++ } }; $n.ToString()+'|'+(Get-Date).ToString($fmt,$ci) } catch {}" >"%measureCountFile%" 2>nul
+set "measureResult="
+if exist "%measureCountFile%" set /p measureResult=<"%measureCountFile%"
+if not defined measureResult exit /b 0
+
+set "measureNumber="
+set "writtenTime="
+for /f "tokens=1,2 delims=|" %%a in ("%measureResult%") do (set "measureNumber=%%a" & set "writtenTime=%%b")
+if not defined measureNumber exit /b 0
+if not defined writtenTime exit /b 0
+
+set "measureLog=%measuresDir%\%ini_machine_name%_measures_%measureStart:~0,7%.txt"
+setlocal EnableDelayedExpansion
+set "measureLine=!measureStart! | !writtenTime! | !ini_machine_name! | !measureLot! | !measureWafer! | !measureName! | !measureNumber! | !measureRemark! | "
+>"!measureNewFile!" echo(!measureLine!
+call :appendWithTemp "!measureLog!" "!measureNewFile!"
+if errorlevel 1 (endlocal & exit /b 0)
+>>"!measuredFile!" echo(!measureName!
+endlocal
+exit /b 0
+
+REM Isang linya ng lot tracking file: oras ng creation (token a), lot unit
+REM (token d), at wafer (token e).
+:storeTrackingLine
+if defined measureStart exit /b 0
+set "measureStart=%~1"
+set "measureLot=%~2"
+set "measureWafer=%~3"
 exit /b 0
 
 REM ======================================================================
